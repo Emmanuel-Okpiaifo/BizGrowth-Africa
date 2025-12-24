@@ -36,7 +36,7 @@ export function useDailyOriginalArticles() {
 		return rotated.map((a) => ({
 			title: a.title,
 			source: "BizGrowth Africa",
-			image: a.image,
+			image: a.canonicalImage || a.image,
 			imageCandidates: a.imageCandidates,
 			url: `/news/${a.slug}`,
 			publishedAt: todayIso,

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import NewsCard from "../components/NewsCard";
 import NewsletterCTA from "../components/NewsletterCTA";
@@ -21,6 +21,11 @@ function formatDate(iso) {
 export default function NewsArticle() {
 	const { slug } = useParams();
 
+	// Always scroll to top when opening or switching articles
+	useEffect(() => {
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	}, [slug]);
+
 	const article = useMemo(
 		() => allOriginalArticles.find((a) => a.slug === slug),
 		[slug]
@@ -39,7 +44,7 @@ export default function NewsArticle() {
 		return picks.map((a) => ({
 			title: a.title,
 			source: "BizGrowth Africa",
-			image: a.image,
+			image: a.canonicalImage || a.image,
 			imageCandidates: a.imageCandidates,
 			url: `/news/${a.slug}`,
 			publishedAt: a.publishedAt,
@@ -138,7 +143,7 @@ export default function NewsArticle() {
 			{/* Hero image */}
 			{article.image ? (
 				<div className="mt-6 overflow-hidden rounded-2xl">
-					<ArticleHeroImage article={article} />
+					<ArticleHeroImage key={article.slug} article={article} />
 				</div>
 			) : null}
 
@@ -299,6 +304,14 @@ function ArticleHeroImage({ article }) {
 		: [article.image];
 	const [src, setSrc] = useState(candidates[0]);
 	const [loaded, setLoaded] = useState(false);
+
+	// Reset image and loader when navigating to a new article
+	useEffect(() => {
+		setLoaded(false);
+		setSrc(candidates[0]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [article.slug]);
+
 	return (
 		<div className="relative aspect-[16/9]">
 			{!loaded ? <div className="absolute inset-0 animate-pulse bg-gray-100 dark:bg-gray-800" /> : null}

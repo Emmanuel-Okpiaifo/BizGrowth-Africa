@@ -220,6 +220,8 @@ export const allOriginalArticles = base.map((a) => {
 		return true;
 	});
 	const richBody = enrichBodyWithCitations(a);
-	return { ...a, image: curatedImage, imageCandidates: candidates, richBody };
+	// Canonical featured image that "sticks" to the article across contexts
+	const canonicalImage = overrides[0] || curatedImage || candidates[0];
+	return { ...a, image: canonicalImage, canonicalImage, imageCandidates: candidates, richBody };
 });
 
