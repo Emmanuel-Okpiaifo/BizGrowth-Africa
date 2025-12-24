@@ -41,9 +41,9 @@ export default function NewsInsights() {
 			{/* Full-width dense grid of cards with no unused sidebar space */}
 			<div>
 				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-					{articles.map((a) => (
+						{articles.map((a) => (
 						<NewsCard key={a.url} article={a} />
-					))}
+						))}
 				</div>
 			</div>
 		</div>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import placeholderUrl from "../assets/placeholder.svg";
 
 export default function NewsCard({ article, variant = "default" }) {
@@ -22,14 +23,20 @@ export default function NewsCard({ article, variant = "default" }) {
 	const aspect =
 		variant === "featured" ? "aspect-[16/9]" : variant === "tall" ? "aspect-[4/5]" : "aspect-[16/9]";
 
+	const isInternal = typeof url === "string" && url.startsWith("/news/");
+	const Anchor = ({ children }) =>
+		isInternal ? (
+			<Link to={url} className={wrapper} aria-label={title}>
+				{children}
+			</Link>
+		) : (
+			<a href={url} target="_blank" rel="noreferrer" className={wrapper} aria-label={title}>
+				{children}
+			</a>
+		);
+
 	return (
-		<a
-			href={url}
-			target="_blank"
-			rel="noreferrer"
-			className={wrapper}
-			aria-label={title}
-		>
+		<Anchor>
 			<div className={["relative", aspect].join(" ")}>
 				{/* Skeleton shimmer while loading */}
 				{!loaded ? (
@@ -71,7 +78,7 @@ export default function NewsCard({ article, variant = "default" }) {
 					</p>
 				) : null}
 			</div>
-		</a>
+		</Anchor>
 	);
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { Moon, Sun } from "lucide-react";
 
 const navItems = [
@@ -18,8 +18,8 @@ export default function Navbar() {
 
 	useEffect(() => {
 		const stored = localStorage.getItem("theme");
-		const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-		const enabled = stored ? stored === "dark" : prefersDark;
+		// Default to light mode unless user explicitly stored "dark"
+		const enabled = stored ? stored === "dark" : false;
 		document.documentElement.classList.toggle("dark", enabled);
 		setDark(enabled);
 	}, []);
@@ -35,12 +35,12 @@ export default function Navbar() {
 		<header className="border-b bg-white dark:border-gray-800 dark:bg-[#0B1220]">
 			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 				<div className="flex h-16 items-center justify-between">
-					<a href="/" className="flex items-center gap-2">
+					<Link to="/" className="flex items-center gap-2">
 						<div className="h-8 w-8 rounded bg-primary" />
 						<span className="text-lg font-bold text-gray-900 dark:text-white">
 							BizGrowth Africa
 						</span>
-					</a>
+					</Link>
 					<nav className="hidden items-center gap-6 md:flex">
 						{navItems.map((item) => (
 							<NavLink
@@ -58,16 +58,17 @@ export default function Navbar() {
 								{item.label}
 							</NavLink>
 						))}
-						<button
-							type="button"
-							onClick={toggleTheme}
-							aria-label="Toggle dark mode"
-							className="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-							title={dark ? "Switch to light mode" : "Switch to dark mode"}
-						>
-							{dark ? <Moon size={16} /> : <Sun size={16} />}
-						</button>
 					</nav>
+					{/* Theme toggle (always visible on mobile and desktop) */}
+					<button
+						type="button"
+						onClick={toggleTheme}
+						aria-label="Toggle dark mode"
+						className="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+						title={dark ? "Switch to light mode" : "Switch to dark mode"}
+					>
+						{dark ? <Moon size={16} /> : <Sun size={16} />}
+					</button>
 				</div>
 			</div>
 		</header>

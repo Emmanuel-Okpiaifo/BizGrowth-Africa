@@ -1,4 +1,5 @@
 import SectionHeader from "./SectionHeader";
+import { Link } from "react-router-dom";
 import NewsInlineCard from "./NewsInlineCard";
 
 export default function EditorsPicks({ items }) {
@@ -7,9 +8,7 @@ export default function EditorsPicks({ items }) {
 			<SectionHeader
 				title="Editor’s Picks"
 				action={
-					<a href="/news-insights" className="text-sm font-semibold text-primary">
-						See all
-					</a>
+					<Link to="/news-insights" className="text-sm font-semibold text-primary">See all</Link>
 				}
 			/>
 			<div className="no-scrollbar -mx-4 overflow-x-auto px-4">
