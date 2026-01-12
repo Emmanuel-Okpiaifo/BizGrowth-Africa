@@ -8,6 +8,8 @@ import ToolsTemplates from "./pages/ToolsTemplates";
 import Community from "./pages/Community";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import Markets from "./pages/Markets";
+import MarketDetail from "./pages/MarketDetail";
 import NewsArticle from "./pages/NewsArticle";
 
 export default function App() {
@@ -15,6 +17,8 @@ export default function App() {
 		<Routes>
 			<Route element={<Layout />}>
 				<Route index element={<Home />} />
+				<Route path="markets" element={<Markets />} />
+				<Route path="markets/:symbol" element={<MarketDetail />} />
 				<Route path="opportunities" element={<Opportunities />} />
 				<Route path="procurement-tenders" element={<ProcurementTenders />} />
 				<Route path="news-insights" element={<NewsInsights />} />

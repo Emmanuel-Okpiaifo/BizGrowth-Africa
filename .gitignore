@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Server secrets and cache
+/server-config/bizgrowth_keys.php
+/api/_cache/

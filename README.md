@@ -103,6 +103,26 @@ npm run preview
 - Ensure `SITE_URL` matches the production domain before building.
 - Consider generating a dynamic sitemap at build time (include all `news/:slug` URLs).
 
+### cPanel (Syskay) with PHP API proxy
+1) Build the React app and upload `dist/` contents into `/public_html/`.
+2) Upload the `api/` folder into `/public_html/api` (keep structure).
+3) Create a keys file OUTSIDE web root:
+   `/home/<CPANEL_USER>/secure/bizgrowth_keys.php` with:
+   ```php
+   <?php
+   return [
+     'ALPHAVANTAGE_API_KEY' => 'YOUR_KEY',
+     'FRED_API_KEY' => 'YOUR_KEY',
+   ];
+   ```
+4) In cPanel, set environment variable `BIZGROWTH_KEYS_PATH` to that absolute path (or upload `server-config/bizgrowth_keys.php` on server and do NOT commit).
+5) Ensure cache directory is writable: `/public_html/api/_cache/` (chmod 755/775).
+6) Frontend calls:
+   - `/api/market/snapshot.php?ids=USDZAR,USDNGN,BTCUSD,ETHUSD`
+   - `/api/market/history.php?id=USDZAR&range=1D`
+   - `/api/market/search.php?q=zar`
+7) Do NOT put provider keys in React/browser code. All provider calls are proxied by PHP.
+
 ## Contact
 - Website: https://bizgrowthafrica.com
 - Contact: https://bizgrowthafrica.com/contact

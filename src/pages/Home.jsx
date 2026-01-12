@@ -42,7 +42,7 @@ export default function Home() {
 				type="website"
 				canonicalPath="/"
 			/>
-			<Ticker items={trending.map((a) => ({ title: a.title, url: a.url }))} />
+			<Ticker speedSec={36} items={trending.map((a) => ({ title: a.title, url: `/news/${a.slug}` }))} />
 
 			{/* Spotlight hero with side headlines */}
 			<section className="grid gap-4 lg:grid-cols-12">

@@ -34,6 +34,7 @@ export function useDailyOriginalArticles() {
 		// Map to homepage/article-card shape and stamp today's date to simulate daily freshness
 		const todayIso = new Date().toISOString();
 		return rotated.map((a) => ({
+			slug: a.slug,
 			title: a.title,
 			source: "BizGrowth Africa",
 			image: a.canonicalImage || a.image,
