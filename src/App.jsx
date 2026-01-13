@@ -11,6 +11,7 @@ import Contact from "./pages/Contact";
 import Markets from "./pages/Markets";
 import MarketDetail from "./pages/MarketDetail";
 import NewsArticle from "./pages/NewsArticle";
+import OpportunityDetail from "./pages/OpportunityDetail";
 
 export default function App() {
 	return (
@@ -20,6 +21,7 @@ export default function App() {
 				<Route path="markets" element={<Markets />} />
 				<Route path="markets/:symbol" element={<MarketDetail />} />
 				<Route path="opportunities" element={<Opportunities />} />
+				<Route path="opportunities/:id" element={<OpportunityDetail />} />
 				<Route path="procurement-tenders" element={<ProcurementTenders />} />
 				<Route path="news-insights" element={<NewsInsights />} />
 				<Route path="news/:slug" element={<NewsArticle />} />

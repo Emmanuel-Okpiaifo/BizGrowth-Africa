@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Menu, X } from "lucide-react";
 
 const navItems = [
 	{ to: "/", label: "Home" },
@@ -15,6 +15,7 @@ const navItems = [
 
 export default function Navbar() {
 	const [dark, setDark] = useState(false);
+	const [open, setOpen] = useState(false);
 
 	useEffect(() => {
 		const stored = localStorage.getItem("theme");
@@ -29,6 +30,79 @@ export default function Navbar() {
 		setDark(next);
 		document.documentElement.classList.toggle("dark", next);
 		localStorage.setItem("theme", next ? "dark" : "light");
+	}
+
+	function MobileMenu({ onClose }) {
+		const [show, setShow] = useState(false);
+		useEffect(() => {
+			const t = requestAnimationFrame(() => setShow(true));
+			return () => cancelAnimationFrame(t);
+		}, []);
+		function closeWithAnimation() {
+			setShow(false);
+			setTimeout(() => onClose(), 200);
+		}
+		return (
+			<>
+				<button
+					className={["fixed inset-0 z-40 cursor-default bg-black/20 transition-opacity duration-200", show ? "opacity-100" : "opacity-0"].join(" ")}
+					aria-hidden="true"
+					onClick={closeWithAnimation}
+				/>
+				<div
+					className={[
+						"absolute right-0 top-11 z-50 w-72 overflow-hidden rounded-xl border bg-white shadow-xl ring-1 ring-gray-200 transition-all duration-200 ease-out dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800",
+						show ? "translate-y-0 scale-100 opacity-100" : "-translate-y-2 scale-95 opacity-0",
+					].join(" ")}
+				>
+					<div className="p-3">
+						<div className="flex items-center justify-between">
+							<div className="text-sm font-semibold text-gray-900 dark:text-white">Quick Menu</div>
+							<button
+								onClick={closeWithAnimation}
+								aria-label="Close menu"
+								className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-black/5 dark:hover:bg-white/10"
+							>
+								<X size={14} />
+							</button>
+						</div>
+						<div className="mt-3 grid gap-1">
+							{navItems.map((item) => (
+								<NavLink
+									key={`m-${item.to}`}
+									to={item.to}
+									onClick={closeWithAnimation}
+									className={({ isActive }) =>
+										[
+											"rounded-lg px-3 py-2 text-sm transition",
+											isActive
+												? "bg-primary/10 text-primary"
+												: "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5",
+										].join(" ")
+									}
+								>
+									{item.label}
+								</NavLink>
+							))}
+						</div>
+						<div className="mt-4 rounded-lg border p-3 dark:border-gray-800">
+							<div className="flex items-center justify-between">
+								<div className="text-sm font-medium text-gray-800 dark:text-gray-200">Appearance</div>
+								<button
+									type="button"
+									onClick={toggleTheme}
+									className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+									title={dark ? "Switch to light mode" : "Switch to dark mode"}
+								>
+									{dark ? <Moon size={14} /> : <Sun size={14} />}
+									<span>{dark ? "Dark" : "Light"}</span>
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</>
+		);
 	}
 
 	return (
@@ -59,16 +133,30 @@ export default function Navbar() {
 							</NavLink>
 						))}
 					</nav>
-					{/* Theme toggle (always visible on mobile and desktop) */}
-					<button
-						type="button"
-						onClick={toggleTheme}
-						aria-label="Toggle dark mode"
-						className="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-						title={dark ? "Switch to light mode" : "Switch to dark mode"}
-					>
-						{dark ? <Moon size={16} /> : <Sun size={16} />}
-					</button>
+					{/* Desktop/Tablet theme toggle */}
+					<div className="hidden md:block">
+						<button
+							type="button"
+							onClick={toggleTheme}
+							aria-label="Toggle dark mode"
+							className="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+							title={dark ? "Switch to light mode" : "Switch to dark mode"}
+						>
+							{dark ? <Moon size={16} /> : <Sun size={16} />}
+						</button>
+					</div>
+					{/* Mobile hamburger (theme toggle lives inside this menu) */}
+					<div className="relative md:hidden">
+						<button
+							type="button"
+							onClick={() => setOpen((v) => !v)}
+							aria-label="Open menu"
+							className="ml-2 inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+						>
+							{open ? <X size={16} /> : <Menu size={16} />}
+						</button>
+						{open ? <MobileMenu onClose={() => setOpen(false)} /> : null}
+					</div>
 				</div>
 			</div>
 		</header>

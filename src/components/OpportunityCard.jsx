@@ -1,65 +1,124 @@
-import placeholderUrl from "../assets/placeholder.svg";
-import CountDownBadge from "./CountDownBadge";
-import { ExternalLink } from "lucide-react";
+import { ArrowRight, Star, Calendar, Globe2, MapPin, BadgeDollarSign, Building2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { getOpportunityImage } from "../data/opportunities.images";
 
-export default function OpportunityCard({ item }) {
-	const {
-		title,
-		org,
-		logo,
-		country,
-		category,
-		amountMin,
-		amountMax,
-		currency = "USD",
-		deadline,
-		link = "#",
-		tags = [],
-		description,
-	} = item;
+function formatAmount(min, max, currency = "USD") {
+	if ((min ?? 0) === 0 && (max ?? 0) === 0) return "Non‑dilutive / In‑kind";
+	const fmt = (v) => (typeof v === "number" ? v.toLocaleString() : "");
+	if (min && max && min !== max) return `${currency} ${fmt(min)}–${fmt(max)}`;
+	const val = max || min || 0;
+	return `${currency} ${fmt(val)}`;
+}
 
-	const amount =
-		amountMin || amountMax
-			? `${currency} ${[amountMin, amountMax].filter(Boolean).map((n) => n.toLocaleString()).join(" - ")}`
-			: "Support varies";
+function getOrgInitials(name = "") {
+	const parts = String(name).trim().split(/\s+/).slice(0, 2);
+	return parts.map((p) => p[0]?.toUpperCase() || "").join("");
+}
 
-	return (
-		<a href={link} target="_blank" rel="noreferrer" className="group block rounded-xl border bg-white p-5 shadow-sm ring-1 ring-gray-200 transition hover:-translate-y-0.5 hover:shadow-lg hover:ring-primary/30 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
-			<div className="flex items-start justify-between">
-				<div className="flex items-center gap-3">
-					<img
-						src={logo || placeholderUrl}
-						alt={org}
-						className="h-9 w-9 rounded bg-white object-cover ring-1 ring-gray-200 dark:ring-gray-700"
-						onError={(e) => {
-							if (e.currentTarget.src !== placeholderUrl) e.currentTarget.src = placeholderUrl;
-						}}
-					/>
-					<div>
-						<div className="text-xs text-gray-500 dark:text-gray-400">{org}</div>
-						<h3 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
+export default function OpportunityCard({ opp, saved = false, onToggleSave, framed = true, showImage = false }) {
+	const amount = formatAmount(opp.amountMin, opp.amountMax, opp.currency);
+	const deadline = opp.deadline ? new Date(opp.deadline).toLocaleDateString() : "TBA";
+	const featured = !!opp.featured;
+	const orgInitials = getOrgInitials(opp.org);
+	const img = useMemo(() => (showImage ? getOpportunityImage(opp) : null), [showImage, opp]);
+	const [loaded, setLoaded] = useState(false);
+	const Inner = (
+		<div className="group relative block rounded-2xl border bg-white p-5 shadow-sm ring-1 ring-gray-200 transition hover:-translate-y-0.5 hover:shadow-lg hover:ring-primary/30 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
+			<div className="pointer-events-none absolute -right-10 -top-10 h-20 w-20 rounded-full bg-primary/10 blur-2xl" />
+			<div className="pointer-events-none absolute -bottom-10 -left-10 h-20 w-20 rounded-full bg-emerald-400/10 blur-2xl" />
+			{featured ? (
+				<div className="absolute left-0 top-0 rounded-br-xl rounded-tl-2xl bg-gradient-to-r from-primary to-emerald-500 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow">
+					Featured
+				</div>
+			) : null}
+			{img ? (
+				<div className="mb-3 overflow-hidden rounded-xl">
+					<div className="relative aspect-[16/9]">
+						{!loaded ? <div className="absolute inset-0 animate-pulse bg-gray-100/60 dark:bg-white/10" /> : null}
+						<img
+							src={img}
+							alt={opp.title}
+							className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+							loading="lazy"
+							decoding="async"
+							onLoad={() => setLoaded(true)}
+						/>
+						<div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
 					</div>
 				</div>
-				<CountDownBadge date={deadline} />
-			</div>
-			<p className="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-300">{description}</p>
-			<div className="mt-3 flex flex-wrap items-center gap-2">
-				<span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{country}</span>
-				<span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200">{category}</span>
-				{tags.slice(0, 2).map((t) => (
-					<span key={t} className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-gray-700 ring-1 ring-gray-200 dark:bg-transparent dark:text-gray-200 dark:ring-gray-700">
-						{t}
-					</span>
-				))}
-			</div>
-			<div className="mt-3 flex items-center justify-between">
-				<div className="text-xs text-gray-500 dark:text-gray-400">Funding: {amount}</div>
-				<div className="inline-flex items-center gap-1 text-sm font-semibold text-primary">
-					Apply <ExternalLink size={14} />
+			) : null}
+			<button
+				onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSave?.(opp.id); }}
+				className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent hover:bg-black/5 dark:hover:bg-white/10"
+				aria-label={saved ? "Unsave opportunity" : "Save opportunity"}
+				title={saved ? "Unsave opportunity" : "Save opportunity"}
+			>
+				<Star size={16} className={saved ? "text-yellow-500" : "text-gray-400"} />
+			</button>
+			<div className="flex items-start gap-3 pr-10">
+				<div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-[12px] font-extrabold text-primary dark:bg-white/10 dark:text-white">
+					{orgInitials || <Building2 size={14} />}
+				</div>
+				<div className="min-w-0">
+					<div className="flex flex-wrap items-center gap-2">
+						<span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{opp.org}</span>
+						{opp.category ? (
+							<span className="rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:bg-white/10 dark:text-gray-200">
+								{opp.category}
+							</span>
+						) : null}
+					</div>
+					<h3 className="mt-0.5 line-clamp-2 text-[17px] font-semibold leading-snug text-gray-900 transition group-hover:text-primary dark:text-white">
+						{opp.title}
+					</h3>
 				</div>
 			</div>
-		</a>
+			<p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-gray-700 dark:text-gray-300">{opp.description}</p>
+			<div className="mt-3 grid grid-cols-2 gap-2 text-[11px] sm:flex sm:flex-wrap">
+				<span className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-gray-700 dark:border-gray-700 dark:text-gray-300">
+					<Globe2 size={12} /> {opp.region || "—"}
+				</span>
+				<span className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-gray-700 dark:border-gray-700 dark:text-gray-300">
+					<MapPin size={12} /> {opp.country || "—"}
+				</span>
+				<span className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-gray-700 dark:border-gray-700 dark:text-gray-300">
+					<Calendar size={12} /> {deadline}
+				</span>
+				<span className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-gray-700 dark:border-gray-700 dark:text-gray-300">
+					<BadgeDollarSign size={12} /> {amount}
+				</span>
+			</div>
+			{Array.isArray(opp.tags) && opp.tags.length ? (
+				<div className="mt-3 flex flex-wrap gap-1.5">
+					{opp.tags.slice(0, 5).map((t) => (
+						<span key={t} className="rounded-md bg-gray-100 px-2 py-1 text-[11px] text-gray-700 dark:bg-white/5 dark:text-gray-300">{t}</span>
+					))}
+				</div>
+			) : null}
+			<div className="mt-4 flex items-center justify-between">
+				<div className="text-xs text-gray-500 dark:text-gray-400">Posted {opp.postedAt ? new Date(opp.postedAt).toLocaleDateString() : "—"}</div>
+				<a
+					onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+					href={opp.link || "#"}
+					target={opp.link ? "_blank" : "_self"}
+					rel="noopener noreferrer"
+					className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90"
+				>
+					Apply Now <ArrowRight size={14} />
+				</a>
+			</div>
+		</div>
+	);
+	return framed ? (
+		<Link to={`/opportunities/${encodeURIComponent(opp.id)}`} className="group relative block rounded-2xl bg-gradient-to-br from-primary/20 to-emerald-400/20 p-[1px]">
+			{Inner}
+		</Link>
+	) : (
+		<Link to={`/opportunities/${encodeURIComponent(opp.id)}`} className="group relative block">
+			{Inner}
+		</Link>
 	);
 }
 
-
+ 

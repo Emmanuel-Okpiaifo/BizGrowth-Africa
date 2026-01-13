@@ -1,38 +1,26 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import Ticker from "../components/Ticker";
 import SectionHeader from "../components/SectionHeader";
-import CategoryPills from "../components/CategoryPills";
 import NewsCard from "../components/NewsCard";
 import NewsletterCTA from "../components/NewsletterCTA";
-import EditorsPicks from "../components/EditorsPicks";
 import MarketsStrip from "../components/MarketsStrip";
-import NewsInlineCard from "../components/NewsInlineCard";
 import HomepageCTABar from "../components/HomepageCTABar";
 import { useDailyOriginalArticles } from "../data/useDailyOriginalArticles";
 import SEO from "../components/SEO";
 
 export default function Home() {
-	const [active, setActive] = useState("All");
-
 	const { articles } = useDailyOriginalArticles();
 
-	const categories = useMemo(() => Array.from(new Set(articles.map((a) => a.category))).sort(), [articles]);
-	const filtered = useMemo(() => {
-		if (active === "All") return articles;
-		return articles.filter((a) => a.category === active);
-	}, [active, articles]);
 	const trending = articles.slice(0, 8);
 	// const picks = articles.slice(8, 16); // removed to keep exactly 3 content sections after hero
 
-	const lead = filtered[0];
-	const sideHeadlines = filtered.slice(1, 5);
-	const latest = filtered.slice(0, 12);
-	const analysis = filtered.slice(12, 18);
+	const lead = articles[0];
+	const sideHeadlines = articles.slice(1, 5);
+	const analysis = articles.slice(4, 10);
 
 	// Curated category sections (independent of current filter)
-	const funding = useMemo(() => articles.filter((a) => a.category === "Funding").slice(0, 6), [articles]);
-	// Remove extra premium sections to keep only three: Latest, Funding & Deals, Deep Dives & Analysis
+	// Funding & Deals removed
 
 	return (
 		<div className="space-y-10">
@@ -114,68 +102,9 @@ export default function Home() {
 
 			<MarketsStrip />
 
-			{/* Latest grid (dense, no unused space) */}
-			<section className="space-y-4">
-				<SectionHeader
-					title="Latest Headlines"
-					action={
-						<div className="flex items-center gap-3">
-							<Link to="/news-insights" className="text-sm font-semibold text-primary">View all</Link>
-							<Link to="/contact" className="text-sm font-semibold text-gray-700 hover:text-primary dark:text-gray-300">Submit a Story</Link>
-						</div>
-					}
-				/>
-				<CategoryPills categories={categories} active={active} onChange={setActive} />
-				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-					{latest.map((a) => (
-						<NewsCard key={a.url} article={a} />
-					))}
-				</div>
-			</section>
+			{/* Latest Headlines section removed */}
 
-			{/* Funding & Deals (redesigned: one featured + compact list) */}
-			{funding.length ? (
-				<section className="space-y-4">
-					<SectionHeader title="Funding & Deals" />
-					<div className="grid gap-4 lg:grid-cols-3">
-					<div className="lg:col-span-2">
-							<NewsCard article={funding[0]} variant="featured" />
-						</div>
-						<div className="rounded-2xl border bg-white p-4 shadow-sm ring-1 ring-gray-200 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
-							<ul className="divide-y divide-gray-200 dark:divide-gray-800">
-								{funding.slice(1, 6).map((a) => (
-									<li key={a.url} className="py-3">
-										<Link to={a.url} className="group flex items-start gap-3">
-											<img
-												src={a.image}
-												alt={a.title}
-												className="h-14 w-20 flex-none rounded-lg object-cover ring-1 ring-gray-200 transition group-hover:ring-primary/30 dark:ring-gray-800"
-												loading="lazy"
-													onError={(e) => {
-														const cands = Array.isArray(a.imageCandidates) && a.imageCandidates.length
-															? a.imageCandidates
-															: [a.image];
-														const idx = cands.findIndex((u) => u === e.currentTarget.src);
-														const next = cands[idx + 1];
-														e.currentTarget.src = next || cands[0];
-													}}
-											/>
-											<div>
-												<p className="line-clamp-2 text-sm font-semibold text-gray-900 transition group-hover:text-primary dark:text-white">
-													{a.title}
-												</p>
-												<p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-													{a.category} • {new Date(a.publishedAt).toLocaleDateString()}
-												</p>
-					</div>
-										</Link>
-									</li>
-						))}
-							</ul>
-					</div>
-				</div>
-				</section>
-			) : null}
+			{/* Funding & Deals section removed */}
 
 			{/* Deep Dives & Analysis (redesigned) */}
 			<section className="space-y-4">

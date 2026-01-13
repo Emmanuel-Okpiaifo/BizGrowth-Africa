@@ -1,0 +1,130 @@
+export const markets = [
+	{
+		symbol: "NGX-ASI",
+		name: "NGX All Share (Nigeria)",
+		region: "West Africa",
+		category: "Equities",
+		currency: "NGN",
+		value: 104532.7,
+		change: +0.82,
+		series: [98, 102, 101, 103, 104, 105, 106, 104, 107, 108, 109, 110],
+		description:
+			"The NGX All Share Index tracks performance of all listed equities on the Nigerian Exchange. It serves as a broad barometer for Nigeria’s equity market.",
+		keyDrivers: [
+			"Banking sector earnings and provisioning cycles",
+			"Energy pricing and FX liquidity for importers",
+			"Policy direction on rates and cash reserve requirements",
+		],
+		lastUpdated: new Date().toISOString(),
+	},
+	{
+		symbol: "JSE-ALSI",
+		name: "JSE All Share (South Africa)",
+		region: "Southern Africa",
+		category: "Equities",
+		currency: "ZAR",
+		value: 78112.3,
+		change: -0.34,
+		series: [80, 79, 78, 78.5, 78.2, 78.1, 77.9, 78.2, 78.4, 78.3, 78.0, 78.1],
+		description:
+			"The JSE ALSI is a broad market index that represents the performance of companies listed on the Johannesburg Stock Exchange.",
+		keyDrivers: [
+			"Commodity prices and global risk appetite",
+			"Rand volatility and bond yields",
+			"Domestic policy clarity and growth outlook",
+		],
+		lastUpdated: new Date().toISOString(),
+	},
+	{
+		symbol: "NSE-20",
+		name: "NSE 20 (Kenya)",
+		region: "East Africa",
+		category: "Equities",
+		currency: "KES",
+		value: 1754.2,
+		change: +0.21,
+		series: [17.1, 17.2, 17.0, 17.3, 17.4, 17.54, 17.6, 17.45, 17.5, 17.52, 17.55, 17.6],
+		description:
+			"The NSE 20 Share Index is a price-weighted index of 20 select companies listed on the Nairobi Securities Exchange.",
+		keyDrivers: [
+			"Banking sector margins and non‑performing loans",
+			"Telecoms performance and mobile money trends",
+			"Local pension fund flows and foreign participation",
+		],
+		lastUpdated: new Date().toISOString(),
+	},
+	{
+		symbol: "EGX30",
+		name: "EGX 30 (Egypt)",
+		region: "North Africa",
+		category: "Equities",
+		currency: "EGP",
+		value: 32651.9,
+		change: +0.47,
+		series: [31, 31.5, 32, 32.2, 32.4, 32.65, 32.7, 32.6, 32.8, 32.9, 33.0, 33.1],
+		description:
+			"The EGX 30 index comprises the top 30 companies in terms of liquidity and activity on the Egyptian Exchange.",
+		keyDrivers: [
+			"Currency regime and FX availability",
+			"Energy inputs and export pipeline",
+			"Fiscal policy and privatization program",
+		],
+		lastUpdated: new Date().toISOString(),
+	},
+	{
+		symbol: "BRVM-C",
+		name: "BRVM Composite (WAEMU)",
+		region: "West Africa",
+		category: "Equities",
+		currency: "XOF",
+		value: 230.5,
+		change: -0.18,
+		series: [2.35, 2.32, 2.31, 2.29, 2.305, 2.305, 2.31, 2.33, 2.32, 2.31, 2.30, 2.305],
+		description:
+			"The BRVM Composite reflects performance on the regional exchange serving the West African Economic and Monetary Union.",
+		keyDrivers: [
+			"Regional banking system dynamics",
+			"CFA franc stability and Euro trajectory",
+			"Sector earnings and cross-border listings",
+		],
+		lastUpdated: new Date().toISOString(),
+	},
+	{
+		symbol: "BRENT",
+		name: "Brent Crude (USD/bbl)",
+		region: "Global",
+		category: "Commodities",
+		currency: "USD",
+		value: 81.2,
+		change: +0.32,
+		series: [78, 79, 80, 80.5, 81, 81.2, 81.4, 81.0, 81.1, 81.3, 81.0, 81.2],
+		description:
+			"Brent crude is a key benchmark for global oil pricing and directly influences fuel costs, logistics and inflation across African economies.",
+		keyDrivers: [
+			"OPEC+ supply guidance",
+			"Global demand and inventory data",
+			"Geopolitical risk premia",
+		],
+		lastUpdated: new Date().toISOString(),
+	},
+	{
+		symbol: "USD/NGN",
+		name: "USD-Naira",
+		region: "Nigeria",
+		category: "FX",
+		currency: "NGN",
+		value: 1235.5,
+		change: +0.15,
+		series: [1210, 1220, 1230, 1225, 1234, 1235, 1238, 1232, 1230, 1236, 1237, 1235],
+		description:
+			"The USD/NGN pair indicates the exchange rate between the US dollar and the Nigerian naira, a key determinant of import costs and local pricing.",
+		keyDrivers: [
+			"FX liquidity from oil exports and remittances",
+			"Monetary policy stance and reserve levels",
+			"Market reforms and parallel market convergence",
+		],
+		lastUpdated: new Date().toISOString(),
+	},
+];
+
+
