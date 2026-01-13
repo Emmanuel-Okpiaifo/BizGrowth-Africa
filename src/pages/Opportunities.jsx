@@ -24,15 +24,6 @@ export default function Opportunities() {
 
 	const { ids: saved, toggle: toggleSaved, has: isSaved } = useSavedOpportunities();
 
-	const stats = useMemo(() => {
-		const active = allOpps.filter((o) => !o.deadline || new Date(o.deadline) >= new Date()).length;
-		const total = allOpps.length;
-		const grantTotal = allOpps
-			.filter((o) => o.category?.toLowerCase().includes("grant"))
-			.reduce((sum, o) => sum + (o.amountMax || 0), 0);
-		return { active, total, grantTotal };
-	}, []);
-
 	const filtered = useMemo(() => {
 		let items = allOpps.slice();
 		if (featuredOnly) items = items.filter((o) => o.featured);
@@ -95,12 +86,6 @@ export default function Opportunities() {
 						</a>
 					</div>
 				</div>
-				<div className="mt-4 grid gap-3 sm:grid-cols-3">
-					<div className="rounded-xl border bg-white/80 p-4 text-sm backdrop-blur ring-1 ring-gray-200 dark:border-gray-800 dark:bg-white/5 dark:ring-gray-800 col-span-full sm:col-span-1">
-						<div className="text-xs text-gray-500 dark:text-gray-400">Total programs</div>
-						<div className="text-lg font-extrabold text-gray-900 dark:text-white">{stats.total}</div>
-					</div>
-				</div>
 				<div className="mt-4">
 					<BrandMarquee />
 				</div>
@@ -158,7 +143,7 @@ export default function Opportunities() {
 					<SectionHeader title="Most Popular" />
 					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 						{mostPopular.map((opp) => (
-							<OpportunityCard key={opp.id} opp={opp} saved={isSaved(opp.id)} onToggleSave={toggleSaved} showImage />
+							<OpportunityCard key={opp.id} opp={opp} saved={isSaved(opp.id)} onToggleSave={toggleSaved} showImage styleVariant="aurora" />
 						))}
 					</div>
 
@@ -171,7 +156,7 @@ export default function Opportunities() {
 					) : (
 						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 							{filtered.map((opp) => (
-								<OpportunityCard key={opp.id} opp={opp} saved={isSaved(opp.id)} onToggleSave={toggleSaved} />
+								<OpportunityCard key={opp.id} opp={opp} saved={isSaved(opp.id)} onToggleSave={toggleSaved} showImage styleVariant="aurora" />
 							))}
 						</div>
 					)}
