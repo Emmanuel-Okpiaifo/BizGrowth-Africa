@@ -1,12 +1,35 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Briefcase, Search, ArrowRight } from "lucide-react";
 import SEO from "../components/SEO";
-import SectionHeader from "../components/SectionHeader";
-import OpportunityCard from "../components/OpportunityCard";
-import useSavedOpportunities from "../hooks/useSavedOpportunities";
 import { opportunities as allOpps } from "../data/opportunities.sample";
 import BrandMarquee from "../components/BrandMarquee";
+import { getOpportunityImage, buildOpportunityImageCandidates } from "../data/opportunities.images";
+import { useDailyOriginalArticles } from "../data/useDailyOriginalArticles";
 // import FeaturedCarousel from "../components/FeaturedCarousel";
+
+function hashStringToInt(str) {
+	let h = 0;
+	const s = String(str);
+	for (let i = 0; i < s.length; i++) {
+		h = (h * 31 + s.charCodeAt(i)) >>> 0;
+	}
+	return h >>> 0;
+}
+
+function pickNewsImageForOpportunity(opp, articles) {
+	if (!Array.isArray(articles) || articles.length === 0) return null;
+	const key = String(opp.id || opp.title || "");
+	const start = hashStringToInt(key) % articles.length;
+	let chosen = articles[start]?.image;
+	if (chosen) return chosen;
+	for (let i = 1; i < articles.length; i++) {
+		const j = (start + i) % articles.length;
+		const img = articles[j]?.image;
+		if (img) return img;
+	}
+	return null;
+}
 
 export default function Opportunities() {
 	const categories = ["All", "Grant", "Accelerator", "Competition", "Fellowship", "Training", "Impact Loan"];
@@ -21,8 +44,6 @@ export default function Opportunities() {
 	const [tag, setTag] = useState("All");
 	const [sort, setSort] = useState("Deadline"); // Deadline | Newest | Amount
 	const [featuredOnly, setFeaturedOnly] = useState(false);
-
-	const { ids: saved, toggle: toggleSaved, has: isSaved } = useSavedOpportunities();
 
 	const filtered = useMemo(() => {
 		let items = allOpps.slice();
@@ -47,13 +68,14 @@ export default function Opportunities() {
 		return items;
 	}, [featuredOnly, cat, region, country, tag, q, sort]);
 
-	const featured = useMemo(() => allOpps.filter((o) => o.featured).slice(0, 3), []);
-	const mostPopular = useMemo(() => {
-		return allOpps
-			.slice()
-			.sort((a, b) => new Date(b.postedAt || "1970-01-01") - new Date(a.postedAt || "1970-01-01"))
-			.slice(0, 6);
-	}, []);
+	// (most popular/featured removed for post-style list layout)
+	const [page, setPage] = useState(1);
+	const perPage = 10;
+	const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+	const pageStart = (page - 1) * perPage;
+	const paged = filtered.slice(pageStart, pageStart + perPage);
+	const goTo = (p) => setPage(Math.min(Math.max(1, p), totalPages));
+	const { articles: newsArticles } = useDailyOriginalArticles();
 
 	return (
 		<div className="space-y-8">
@@ -96,7 +118,7 @@ export default function Opportunities() {
 			<div className="grid gap-6 lg:grid-cols-[300px,1fr]">
 				{/* Sticky Sidebar Filters */}
 				<aside className="lg:sticky lg:top-20">
-					<div className="rounded-2xl border bg-white p-4 shadow-sm ring-1 ring-gray-200 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
+					<div className="rounded-2xl border bg-red-50 p-4 shadow-sm ring-1 ring-red-100 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
 						<div className="grid gap-3">
 							<label className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm dark:border-gray-700">
 								<Search size={14} className="text-gray-500" />
@@ -140,26 +162,114 @@ export default function Opportunities() {
 
 				{/* Main Content */}
 				<section className="space-y-6" id="featured">
-					<SectionHeader title="Most Popular" />
-					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-						{mostPopular.map((opp) => (
-							<OpportunityCard key={opp.id} opp={opp} saved={isSaved(opp.id)} onToggleSave={toggleSaved} showImage styleVariant="aurora" />
-						))}
-					</div>
-
 					<div id="all" />
-					<SectionHeader title="All Opportunities" />
-					{filtered.length === 0 ? (
-						<div className="rounded-2xl border bg-white p-10 text-center text-sm text-gray-600 ring-1 ring-gray-200 dark:border-gray-800 dark:bg-[#0B1220] dark:text-gray-300 dark:ring-gray-800">
+					{paged.length === 0 ? (
+						<div className="rounded-2xl border bg-red-50 p-10 text-center text-sm text-gray-600 ring-1 ring-red-100 dark:border-gray-800 dark:bg-[#0B1220] dark:text-gray-300 dark:ring-gray-800">
 							No opportunities match your filters. Try broadening your search.
 						</div>
 					) : (
-						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-							{filtered.map((opp) => (
-								<OpportunityCard key={opp.id} opp={opp} saved={isSaved(opp.id)} onToggleSave={toggleSaved} showImage styleVariant="aurora" />
-							))}
+						<div className="grid gap-6 sm:grid-cols-2">
+							{paged.map((opp) => {
+								const date = opp.postedAt || opp.deadline;
+								const preferred = pickNewsImageForOpportunity(opp, newsArticles);
+								const cands = (() => {
+									const arr = [];
+									if (preferred) arr.push(preferred);
+									arr.push(...buildOpportunityImageCandidates(opp));
+									// unique while preserving order
+									return Array.from(new Set(arr.filter(Boolean)));
+								})();
+								const img = cands[0] || getOpportunityImage(opp);
+								return (
+									<article key={opp.id} className="relative">
+										<Link to={`/opportunities/${encodeURIComponent(opp.id)}`} className="group block overflow-hidden rounded-xl">
+											<div className="relative aspect-[16/9]">
+												<img
+													src={img}
+													alt={opp.title}
+													className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+													loading="lazy"
+													decoding="async"
+													onError={(e) => {
+														try {
+															const current = e.currentTarget.src;
+															const idx = cands.indexOf(current);
+															const next = cands[idx + 1] || cands[0];
+															if (next && next !== current) {
+																e.currentTarget.src = next;
+															} else {
+																// final fallback to picsum seed by title
+																e.currentTarget.src = `https://picsum.photos/seed/${encodeURIComponent(opp.id || opp.title || "opp")}/1600/900`;
+															}
+														} catch {}
+													}}
+												/>
+												{opp.category ? (
+													<div className="absolute left-2 top-2">
+														<span className="rounded-md bg-white/90 px-2 py-1 text-[11px] font-semibold text-gray-900 shadow dark:bg-black/60 dark:text-white">
+															{opp.category}
+														</span>
+													</div>
+												) : null}
+											</div>
+										</Link>
+										<div className="mt-2 text-[12px] text-gray-600 dark:text-gray-400">
+											<ul className="flex flex-wrap items-center gap-2">
+												<li className="flex items-center gap-1">
+													<span>{date ? new Date(date).toLocaleDateString() : "TBA"}</span>
+												</li>
+											</ul>
+										</div>
+										<h3 className="title-medium-dark size-lg mb-0 mt-1 text-[18px] font-semibold leading-snug text-gray-900 hover:text-primary dark:text-white">
+											<Link to={`/opportunities/${encodeURIComponent(opp.id)}`}>{opp.title}</Link>
+										</h3>
+										{opp.description ? (
+											<p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-gray-700 dark:text-gray-300">
+												{opp.description}
+											</p>
+										) : null}
+										<div className="mt-3">
+											<Link
+												to={`/opportunities/${encodeURIComponent(opp.id)}`}
+												className="inline-flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-gray-900 transition hover:bg-red-100 dark:border-gray-700 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+											>
+												Read more <ArrowRight size={14} />
+											</Link>
+										</div>
+									</article>
+								);
+							})}
 						</div>
 					)}
+					{totalPages > 1 ? (
+						<div className="mt-4 grid items-center gap-3 sm:grid-cols-2">
+							<div className="text-center sm:text-left">
+								<ul className="inline-flex items-center gap-2">
+									{Array.from({ length: totalPages }).map((_, i) => {
+										const p = i + 1;
+										const active = p === page;
+										return (
+											<li key={p}>
+												<button
+													onClick={() => goTo(p)}
+													className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
+														active
+															? "bg-primary text-white"
+															: "border border-gray-300 text-gray-900 hover:bg-gray-50 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800"
+													}`}
+												>
+													{p}
+												</button>
+											</li>
+										);
+									})}
+								</ul>
+							</div>
+							<div className="text-center text-sm text-gray-600 dark:text-gray-300 sm:text-right">
+								Page {page} of {totalPages}
+							</div>
+						</div>
+					) : null}
 				</section>
 			</div>
 		</div>

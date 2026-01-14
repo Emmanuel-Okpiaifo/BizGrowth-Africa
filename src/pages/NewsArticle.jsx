@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import { Facebook, Twitter, Linkedin, Link as LinkIcon } from "lucide-react";
 import NewsCard from "../components/NewsCard";
 import NewsletterCTA from "../components/NewsletterCTA";
 import { allOriginalArticles } from "../data/originals.index";
@@ -116,35 +117,9 @@ export default function NewsArticle() {
 				<span className="text-gray-700 dark:text-gray-300">{article.category}</span>
 			</nav>
 
-			{/* Headline */}
-			<h1 className="text-3xl font-extrabold leading-tight text-gray-900 sm:text-4xl dark:text-white">
-				{article.title}
-			</h1>
-			{article.subheading ? (
-				<p className="mt-3 text-lg text-gray-700 dark:text-gray-300">{article.subheading}</p>
-			) : null}
-
-			{/* Metadata */}
-			<div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
-				<span className="rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary">
-					{article.category}
-				</span>
-				{article.country ? (
-					<span className="rounded-full bg-gray-100 px-3 py-1 text-gray-700 dark:bg-gray-800 dark:text-gray-200">
-						{article.country}{article.region ? ` • ${article.region}` : ""}
-					</span>
-				) : null}
-				<span className="text-gray-500 dark:text-gray-400">{formatDate(article.publishedAt)}</span>
-				<span className="ml-auto text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-					BizGrowth Africa Original
-				</span>
-			</div>
-
-			{/* Hero image */}
-			{article.image ? (
-				<div className="mt-6 overflow-hidden rounded-2xl">
-					<ArticleHeroImage key={article.slug} article={article} />
-				</div>
+			{/* Post Detail 2 style: overlay hero with title/meta on image */}
+			{(article.image || (article.imageCandidates && article.imageCandidates.length)) ? (
+				<Detail2Hero key={article.slug} article={article} />
 			) : null}
 
 			{/* Article body (rich with inline citations) */}
@@ -187,6 +162,69 @@ export default function NewsArticle() {
 				) : null}
 			</article>
 
+			{/* Share bar */}
+			<div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border bg-red-50 p-4 text-sm shadow-sm ring-1 ring-red-100 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
+				<p className="mr-2 font-medium text-gray-700 dark:text-gray-200">Share this article:</p>
+				<div className="flex items-center gap-2">
+					<a
+						className="inline-flex items-center justify-center rounded-md border px-2 py-1.5 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/5"
+						href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(location.href)}`}
+						target="_blank" rel="noreferrer"
+						title="Share on Facebook"
+					>
+						<Facebook size={16} />
+					</a>
+					<a
+						className="inline-flex items-center justify-center rounded-md border px-2 py-1.5 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/5"
+						href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(location.href)}&text=${encodeURIComponent(article.title)}`}
+						target="_blank" rel="noreferrer"
+						title="Share on Twitter"
+					>
+						<Twitter size={16} />
+					</a>
+					<a
+						className="inline-flex items-center justify-center rounded-md border px-2 py-1.5 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/5"
+						href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(location.href)}`}
+						target="_blank" rel="noreferrer"
+						title="Share on LinkedIn"
+					>
+						<Linkedin size={16} />
+					</a>
+					<button
+						type="button"
+						onClick={() => navigator.clipboard?.writeText(location.href)}
+						className="inline-flex items-center justify-center rounded-md border px-2 py-1.5 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/5"
+						title="Copy link"
+					>
+						<LinkIcon size={16} />
+					</button>
+				</div>
+			</div>
+
+			{/* Author box */}
+			<div className="mt-6 rounded-2xl border bg-red-50 p-5 shadow-sm ring-1 ring-red-100 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
+				<div className="flex items-start gap-4">
+					<div className="h-12 w-12 flex-none rounded-full bg-primary/20" />
+					<div>
+						<h3 className="text-base font-semibold text-gray-900 dark:text-white">BizGrowth Africa Editorial</h3>
+						<p className="mt-1 text-sm text-gray-600 dark:text-gray-300">Independent analysis and reporting focused on African MSMEs and markets.</p>
+					</div>
+				</div>
+			</div>
+
+			{/* Comments (placeholder) */}
+			<div className="mt-6 rounded-2xl border bg-red-50 p-5 shadow-sm ring-1 ring-red-100 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
+				<h3 className="text-lg font-bold text-gray-900 dark:text-white">Comments</h3>
+				<p className="mt-1 text-sm text-gray-600 dark:text-gray-300">Comments are moderated. Please be respectful.</p>
+				<form className="mt-4 grid gap-3 sm:grid-cols-2">
+					<input className="rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white sm:col-span-1" placeholder="Name*" />
+					<input className="rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white sm:col-span-1" placeholder="Email*" type="email" />
+					<textarea className="min-h-[120px] rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white sm:col-span-2" placeholder="Message*" />
+					<div className="sm:col-span-2">
+						<button type="button" className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white">Post Comment</button>
+					</div>
+				</form>
+			</div>
 			{/* Why it matters */}
 			<section className="mt-8 overflow-hidden rounded-2xl border bg-white shadow-sm ring-1 ring-primary/20 dark:border-gray-800 dark:bg-[#0B1220]">
 				<div className="border-l-4 border-primary px-5 py-5 sm:px-6">
@@ -329,6 +367,53 @@ function ArticleHeroImage({ article }) {
 					setSrc(next || candidates[0]);
 				}}
 			/>
+		</div>
+	);
+}
+
+function Detail2Hero({ article }) {
+	const candidates = Array.isArray(article.imageCandidates) && article.imageCandidates.length
+		? article.imageCandidates
+		: [article.image];
+	const [src, setSrc] = useState(candidates[0]);
+	useEffect(() => {
+		setSrc(candidates[0]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [article.slug]);
+	return (
+		<div className="mt-4 overflow-hidden rounded-2xl">
+			<div className="relative aspect-[16/9]">
+				<img
+					src={src}
+					alt={article.title}
+					className="absolute inset-0 h-full w-full object-cover"
+					loading="eager"
+					fetchpriority="high"
+					decoding="async"
+					onError={(e) => {
+						const idx = candidates.findIndex((u) => u === e.currentTarget.src);
+						const next = candidates[idx + 1];
+						setSrc(next || candidates[0]);
+					}}
+				/>
+				<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+				{article.category ? (
+					<div className="absolute left-3 top-3">
+						<span className="rounded-md bg-white/90 px-2 py-1 text-[11px] font-semibold text-gray-900 shadow dark:bg-black/60 dark:text-white">
+							{article.category}
+						</span>
+					</div>
+				) : null}
+				<div className="absolute inset-x-0 bottom-0 p-4 sm:p-6">
+					<ul className="mb-2 flex flex-wrap items-center gap-3 text-sm text-white/90">
+						<li><span>By</span> <span className="font-semibold">BizGrowth Africa</span></li>
+						<li className="before:mx-2 before:text-white/60 before:content-['•']">{formatDate(article.publishedAt)}</li>
+					</ul>
+					<h1 className="text-2xl font-extrabold leading-tight text-white sm:text-3xl">
+						{article.title}
+					</h1>
+				</div>
+			</div>
 		</div>
 	);
 }

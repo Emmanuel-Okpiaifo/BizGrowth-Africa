@@ -3,10 +3,12 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import RouteProgress from "./RouteProgress";
 import ScrollToTop from "./ScrollToTop";
+import Preloader from "./Preloader";
 
 export default function Layout() {
 	return (
 		<div className="flex min-h-screen flex-col bg-white dark:bg-[#0B1220]">
+			<Preloader />
 			<RouteProgress />
 			<ScrollToTop />
 			<Navbar />

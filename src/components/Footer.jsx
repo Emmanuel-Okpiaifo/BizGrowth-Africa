@@ -1,4 +1,5 @@
 import { Facebook, Twitter, Linkedin, Instagram, Mail, Phone } from "lucide-react";
+import brandLogo from "../assets/img/logos/bizgrowth2.png";
 
 export default function Footer() {
 	return (
@@ -7,7 +8,7 @@ export default function Footer() {
 				<div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
 					<div>
 						<div className="flex items-center gap-2">
-							<div className="h-8 w-8 rounded bg-primary" />
+							<img src={brandLogo} alt="BizGrowth Africa" className="h-8 w-auto object-contain" />
 							<span className="text-lg font-bold">BizGrowth Africa</span>
 						</div>
 						<p className="mt-3 text-sm text-gray-300">

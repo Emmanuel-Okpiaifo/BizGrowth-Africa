@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { Moon, Sun, Menu, X } from "lucide-react";
+import brandLogo from "../assets/img/logos/bizgrowth2.png";
 
 const navItems = [
 	{ to: "/", label: "Home" },
@@ -51,7 +52,7 @@ export default function Navbar() {
 				/>
 				<div
 					className={[
-						"absolute right-0 top-11 z-50 w-72 overflow-hidden rounded-xl border bg-white shadow-xl ring-1 ring-gray-200 transition-all duration-200 ease-out dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800",
+						"absolute right-0 top-11 z-50 w-72 overflow-hidden rounded-xl border bg-red-50 shadow-xl ring-1 ring-red-100 transition-all duration-200 ease-out dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800",
 						show ? "translate-y-0 scale-100 opacity-100" : "-translate-y-2 scale-95 opacity-0",
 					].join(" ")}
 				>
@@ -106,11 +107,11 @@ export default function Navbar() {
 	}
 
 	return (
-		<header className="border-b bg-white dark:border-gray-800 dark:bg-[#0B1220]">
+		<header className="border-b bg-red-50 dark:border-gray-800 dark:bg-[#0B1220]">
 			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 				<div className="flex h-16 items-center justify-between">
 					<Link to="/" className="flex items-center gap-2">
-						<div className="h-8 w-8 rounded bg-primary" />
+						<img src={brandLogo} alt="BizGrowth Africa" className="h-8 w-auto object-contain" />
 						<span className="text-lg font-bold text-gray-900 dark:text-white">
 							BizGrowth Africa
 						</span>
