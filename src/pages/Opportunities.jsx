@@ -68,13 +68,8 @@ export default function Opportunities() {
 		return items;
 	}, [featuredOnly, cat, region, country, tag, q, sort]);
 
-	// (most popular/featured removed for post-style list layout)
-	const [page, setPage] = useState(1);
-	const perPage = 10;
-	const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
-	const pageStart = (page - 1) * perPage;
-	const paged = filtered.slice(pageStart, pageStart + perPage);
-	const goTo = (p) => setPage(Math.min(Math.max(1, p), totalPages));
+	// Limit listing to 3 items (as requested)
+	const paged = filtered.slice(0, 3);
 	const { articles: newsArticles } = useDailyOriginalArticles();
 
 	return (
@@ -241,35 +236,7 @@ export default function Opportunities() {
 							})}
 						</div>
 					)}
-					{totalPages > 1 ? (
-						<div className="mt-4 grid items-center gap-3 sm:grid-cols-2">
-							<div className="text-center sm:text-left">
-								<ul className="inline-flex items-center gap-2">
-									{Array.from({ length: totalPages }).map((_, i) => {
-										const p = i + 1;
-										const active = p === page;
-										return (
-											<li key={p}>
-												<button
-													onClick={() => goTo(p)}
-													className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
-														active
-															? "bg-primary text-white"
-															: "border border-gray-300 text-gray-900 hover:bg-gray-50 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800"
-													}`}
-												>
-													{p}
-												</button>
-											</li>
-										);
-									})}
-								</ul>
-							</div>
-							<div className="text-center text-sm text-gray-600 dark:text-gray-300 sm:text-right">
-								Page {page} of {totalPages}
-							</div>
-						</div>
-					) : null}
+					{/* Pagination removed since we now show only 3 items */}
 				</section>
 			</div>
 		</div>

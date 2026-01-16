@@ -48,7 +48,7 @@ export default function ProcurementTenders() {
 				}
 			/>
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-				{Array.from({ length: 6 }).map((_, i) => (
+				{Array.from({ length: 3 }).map((_, i) => (
 					<div key={i} className="rounded-xl border bg-white p-5 shadow-sm ring-1 ring-gray-200 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
 						<h3 className="font-semibold text-gray-900 dark:text-white">Tender Notice {i + 1}</h3>
 						<p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
