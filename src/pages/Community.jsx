@@ -1,56 +1,459 @@
-import { Users, MessageCircle, CalendarRange, ShieldCheck, ArrowRight } from "lucide-react";
-import SectionHeader from "../components/SectionHeader";
-import PlaceholderBlock from "../components/PlaceholderBlock";
+import { Facebook, X, Instagram, Send, MessageCircle, Globe, Heart, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
+import SEO from "../components/SEO";
 
 export default function Community() {
+	const socialLinks = [
+		{
+			name: "Facebook",
+			icon: Facebook,
+			accentColor: "#1877F2",
+			lightBg: "from-blue-500/5 to-blue-400/5",
+			darkBg: "from-blue-950/20 to-blue-900/20",
+			borderColor: "border-blue-200 dark:border-blue-800/40",
+			url: "https://www.facebook.com/share/1ARErnneyb/?mibextid=wwXIfr",
+			followers: "50.2K",
+			description: "Stay connected with real-time updates and community announcements",
+			benefits: ["Daily business insights", "Live event announcements", "Exclusive resource drops"]
+		},
+		{
+			name: "Twitter/X",
+			icon: X,
+			accentColor: "#000000",
+			lightBg: "from-gray-600/5 to-gray-500/5",
+			darkBg: "from-gray-800/30 to-gray-900/30",
+			borderColor: "border-gray-300 dark:border-gray-700",
+			url: "https://x.com/BizGrowthAfrica",
+			followers: "12.8K",
+			description: "Fast-paced conversations on business trends and market insights",
+			benefits: ["Real-time market updates", "Industry thought leadership", "Live Q&A sessions"]
+		},
+		{
+			name: "Instagram",
+			icon: Instagram,
+			accentColor: "#E4405F",
+			lightBg: "from-pink-500/5 to-rose-400/5",
+			darkBg: "from-pink-950/20 to-rose-900/20",
+			borderColor: "border-pink-200 dark:border-pink-800/40",
+			url: "https://www.instagram.com/bizgrowth_africa?igsh=d3d0OWJuMHU3dms5&utm_source=qr",
+			followers: "18.5K",
+			description: "Inspiring success stories and behind-the-scenes community moments",
+			benefits: ["Member success features", "Growth stories & case studies", "Community spotlights"]
+		}
+	];
+
+	const communityLinks = [
+		{
+			name: "Telegram",
+			icon: Send,
+			accentColor: "#0088cc",
+			lightBg: "from-sky-500/5 to-blue-400/5",
+			darkBg: "from-sky-950/20 to-blue-900/20",
+			borderColor: "border-sky-200 dark:border-sky-800/40",
+			url: "https://t.me/+ZkVsvN0zrks2Y2I0",
+			members: "8.3K+",
+			description: "Instant messaging for real-time collaboration and direct networking",
+			benefits: ["24/7 peer support channel", "Resource library access", "Direct member connections"]
+		},
+		{
+			name: "WhatsApp Channel",
+			icon: MessageCircle,
+			accentColor: "#25D366",
+			lightBg: "from-green-500/5 to-emerald-400/5",
+			darkBg: "from-green-950/20 to-emerald-900/20",
+			borderColor: "border-green-200 dark:border-green-800/40",
+			url: "https://chat.whatsapp.com/DjFkc7i6xZiBa3Hm47Bssn",
+			members: "5.1K+",
+			description: "Intimate group conversations with exclusive partnerships and deals",
+			benefits: ["Early opportunity alerts", "Group mentorship programs", "Exclusive partnerships"]
+		},
+		{
+			name: "Facebook Community",
+			icon: Facebook,
+			accentColor: "#1877F2",
+			lightBg: "from-blue-600/5 to-blue-500/5",
+			darkBg: "from-blue-950/20 to-blue-900/20",
+			borderColor: "border-blue-300 dark:border-blue-800/40",
+			url: "https://web.facebook.com/share/g/19bzMiHKr6/",
+			members: "3.2K+",
+			description: "Structured community hub for discussions, events, and group initiatives",
+			benefits: ["Organized group discussions", "Community-led initiatives", "Member spotlight events"]
+		}
+	];
+
+	const benefits = [
+		{
+			title: "Strategic Networking",
+			description: "Connect with vetted entrepreneurs, investors, and industry leaders",
+			icon: "🌐",
+			gradient: "from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30"
+		},
+		{
+			title: "Knowledge Capital",
+			description: "Access expert guidance, market research, and proven business strategies",
+			icon: "📖",
+			gradient: "from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30"
+		},
+		{
+			title: "Growth Acceleration",
+			description: "Find partnerships, funding opportunities, and business expansion channels",
+			icon: "🚀",
+			gradient: "from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30"
+		},
+		{
+			title: "Community Support",
+			description: "Get mentorship, peer advice, and emotional support from your journey",
+			icon: "💼",
+			gradient: "from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30"
+		}
+	];
+
 	return (
-		<div className="space-y-8">
-			<header className="rounded-2xl bg-gradient-to-br from-primary/10 via-white to-primary/5 p-6 dark:via-[#0B1220]">
-				<h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-white">
-					<Users size={22} /> Community
-				</h1>
-				<p className="mt-1 text-gray-600 dark:text-gray-300">
-					Connect, collaborate, and learn with fellow entrepreneurs across Africa.
-				</p>
-			</header>
+		<div className="min-h-screen bg-white dark:bg-gray-900">
+			<SEO
+				title="Join Our Community — BizGrowth Africa"
+				description="Connect with thousands of entrepreneurs and business professionals. Join our growing community on social media and messaging platforms."
+				canonicalPath="/community"
+			/>
 
-			<SectionHeader title="Join the conversation" />
-			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-				{Array.from({ length: 6 }).map((_, i) => (
-					<div key={i} className="rounded-xl border bg-white p-5 shadow-sm ring-1 ring-gray-200 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
-						<h3 className="font-semibold text-gray-900 dark:text-white">Topic {i + 1}</h3>
-						<p className="mt-1 text-sm text-gray-600 dark:text-gray-300">Latest thread preview.</p>
-						<a href="#" className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-							<MessageCircle size={14} /> View Thread
-						</a>
+			{/* Hero Section */}
+			<section className="relative overflow-hidden px-4 py-20 sm:py-32 lg:py-40">
+				{/* Decorative Background */}
+				<div className="absolute inset-0 -z-10 overflow-hidden">
+					<div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/10 to-primary/5 rounded-full blur-3xl"></div>
+					<div className="absolute bottom-20 left-10 w-72 h-72 bg-gradient-to-tr from-primary/8 to-transparent rounded-full blur-3xl"></div>
+				</div>
+
+				<div className="mx-auto max-w-5xl text-center">
+					<div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2">
+						<Sparkles className="w-4 h-4 text-primary" />
+						<span className="text-sm font-semibold text-primary">Join 100K+ Entrepreneurs</span>
 					</div>
-				))}
-			</div>
 
-			<SectionHeader title="Featured Groups" />
-			<PlaceholderBlock title="Groups Grid Placeholder" height="h-32" />
+					<h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+						Where Entrepreneurs
+						<span className="block bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+							Build & Thrive Together
+						</span>
+					</h1>
 
-			<SectionHeader title="Upcoming Events" />
-			<div className="rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-[#0B1220]">
-				<div className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
-					<CalendarRange size={14} className="text-primary" /> Events Calendar
+					<p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
+						Connect with Africa's most ambitious entrepreneurs. Access exclusive insights, find strategic partnerships, and accelerate your business growth in a community built for success.
+					</p>
+
+					<div className="flex flex-wrap justify-center gap-6 sm:gap-8 mb-12">
+						<div className="rounded-xl bg-white dark:bg-gray-800/50 backdrop-blur border border-gray-200 dark:border-gray-700/50 px-6 py-4 shadow-sm">
+							<div className="text-3xl sm:text-4xl font-bold text-primary mb-1">100K+</div>
+							<div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Active Members</div>
+						</div>
+						<div className="rounded-xl bg-white dark:bg-gray-800/50 backdrop-blur border border-gray-200 dark:border-gray-700/50 px-6 py-4 shadow-sm">
+							<div className="text-3xl sm:text-4xl font-bold text-primary mb-1">7</div>
+							<div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Connected Platforms</div>
+						</div>
+						<div className="rounded-xl bg-white dark:bg-gray-800/50 backdrop-blur border border-gray-200 dark:border-gray-700/50 px-6 py-4 shadow-sm">
+							<div className="text-3xl sm:text-4xl font-bold text-primary mb-1">Daily</div>
+							<div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Active Discussions</div>
+						</div>
+					</div>
+
+					<a
+						href="#platforms"
+						className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-4 font-semibold text-white transition hover:shadow-lg hover:scale-105 duration-300"
+					>
+						Explore Communities
+						<ArrowRight className="w-5 h-5" />
+					</a>
 				</div>
-				<PlaceholderBlock title="Events Calendar Placeholder" height="h-40" />
-			</div>
+			</section>
 
-			<SectionHeader title="Community Guidelines" />
-			<div className="rounded-xl border bg-white p-4 dark:border-gray-800 dark:bg-[#0B1220]">
-				<div className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
-					<ShieldCheck size={14} className="text-primary" /> Code of Conduct
+			{/* Benefits Section */}
+			<section className="mx-auto max-w-6xl px-4 py-20">
+				<div className="text-center mb-16">
+					<h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">Why Join BizGrowth?</h2>
+					<div className="w-16 h-1 bg-gradient-to-r from-primary to-primary/60 mx-auto rounded-full mb-6"></div>
+					<p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+						Designed for serious entrepreneurs who want to scale, learn, and network strategically
+					</p>
 				</div>
-				<PlaceholderBlock title="Guidelines Content Placeholder" height="h-28" />
-			</div>
 
-			<div className="flex justify-center">
-				<a href="#" className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 transition hover:border-primary hover:text-primary dark:border-gray-700 dark:text-gray-200">
-					Join Community <ArrowRight size={14} />
-				</a>
-			</div>
+				<div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+					{benefits.map((benefit, idx) => (
+						<div
+							key={idx}
+							className={`relative rounded-2xl bg-gradient-to-br ${benefit.gradient} border border-gray-200 dark:border-gray-700/50 p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden`}
+						>
+							<div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full -mr-10 -mt-10"></div>
+							<div className="relative z-10">
+								<div className="text-5xl mb-4">{benefit.icon}</div>
+								<h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{benefit.title}</h3>
+								<p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{benefit.description}</p>
+							</div>
+						</div>
+					))}
+				</div>
+			</section>
+
+			{/* Social Media Section */}
+			<section id="platforms" className="mx-auto max-w-6xl px-4 py-20">
+				<div className="text-center mb-16">
+					<h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">Follow Our Social Presence</h2>
+					<div className="w-16 h-1 bg-gradient-to-r from-primary to-primary/60 mx-auto rounded-full mb-6"></div>
+					<p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+						Stay updated with real-time insights, market trends, and community highlights
+					</p>
+				</div>
+
+				<div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+					{socialLinks.map((social, idx) => {
+						const Icon = social.icon;
+						return (
+							<a
+								key={idx}
+								href={social.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="group relative rounded-2xl border transition-all duration-300 hover:shadow-2xl overflow-hidden"
+								style={{
+									borderColor: social.accentColor + "30",
+									backgroundColor: "var(--social-bg-light)"
+								}}
+							>
+								{/* Background Gradient */}
+								<div className={`absolute inset-0 bg-gradient-to-br ${social.lightBg} dark:${social.darkBg.split(" ")[0]} dark:${social.darkBg.split(" ")[1]}`}></div>
+
+								{/* Accent Line */}
+								<div
+									className="absolute top-0 left-0 right-0 h-1 group-hover:h-1.5 transition-all"
+									style={{ backgroundColor: social.accentColor }}
+								></div>
+
+								<div className="relative p-8">
+									{/* Header */}
+									<div className="flex items-start justify-between mb-6">
+										<div className="flex items-center gap-3">
+											<div
+												className="p-3 rounded-lg transition-all"
+												style={{ backgroundColor: social.accentColor + "15" }}
+											>
+												<Icon className="w-6 h-6" style={{ color: social.accentColor }} />
+											</div>
+											<div>
+												<h3 className="text-xl font-bold text-gray-900 dark:text-white">{social.name}</h3>
+											</div>
+										</div>
+										<div className="text-right bg-white dark:bg-gray-800/50 backdrop-blur rounded-lg px-3 py-2">
+											<div className="text-2xl font-bold" style={{ color: social.accentColor }}>
+												{social.followers}
+											</div>
+											<div className="text-xs text-gray-600 dark:text-gray-400">followers</div>
+										</div>
+									</div>
+
+									{/* Description */}
+									<p className="text-gray-700 dark:text-gray-300 mb-5 font-medium">{social.description}</p>
+
+									{/* Benefits */}
+									<div className="space-y-2.5 mb-6">
+										{social.benefits.map((benefit, i) => (
+											<div key={i} className="flex items-center gap-2.5">
+												<CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: social.accentColor }} />
+												<span className="text-sm text-gray-700 dark:text-gray-300">{benefit}</span>
+											</div>
+										))}
+									</div>
+
+									{/* CTA */}
+									<button className="w-full rounded-lg px-4 py-3 font-semibold transition-all duration-300" style={{
+										backgroundColor: social.accentColor + "20",
+										color: social.accentColor,
+										border: `2px solid ${social.accentColor}30`
+									}}>
+										Follow Now
+									</button>
+								</div>
+							</a>
+						);
+					})}
+				</div>
+			</section>
+
+			{/* Community Groups Section */}
+			<section className="mx-auto max-w-6xl px-4 py-20">
+				<div className="text-center mb-16">
+					<h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">Join Community Groups</h2>
+					<div className="w-16 h-1 bg-gradient-to-r from-primary to-primary/60 mx-auto rounded-full mb-6"></div>
+					<p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+						Direct conversations, exclusive opportunities, and personalized support
+					</p>
+				</div>
+
+				<div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+					{communityLinks.map((link, idx) => {
+						const Icon = link.icon;
+						return (
+							<a
+								key={idx}
+								href={link.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="group relative rounded-2xl border transition-all duration-300 hover:shadow-2xl overflow-hidden"
+								style={{
+									borderColor: link.accentColor + "30"
+								}}
+							>
+								{/* Background Gradient */}
+								<div className={`absolute inset-0 bg-gradient-to-br ${link.lightBg} dark:${link.darkBg.split(" ")[0]} dark:${link.darkBg.split(" ")[1]}`}></div>
+
+								{/* Accent Line */}
+								<div
+									className="absolute top-0 left-0 right-0 h-1 group-hover:h-1.5 transition-all"
+									style={{ backgroundColor: link.accentColor }}
+								></div>
+
+								<div className="relative p-8">
+									{/* Header */}
+									<div className="flex items-start justify-between mb-6">
+										<div className="flex items-center gap-3">
+											<div
+												className="p-3 rounded-lg transition-all"
+												style={{ backgroundColor: link.accentColor + "15" }}
+											>
+												<Icon className="w-6 h-6" style={{ color: link.accentColor }} />
+											</div>
+											<div>
+												<h3 className="text-xl font-bold text-gray-900 dark:text-white">{link.name}</h3>
+											</div>
+										</div>
+										<div className="text-right bg-white dark:bg-gray-800/50 backdrop-blur rounded-lg px-3 py-2">
+											<div className="text-2xl font-bold" style={{ color: link.accentColor }}>
+												{link.members}
+											</div>
+											<div className="text-xs text-gray-600 dark:text-gray-400">members</div>
+										</div>
+									</div>
+
+									{/* Description */}
+									<p className="text-gray-700 dark:text-gray-300 mb-5 font-medium">{link.description}</p>
+
+									{/* Benefits */}
+									<div className="space-y-2.5 mb-6">
+										{link.benefits.map((benefit, i) => (
+											<div key={i} className="flex items-center gap-2.5">
+												<CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: link.accentColor }} />
+												<span className="text-sm text-gray-700 dark:text-gray-300">{benefit}</span>
+											</div>
+										))}
+									</div>
+
+									{/* CTA */}
+									<button className="w-full rounded-lg px-4 py-3 font-semibold transition-all duration-300" style={{
+										backgroundColor: link.accentColor + "20",
+										color: link.accentColor,
+										border: `2px solid ${link.accentColor}30`
+									}}>
+										Join Group
+									</button>
+								</div>
+							</a>
+						);
+					})}
+				</div>
+			</section>
+
+			{/* CTA Section */}
+			<section className="mx-auto max-w-6xl px-4 py-20">
+				<div className="relative rounded-3xl overflow-hidden">
+					{/* Premium Background */}
+					<div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/70"></div>
+					<div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -mr-48 -mt-48 blur-3xl"></div>
+					<div className="absolute bottom-0 left-0 w-72 h-72 bg-white/5 rounded-full -ml-36 -mb-36 blur-3xl"></div>
+
+					<div className="relative px-8 py-16 sm:px-12 sm:py-20 text-center">
+						<h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">Ready to Accelerate Your Growth?</h2>
+						<p className="text-lg text-white/90 mb-10 max-w-2xl mx-auto leading-relaxed">
+							Choose your preferred platform and start connecting with thousands of entrepreneurs, investors, and business leaders today.
+						</p>
+						<div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
+							<a
+								href="https://www.facebook.com/share/1ARErnneyb/?mibextid=wwXIfr"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="rounded-lg bg-white text-primary px-8 py-4 font-bold transition hover:shadow-xl hover:scale-105 duration-300"
+							>
+								Join on Facebook
+							</a>
+							<a
+								href="https://t.me/+ZkVsvN0zrks2Y2I0"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="rounded-lg border-2 border-white text-white px-8 py-4 font-bold transition hover:bg-white/10 duration-300"
+							>
+								Join Telegram
+							</a>
+							<a
+								href="https://chat.whatsapp.com/DjFkc7i6xZiBa3Hm47Bssn"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="rounded-lg border-2 border-white text-white px-8 py-4 font-bold transition hover:bg-white/10 duration-300"
+							>
+								Join WhatsApp
+							</a>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			{/* Footer Section */}
+			<section className="mx-auto max-w-6xl px-4 py-20 border-t border-gray-200 dark:border-gray-800">
+				<div className="grid gap-12 sm:grid-cols-2">
+					{/* Values */}
+					<div>
+						<h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
+							<Heart className="text-primary w-7 h-7" />
+							Our Values
+						</h3>
+						<ul className="space-y-4">
+							{[
+								{ label: "Inclusivity", desc: "Welcome at every stage of your journey" },
+								{ label: "Excellence", desc: "Committed to the highest standards" },
+								{ label: "Collaboration", desc: "United strength beats individual effort" },
+								{ label: "Integrity", desc: "Transparent and ethical always" }
+							].map((value, i) => (
+								<li key={i} className="flex gap-3">
+									<span className="text-primary font-bold mt-1">✓</span>
+									<div>
+										<div className="font-semibold text-gray-900 dark:text-white">{value.label}</div>
+										<div className="text-sm text-gray-600 dark:text-gray-400">{value.desc}</div>
+									</div>
+								</li>
+							))}
+						</ul>
+					</div>
+
+					{/* Guidelines */}
+					<div>
+						<h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
+							<Globe className="text-primary w-7 h-7" />
+							Community Standards
+						</h3>
+						<ul className="space-y-4">
+							{[
+								{ label: "Respect", desc: "Treat all members with dignity" },
+								{ label: "Knowledge Sharing", desc: "Lift others as you grow" },
+								{ label: "Quality Engagement", desc: "Add value to conversations" },
+								{ label: "Professional Conduct", desc: "Maintain business etiquette" }
+							].map((guideline, i) => (
+								<li key={i} className="flex gap-3">
+									<span className="text-primary font-bold mt-1">✓</span>
+									<div>
+										<div className="font-semibold text-gray-900 dark:text-white">{guideline.label}</div>
+										<div className="text-sm text-gray-600 dark:text-gray-400">{guideline.desc}</div>
+									</div>
+								</li>
+							))}
+						</ul>
+					</div>
+				</div>
+			</section>
 		</div>
 	);
 }
