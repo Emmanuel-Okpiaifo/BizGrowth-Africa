@@ -110,7 +110,7 @@ export default function Community() {
 	];
 
 	return (
-		<div className="min-h-screen bg-white dark:bg-gray-900">
+		<div className="min-h-screen bg-white dark:bg-[#0B1220]">
 			<SEO
 				title="Join Our Community — BizGrowth Africa"
 				description="Connect with thousands of entrepreneurs and business professionals. Join our growing community on social media and messaging platforms."

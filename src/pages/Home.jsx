@@ -41,7 +41,7 @@ export default function Home() {
 							className="group relative block overflow-hidden rounded-2xl bg-gray-900 ring-1 ring-gray-200 transition hover:ring-primary/30 dark:ring-gray-800"
 							aria-label={lead.title}
 						>
-							<div className="relative aspect-[16/9]">
+							<div className="relative aspect-[3/4] sm:aspect-[4/3] lg:aspect-[16/9]">
 								<img
 									src={lead.image}
 									alt={lead.title}
