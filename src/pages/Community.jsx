@@ -1,4 +1,6 @@
-import { Facebook, X, Instagram, Send, MessageCircle, Globe, Heart, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Facebook, X, Instagram, Send, Globe, Heart, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import SEO from "../components/SEO";
 
 export default function Community() {
@@ -56,7 +58,7 @@ export default function Community() {
 		},
 		{
 			name: "WhatsApp Channel",
-			icon: MessageCircle,
+			icon: "whatsapp",
 			accentColor: "#25D366",
 			lightBg: "from-green-500/5 to-emerald-400/5",
 			darkBg: "from-green-950/20 to-emerald-900/20",
@@ -116,7 +118,7 @@ export default function Community() {
 			/>
 
 			{/* Hero Section */}
-			<section className="relative overflow-hidden px-4 py-20 sm:py-32 lg:py-40">
+			<section className="relative overflow-hidden px-4 pt-8 pb-20 sm:pt-12 sm:pb-32 lg:pt-16 lg:pb-40">
 				{/* Decorative Background */}
 				<div className="absolute inset-0 -z-10 overflow-hidden">
 					<div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/10 to-primary/5 rounded-full blur-3xl"></div>
@@ -129,9 +131,9 @@ export default function Community() {
 						<span className="text-sm font-semibold text-primary">Join 100K+ Entrepreneurs</span>
 					</div>
 
-					<h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+					<h1 className="pb-6 text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-0 leading-[1.18]">
 						Where Entrepreneurs
-						<span className="block bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+						<span className="block pb-3 bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
 							Build & Thrive Together
 						</span>
 					</h1>
@@ -156,7 +158,7 @@ export default function Community() {
 					</div>
 
 					<a
-						href="#platforms"
+						href="#join-community"
 						className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-4 font-semibold text-white transition hover:shadow-lg hover:scale-105 duration-300"
 					>
 						Explore Communities
@@ -192,92 +194,8 @@ export default function Community() {
 				</div>
 			</section>
 
-			{/* Social Media Section */}
-			<section id="platforms" className="mx-auto max-w-6xl px-4 py-20">
-				<div className="text-center mb-16">
-					<h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">Follow Our Social Presence</h2>
-					<div className="w-16 h-1 bg-gradient-to-r from-primary to-primary/60 mx-auto rounded-full mb-6"></div>
-					<p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-						Stay updated with real-time insights, market trends, and community highlights
-					</p>
-				</div>
-
-				<div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-					{socialLinks.map((social, idx) => {
-						const Icon = social.icon;
-						return (
-							<a
-								key={idx}
-								href={social.url}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="group relative rounded-2xl border transition-all duration-300 hover:shadow-2xl overflow-hidden"
-								style={{
-									borderColor: social.accentColor + "30",
-									backgroundColor: "var(--social-bg-light)"
-								}}
-							>
-								{/* Background Gradient */}
-								<div className={`absolute inset-0 bg-gradient-to-br ${social.lightBg} dark:${social.darkBg.split(" ")[0]} dark:${social.darkBg.split(" ")[1]}`}></div>
-
-								{/* Accent Line */}
-								<div
-									className="absolute top-0 left-0 right-0 h-1 group-hover:h-1.5 transition-all"
-									style={{ backgroundColor: social.accentColor }}
-								></div>
-
-								<div className="relative p-8">
-									{/* Header */}
-									<div className="flex items-start justify-between mb-6">
-										<div className="flex items-center gap-3">
-											<div
-												className="p-3 rounded-lg transition-all"
-												style={{ backgroundColor: social.accentColor + "15" }}
-											>
-												<Icon className="w-6 h-6" style={{ color: social.accentColor }} />
-											</div>
-											<div>
-												<h3 className="text-xl font-bold text-gray-900 dark:text-white">{social.name}</h3>
-											</div>
-										</div>
-										<div className="text-right bg-white dark:bg-gray-800/50 backdrop-blur rounded-lg px-3 py-2">
-											<div className="text-2xl font-bold" style={{ color: social.accentColor }}>
-												{social.followers}
-											</div>
-											<div className="text-xs text-gray-600 dark:text-gray-400">followers</div>
-										</div>
-									</div>
-
-									{/* Description */}
-									<p className="text-gray-700 dark:text-gray-300 mb-5 font-medium">{social.description}</p>
-
-									{/* Benefits */}
-									<div className="space-y-2.5 mb-6">
-										{social.benefits.map((benefit, i) => (
-											<div key={i} className="flex items-center gap-2.5">
-												<CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: social.accentColor }} />
-												<span className="text-sm text-gray-700 dark:text-gray-300">{benefit}</span>
-											</div>
-										))}
-									</div>
-
-									{/* CTA */}
-									<button className="w-full rounded-lg px-4 py-3 font-semibold transition-all duration-300" style={{
-										backgroundColor: social.accentColor + "20",
-										color: social.accentColor,
-										border: `2px solid ${social.accentColor}30`
-									}}>
-										Follow Now
-									</button>
-								</div>
-							</a>
-						);
-					})}
-				</div>
-			</section>
-
 			{/* Community Groups Section */}
-			<section className="mx-auto max-w-6xl px-4 py-20">
+			<section id="join-community" className="mx-auto max-w-6xl px-4 py-20">
 				<div className="text-center mb-16">
 					<h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">Join Community Groups</h2>
 					<div className="w-16 h-1 bg-gradient-to-r from-primary to-primary/60 mx-auto rounded-full mb-6"></div>
@@ -317,7 +235,11 @@ export default function Community() {
 												className="p-3 rounded-lg transition-all"
 												style={{ backgroundColor: link.accentColor + "15" }}
 											>
-												<Icon className="w-6 h-6" style={{ color: link.accentColor }} />
+												{Icon === "whatsapp" ? (
+													<FontAwesomeIcon icon={faWhatsapp} className="h-6 w-6" style={{ color: link.accentColor }} />
+												) : (
+													<Icon className="w-6 h-6" style={{ color: link.accentColor }} />
+												)}
 											</div>
 											<div>
 												<h3 className="text-xl font-bold text-gray-900 dark:text-white">{link.name}</h3>
@@ -359,98 +281,65 @@ export default function Community() {
 				</div>
 			</section>
 
+
 			{/* CTA Section */}
-			<section className="mx-auto max-w-6xl px-4 py-20">
+			<section className="mx-auto max-w-6xl px-4 pt-20 pb-8">
 				<div className="relative rounded-3xl overflow-hidden">
 					{/* Premium Background */}
 					<div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/70"></div>
 					<div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -mr-48 -mt-48 blur-3xl"></div>
 					<div className="absolute bottom-0 left-0 w-72 h-72 bg-white/5 rounded-full -ml-36 -mb-36 blur-3xl"></div>
 
-					<div className="relative px-8 py-16 sm:px-12 sm:py-20 text-center">
-						<h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">Ready to Accelerate Your Growth?</h2>
-						<p className="text-lg text-white/90 mb-10 max-w-2xl mx-auto leading-relaxed">
-							Choose your preferred platform and start connecting with thousands of entrepreneurs, investors, and business leaders today.
-						</p>
-						<div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
-							<a
-								href="https://www.facebook.com/share/1ARErnneyb/?mibextid=wwXIfr"
-								target="_blank"
-								rel="noopener noreferrer"
-								className="rounded-lg bg-white text-primary px-8 py-4 font-bold transition hover:shadow-xl hover:scale-105 duration-300"
-							>
-								Join on Facebook
-							</a>
-							<a
-								href="https://t.me/+ZkVsvN0zrks2Y2I0"
-								target="_blank"
-								rel="noopener noreferrer"
-								className="rounded-lg border-2 border-white text-white px-8 py-4 font-bold transition hover:bg-white/10 duration-300"
-							>
-								Join Telegram
-							</a>
-							<a
-								href="https://chat.whatsapp.com/DjFkc7i6xZiBa3Hm47Bssn"
-								target="_blank"
-								rel="noopener noreferrer"
-								className="rounded-lg border-2 border-white text-white px-8 py-4 font-bold transition hover:bg-white/10 duration-300"
-							>
-								Join WhatsApp
-							</a>
+					<div className="relative px-8 py-16 sm:px-12 sm:py-20">
+						<div className="grid gap-12 sm:grid-cols-2">
+							{/* Values */}
+							<div>
+								<h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+									<Heart className="text-white w-7 h-7" />
+									Our Values
+								</h3>
+								<ul className="space-y-4">
+									{[
+										{ label: "Inclusivity", desc: "Welcome at every stage of your journey" },
+										{ label: "Excellence", desc: "Committed to the highest standards" },
+										{ label: "Collaboration", desc: "United strength beats individual effort" },
+										{ label: "Integrity", desc: "Transparent and ethical always" }
+									].map((value, i) => (
+										<li key={i} className="flex gap-3">
+											<span className="text-white font-bold mt-1">✓</span>
+											<div>
+												<div className="font-semibold text-white">{value.label}</div>
+												<div className="text-sm text-white/90">{value.desc}</div>
+											</div>
+										</li>
+									))}
+								</ul>
+							</div>
+
+							{/* Guidelines */}
+							<div>
+								<h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+									<Globe className="text-white w-7 h-7" />
+									Community Standards
+								</h3>
+								<ul className="space-y-4">
+									{[
+										{ label: "Respect", desc: "Treat all members with dignity" },
+										{ label: "Knowledge Sharing", desc: "Lift others as you grow" },
+										{ label: "Quality Engagement", desc: "Add value to conversations" },
+										{ label: "Professional Conduct", desc: "Maintain business etiquette" }
+									].map((guideline, i) => (
+										<li key={i} className="flex gap-3">
+											<span className="text-white font-bold mt-1">✓</span>
+											<div>
+												<div className="font-semibold text-white">{guideline.label}</div>
+												<div className="text-sm text-white/90">{guideline.desc}</div>
+											</div>
+										</li>
+									))}
+								</ul>
+							</div>
 						</div>
-					</div>
-				</div>
-			</section>
-
-			{/* Footer Section */}
-			<section className="mx-auto max-w-6xl px-4 py-20 border-t border-gray-200 dark:border-gray-800">
-				<div className="grid gap-12 sm:grid-cols-2">
-					{/* Values */}
-					<div>
-						<h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
-							<Heart className="text-primary w-7 h-7" />
-							Our Values
-						</h3>
-						<ul className="space-y-4">
-							{[
-								{ label: "Inclusivity", desc: "Welcome at every stage of your journey" },
-								{ label: "Excellence", desc: "Committed to the highest standards" },
-								{ label: "Collaboration", desc: "United strength beats individual effort" },
-								{ label: "Integrity", desc: "Transparent and ethical always" }
-							].map((value, i) => (
-								<li key={i} className="flex gap-3">
-									<span className="text-primary font-bold mt-1">✓</span>
-									<div>
-										<div className="font-semibold text-gray-900 dark:text-white">{value.label}</div>
-										<div className="text-sm text-gray-600 dark:text-gray-400">{value.desc}</div>
-									</div>
-								</li>
-							))}
-						</ul>
-					</div>
-
-					{/* Guidelines */}
-					<div>
-						<h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
-							<Globe className="text-primary w-7 h-7" />
-							Community Standards
-						</h3>
-						<ul className="space-y-4">
-							{[
-								{ label: "Respect", desc: "Treat all members with dignity" },
-								{ label: "Knowledge Sharing", desc: "Lift others as you grow" },
-								{ label: "Quality Engagement", desc: "Add value to conversations" },
-								{ label: "Professional Conduct", desc: "Maintain business etiquette" }
-							].map((guideline, i) => (
-								<li key={i} className="flex gap-3">
-									<span className="text-primary font-bold mt-1">✓</span>
-									<div>
-										<div className="font-semibold text-gray-900 dark:text-white">{guideline.label}</div>
-										<div className="text-sm text-gray-600 dark:text-gray-400">{guideline.desc}</div>
-									</div>
-								</li>
-							))}
-						</ul>
 					</div>
 				</div>
 			</section>

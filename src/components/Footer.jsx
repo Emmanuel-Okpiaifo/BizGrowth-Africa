@@ -1,5 +1,7 @@
-import { Facebook, Twitter, Linkedin, Instagram, Mail, Phone } from "lucide-react";
-import brandLogo from "../assets/img/logos/bizgrowth2.png";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFacebook, faXTwitter, faInstagram } from "@fortawesome/free-brands-svg-icons";
+import { faEnvelope, faPhone } from "@fortawesome/free-solid-svg-icons";
+import brandLogo from "../assets/img/logos/bizgrowth3.png";
 
 export default function Footer() {
 	return (
@@ -8,18 +10,18 @@ export default function Footer() {
 				<div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
 					<div>
 						<div className="flex items-center gap-2">
-							<img src={brandLogo} alt="BizGrowth Africa" className="h-8 w-auto object-contain" />
+							<img src={brandLogo} alt="BizGrowth Africa" className="h-10 w-auto object-contain" />
 							<span className="text-lg font-bold">BizGrowth Africa</span>
 						</div>
 							<p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
 							Curated business news, opportunities, tenders, tools and community for African MSMEs.
 						</p>
 							<div className="mt-4 flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
-								<Mail size={16} className="text-gray-400 dark:text-gray-400" />
+								<FontAwesomeIcon icon={faEnvelope} className="text-gray-400 dark:text-gray-400" size="sm" />
 								<span>info@bizgrowthafrica.com</span>
 						</div>
 							<div className="mt-1 flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
-								<Phone size={16} className="text-gray-400 dark:text-gray-400" />
+								<FontAwesomeIcon icon={faPhone} className="text-gray-400 dark:text-gray-400" size="sm" />
 							<span>+234 (0) 800 000 0000</span>
 						</div>
 					</div>
@@ -69,19 +71,37 @@ export default function Footer() {
 							</button>
 						</form>
 							<div className="mt-4 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
-								<a href="#" aria-label="Twitter" className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 dark:bg-white/5 text-gray-700 dark:text-white transition hover:bg-gray-300 dark:hover:bg-white/10">
-									<Twitter size={18} />
+								<a
+									href="https://x.com/BizGrowthAfrica"
+									target="_blank"
+									rel="noopener noreferrer"
+									aria-label="X (Twitter)"
+									className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 dark:bg-white/5 transition hover:bg-gray-300 dark:hover:bg-white/10"
+									style={{ color: "#000000" }}
+								>
+									<FontAwesomeIcon icon={faXTwitter} size="lg" />
 								</a>
-								<a href="#" aria-label="LinkedIn" className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 dark:bg-white/5 text-gray-700 dark:text-white transition hover:bg-gray-300 dark:hover:bg-white/10">
-									<Linkedin size={18} />
+								<a
+									href="https://www.instagram.com/bizgrowth_africa?igsh=d3d0OWJuMHU3dms5&utm_source=qr"
+									target="_blank"
+									rel="noopener noreferrer"
+									aria-label="Instagram"
+									className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 dark:bg-white/5 transition hover:bg-gray-300 dark:hover:bg-white/10"
+									style={{ color: "#E4405F" }}
+								>
+									<FontAwesomeIcon icon={faInstagram} size="lg" />
 								</a>
-								<a href="#" aria-label="Instagram" className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 dark:bg-white/5 text-gray-700 dark:text-white transition hover:bg-gray-300 dark:hover:bg-white/10">
-									<Instagram size={18} />
+								<a
+									href="https://www.facebook.com/share/1ARErnneyb/?mibextid=wwXIfr"
+									target="_blank"
+									rel="noopener noreferrer"
+									aria-label="Facebook"
+									className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 dark:bg-white/5 transition hover:bg-gray-300 dark:hover:bg-white/10"
+									style={{ color: "#1877F2" }}
+								>
+									<FontAwesomeIcon icon={faFacebook} size="lg" />
 								</a>
-								<a href="#" aria-label="Facebook" className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 dark:bg-white/5 text-gray-700 dark:text-white transition hover:bg-gray-300 dark:hover:bg-white/10">
-								<Facebook size={18} />
-							</a>
-						</div>
+							</div>
 					</div>
 				</div>
 				<div className="mt-8 border-t border-gray-200 dark:border-white/10 pt-6 text-center text-xs text-gray-500 dark:text-gray-400">

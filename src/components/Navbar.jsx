@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { Moon, Sun, Menu, X } from "lucide-react";
-import brandLogo from "../assets/img/logos/bizgrowth2.png";
+import brandLogo from "../assets/img/logos/bizgrowth3.png";
 
 const navItems = [
 	{ to: "/", label: "Home" },
@@ -111,7 +111,7 @@ export default function Navbar() {
 			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 				<div className="flex h-16 items-center justify-between">
 					<Link to="/" className="flex items-center gap-2">
-						<img src={brandLogo} alt="BizGrowth Africa" className="h-8 w-auto object-contain" />
+						<img src={brandLogo} alt="BizGrowth Africa" className="h-10 w-auto object-contain" />
 						<span className="text-lg font-bold text-gray-900 dark:text-white">
 							BizGrowth Africa
 						</span>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import brandLogo from "../assets/img/logos/bizgrowth2.png";
+import brandLogo from "../assets/img/logos/bizgrowth3.png";
 
 export default function Preloader() {
 	const [visible, setVisible] = useState(true);
@@ -29,7 +29,7 @@ export default function Preloader() {
 						<div className="absolute inset-0 animate-ping rounded-full bg-primary/40" />
 						<div className="absolute inset-2 rounded-full bg-primary" />
 					</div>
-					<img src={brandLogo} alt="BizGrowth Africa" className="h-8 w-auto object-contain" />
+					<img src={brandLogo} alt="BizGrowth Africa" className="h-10 w-auto object-contain" />
 					<div className="text-sm font-semibold text-gray-800 dark:text-gray-200">Loading BizGrowth Africa…</div>
 				</div>
 			</div>
