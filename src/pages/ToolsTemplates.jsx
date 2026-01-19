@@ -2,11 +2,17 @@ import { Download, FolderGit2, FileText, Layers, PlusCircle } from "lucide-react
 import SectionHeader from "../components/SectionHeader";
 import CategoryPills from "../components/CategoryPills";
 import PlaceholderBlock from "../components/PlaceholderBlock";
+import SEO from "../components/SEO";
 
 export default function ToolsTemplates() {
 	const categories = ["All", "Finance", "HR", "Legal", "Operations", "Marketing"];
 	return (
 		<div className="space-y-8">
+			<SEO
+				title="Tools & Templates — BizGrowth Africa"
+				description="Download ready-to-use business templates, tools, and guides designed to improve operational efficiency, strengthen internal systems, and support daily business management processes for African MSMEs."
+				canonicalPath="/tools-templates"
+			/>
 			<header className="rounded-2xl bg-gradient-to-br from-primary/10 via-white to-primary/5 p-6 dark:via-[#0B1220]">
 				<h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-white">
 					<FolderGit2 size={22} /> Tools & Templates

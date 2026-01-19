@@ -1,8 +1,21 @@
 import { useEffect, useState } from "react";
-import brandLogo from "../assets/img/logos/bizgrowth3.png";
+import brandLogoLight from "../assets/img/logos/bizgrowth2.png";
+import brandLogoDark from "../assets/img/logos/bizgrowth1.png";
 
 export default function Preloader() {
 	const [visible, setVisible] = useState(true);
+	const [dark, setDark] = useState(false);
+	
+	useEffect(() => {
+		const checkDark = () => {
+			setDark(document.documentElement.classList.contains("dark"));
+		};
+		checkDark();
+		const observer = new MutationObserver(checkDark);
+		observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+		return () => observer.disconnect();
+	}, []);
+
 	useEffect(() => {
 		let timeoutId = 0;
 		function hide() {
@@ -29,7 +42,11 @@ export default function Preloader() {
 						<div className="absolute inset-0 animate-ping rounded-full bg-primary/40" />
 						<div className="absolute inset-2 rounded-full bg-primary" />
 					</div>
-					<img src={brandLogo} alt="BizGrowth Africa" className="h-10 w-auto object-contain" />
+					<img 
+						src={dark ? brandLogoDark : brandLogoLight} 
+						alt="BizGrowth Africa" 
+						className="h-10 w-auto object-contain" 
+					/>
 					<div className="text-sm font-semibold text-gray-800 dark:text-gray-200">Loading BizGrowth Africa…</div>
 				</div>
 			</div>

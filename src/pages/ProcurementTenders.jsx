@@ -3,11 +3,17 @@ import SectionHeader from "../components/SectionHeader";
 import CategoryPills from "../components/CategoryPills";
 import PlaceholderBlock from "../components/PlaceholderBlock";
 import Pagination from "../components/Pagination";
+import SEO from "../components/SEO";
 
 export default function ProcurementTenders() {
 	const categories = ["IT & Telecoms", "Construction", "Healthcare", "Energy", "Logistics"];
 	return (
 		<div className="space-y-8">
+			<SEO
+				title="Procurement & Tenders — BizGrowth Africa"
+				description="Explore verified procurement opportunities and tender notices from public and private sectors across Africa. Access structured information to help MSMEs identify relevant contracts and strengthen compliance."
+				canonicalPath="/procurement-tenders"
+			/>
 			<header className="rounded-2xl bg-gradient-to-br from-primary/10 via-white to-primary/5 p-6 dark:via-[#0B1220]">
 				<h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-white">
 					<FileText size={22} /> Procurement & Tenders

@@ -21,8 +21,6 @@ function formatDate(iso) {
 
 export default function NewsArticle() {
 	const { slug } = useParams();
-	const [comments, setComments] = useState([]);
-	const [commentForm, setCommentForm] = useState({ name: "", email: "", message: "" });
 
 	// Always scroll to top when opening or switching articles
 	useEffect(() => {
@@ -33,22 +31,6 @@ export default function NewsArticle() {
 		() => allOriginalArticles.find((a) => a.slug === slug),
 		[slug]
 	);
-
-	const handleCommentSubmit = (e) => {
-		e.preventDefault();
-		if (commentForm.name && commentForm.email && commentForm.message) {
-			setComments([
-				...comments,
-				{
-					name: commentForm.name,
-					email: commentForm.email,
-					message: commentForm.message,
-					timestamp: new Date().toISOString(),
-				},
-			]);
-			setCommentForm({ name: "", email: "", message: "" });
-		}
-	};
 
 	const related = useMemo(() => {
 		if (!article) return [];
@@ -253,115 +235,48 @@ export default function NewsArticle() {
 										<p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
 											Independent analysis and reporting focused on African MSMEs, markets, and business growth opportunities.
 										</p>
-										<div className="flex gap-3 mt-3">
-											<a href="#" className="text-primary hover:opacity-75 text-xs font-semibold">Follow</a>
-										</div>
 									</div>
 								</div>
 							</div>
 
-							{/* Comments Section */}
-							<div className="mt-10">
-								<h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Comments ({comments.length})</h3>
-								
-								{/* Existing Comments */}
-								{comments.length > 0 && (
-									<div className="space-y-4 mb-8">
-										{comments.map((comment, idx) => (
-											<div key={idx} className="flex gap-4 pb-4 border-b border-gray-200 dark:border-gray-800">
-												<div className="h-10 w-10 flex-none rounded-full bg-gray-300 dark:bg-gray-700" />
-												<div className="flex-1">
-													<h4 className="font-semibold text-gray-900 dark:text-white">
-														{comment.name} 
-														<span className="text-xs text-gray-500 dark:text-gray-400 font-normal ml-2">
-															{formatDate(comment.timestamp)}
-														</span>
-													</h4>
-													<p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{comment.message}</p>
-												</div>
-											</div>
-										))}
-									</div>
-								)}
+							{/* Why it Matters Section */}
+							<div className="mt-10 rounded-lg border-l-4 border-primary bg-white dark:bg-gray-800 dark:border-gray-700 p-6">
+								<h3 className="text-lg font-bold text-primary uppercase tracking-wide">Why it matters for African MSMEs</h3>
+								<p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed">
+									{article.whyItMatters || "Understanding these market dynamics helps African businesses make informed decisions about growth, expansion, and adaptation to changing economic conditions."}
+								</p>
+							</div>
 
-								{/* Comment Form */}
-								<form onSubmit={handleCommentSubmit} className="rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 p-6">
-									<h4 className="font-bold text-gray-900 dark:text-white mb-4">Leave a Comment</h4>
-									<div className="grid gap-4 sm:grid-cols-2">
-										<input
-											type="text"
-											placeholder="Name*"
-											required
-											value={commentForm.name}
-											onChange={(e) => setCommentForm({ ...commentForm, name: e.target.value })}
-											className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent"
-										/>
-										<input
-											type="email"
-											placeholder="Email*"
-											required
-											value={commentForm.email}
-											onChange={(e) => setCommentForm({ ...commentForm, email: e.target.value })}
-											className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent"
-										/>
-										<textarea
-											placeholder="Message*"
-											required
-											rows={5}
-											value={commentForm.message}
-											onChange={(e) => setCommentForm({ ...commentForm, message: e.target.value })}
-											className="sm:col-span-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent"
-										/>
-										<button
-											type="submit"
-											className="sm:col-span-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition"
-										>
-											Post Comment
-										</button>
-									</div>
-								</form>
+							{/* Key Takeaways */}
+							<div className="mt-10">
+								<h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wide mb-6">Key Takeaways</h3>
+								<div className="grid gap-4 sm:grid-cols-2">
+									{(article.keyTakeaways || []).map((point, idx) => (
+										<div key={idx} className="rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 p-4">
+											<div className="flex gap-3">
+												<div className="flex-none text-primary font-bold text-lg">✓</div>
+												<p className="text-sm text-gray-700 dark:text-gray-300">{point}</p>
+											</div>
+										</div>
+									))}
+								</div>
+							</div>
+
+							{/* Tags */}
+							<div className="mt-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-5 shadow-md hover:shadow-lg transition-all">
+								<h3 className="font-bold text-gray-900 dark:text-white mb-4 text-lg">Tags</h3>
+								<div className="flex flex-wrap gap-2">
+									{["Business", "Markets", "Growth", "Africa", "MSME", "Trade", "Innovation", "Strategy"].map((tag) => (
+										<a key={tag} href="#" className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-primary hover:text-white dark:hover:bg-primary text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full transition">
+											{tag}
+										</a>
+									))}
+								</div>
 							</div>
 						</div>
 
 						{/* Sidebar */}
 					<aside className="lg:col-span-1 space-y-6">
-						{/* Stay Connected */}
-					<div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-5 shadow-md hover:shadow-lg transition-all">
-							<h3 className="font-bold text-gray-900 dark:text-white mb-4 text-lg">Stay Connected</h3>
-							<div className="space-y-2.5">
-									<a href="#" className="flex items-center justify-between rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition">
-										<div className="flex items-center gap-2">
-											<Facebook size={20} className="text-blue-600" />
-											<div className="text-sm">
-												<div className="font-semibold text-gray-900 dark:text-white">50.2K</div>
-												<div className="text-xs text-gray-600 dark:text-gray-400">Fans</div>
-											</div>
-										</div>
-										→
-									</a>
-									<a href="#" className="flex items-center justify-between rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition">
-										<div className="flex items-center gap-2">
-											<Twitter size={20} className="text-blue-400" />
-											<div className="text-sm">
-												<div className="font-semibold text-gray-900 dark:text-white">10.3K</div>
-												<div className="text-xs text-gray-600 dark:text-gray-400">Followers</div>
-											</div>
-										</div>
-										→
-									</a>
-									<a href="#" className="flex items-center justify-between rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition">
-										<div className="flex items-center gap-2">
-											<Linkedin size={20} className="text-blue-700" />
-											<div className="text-sm">
-												<div className="font-semibold text-gray-900 dark:text-white">25.4K</div>
-												<div className="text-xs text-gray-600 dark:text-gray-400">Followers</div>
-											</div>
-										</div>
-										→
-									</a>
-								</div>
-							</div>
-
 							{/* Newsletter CTA */}
 					<div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary to-primary/80 p-5 text-white shadow-lg hover:shadow-xl transition-all">
 							<h3 className="font-bold mb-2 text-lg">Subscribe to Newsletter</h3>
@@ -413,47 +328,7 @@ export default function NewsArticle() {
 							</div>
 						</div>
 
-							{/* Tags */}
-					<div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-5 shadow-md hover:shadow-lg transition-all">
-							<h3 className="font-bold text-gray-900 dark:text-white mb-4 text-lg">Tags</h3>
-								<div className="flex flex-wrap gap-2">
-									{["Business", "Markets", "Growth", "Africa", "MSME", "Trade", "Innovation", "Strategy"].map((tag) => (
-										<a key={tag} href="#" className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-primary hover:text-white dark:hover:bg-primary text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full transition">
-											{tag}
-										</a>
-									))}
-								</div>
-							</div>
 						</aside>
-					</div>
-				</div>
-			</section>
-
-			{/* Why it Matters Section */}
-			<section className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
-				<div className="mx-auto max-w-6xl px-4 py-12">
-					<div className="rounded-lg border-l-4 border-primary bg-white dark:bg-gray-800 dark:border-gray-700 p-6">
-						<h3 className="text-lg font-bold text-primary uppercase tracking-wide">Why it matters for African MSMEs</h3>
-						<p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed">
-							{article.whyItMatters || "Understanding these market dynamics helps African businesses make informed decisions about growth, expansion, and adaptation to changing economic conditions."}
-						</p>
-					</div>
-				</div>
-			</section>
-
-			{/* Key Takeaways */}
-			<section className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
-				<div className="mx-auto max-w-6xl px-4 py-12">
-					<h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wide mb-6">Key Takeaways</h3>
-					<div className="grid gap-4 sm:grid-cols-2">
-						{(article.keyTakeaways || []).map((point, idx) => (
-							<div key={idx} className="rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 p-4">
-								<div className="flex gap-3">
-									<div className="flex-none text-primary font-bold text-lg">✓</div>
-									<p className="text-sm text-gray-700 dark:text-gray-300">{point}</p>
-								</div>
-							</div>
-						))}
 					</div>
 				</div>
 			</section>

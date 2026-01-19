@@ -47,8 +47,8 @@ export default function OpportunityDetail() {
 	return (
 		<div className="min-h-screen bg-white dark:bg-gray-900">
 			<SEO
-				title={`${opp.title} — Opportunity`}
-				description={`${opp.org} • ${opp.region} • ${opp.category}`}
+				title={`${opp.title} — Opportunity | BizGrowth Africa`}
+				description={`${opp.title} by ${opp.org} in ${opp.region || opp.country || 'Africa'}. ${opp.category || 'Business opportunity'} for African MSMEs. ${opp.summary ? opp.summary.substring(0, 100) + '...' : 'Apply now for grants, accelerators, or funding programs.'}`}
 				type="website"
 				canonicalPath={`/opportunities/${encodeURIComponent(opp.id)}`}
 			/>

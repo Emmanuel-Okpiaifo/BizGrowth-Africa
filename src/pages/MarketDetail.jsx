@@ -93,8 +93,8 @@ export default function MarketDetail() {
 	return (
 		<div className="mx-auto max-w-4xl space-y-6">
 			<SEO
-				title={`${quoteLabel} — Live Market`}
-				description={`Live snapshot of ${quoteLabel}.`}
+				title={`${quoteLabel} — Live Market Data | BizGrowth Africa`}
+				description={`Live market data and analysis for ${quoteLabel}. Track real-time prices, trends, and market insights for African markets including indices, FX, and commodities.`}
 				type="website"
 				canonicalPath={`/markets/${encodeURIComponent(marketId)}`}
 			/>

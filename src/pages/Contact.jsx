@@ -1,9 +1,15 @@
 import { Mail, Phone, MapPin, Clock, Send } from "lucide-react";
 import PlaceholderBlock from "../components/PlaceholderBlock";
+import SEO from "../components/SEO";
 
 export default function Contact() {
 	return (
 		<div className="space-y-8">
+			<SEO
+				title="Contact Us — BizGrowth Africa"
+				description="Get in touch with BizGrowth Africa for partnerships, support, media inquiries, or general questions. We'd love to hear from you."
+				canonicalPath="/contact"
+			/>
 			<header className="rounded-2xl bg-gradient-to-br from-primary/10 via-white to-primary/5 p-6 dark:via-[#0B1220]">
 				<h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-white">
 					<Send size={22} /> Contact
