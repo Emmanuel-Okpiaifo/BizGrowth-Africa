@@ -124,9 +124,9 @@ export default function Home() {
 
 			{/* Funding & Deals section removed */}
 
-			{/* Deep Dives & Analysis (redesigned) */}
+			{/* Trending Stories */}
 			<section className="space-y-4">
-				<SectionHeader title="Deep Dives & Analysis" />
+				<SectionHeader title="Trending Stories" />
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 					<div className="sm:col-span-2 lg:col-span-2">
 						{analysis[0] ? <NewsCard article={analysis[0]} variant="featured" index={0} /> : null}
