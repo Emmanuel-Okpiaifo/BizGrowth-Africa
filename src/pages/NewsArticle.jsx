@@ -1,9 +1,10 @@
 import { useMemo, useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Facebook, Twitter, Linkedin, Link as LinkIcon, Send } from "lucide-react";
+import { Facebook, Twitter, Linkedin, Link as LinkIcon, Briefcase, ArrowRight } from "lucide-react";
 import NewsCard from "../components/NewsCard";
-import NewsletterCTA from "../components/NewsletterCTA";
 import { allOriginalArticles } from "../data/originals.index";
+import { opportunities } from "../data/opportunities.sample";
+import { getOpportunityImage } from "../data/opportunities.images";
 import SEO from "../components/SEO";
 import { SITE_URL } from "../config/site";
 
@@ -52,6 +53,31 @@ export default function NewsArticle() {
 			url: `/news/${a.slug}`,
 		}));
 	}, [article]);
+
+	// Collect all available images from other articles and opportunities for fallback
+	const availableImages = useMemo(() => {
+		const imagePool = [];
+		
+		// Collect images from other articles (excluding current article)
+		allOriginalArticles.forEach((a) => {
+			if (a.slug !== article?.slug) {
+				if (a.canonicalImage) imagePool.push(a.canonicalImage);
+				if (a.image) imagePool.push(a.image);
+				if (Array.isArray(a.imageCandidates)) {
+					imagePool.push(...a.imageCandidates);
+				}
+			}
+		});
+		
+		// Collect images from opportunities
+		opportunities.forEach((opp) => {
+			const oppImg = getOpportunityImage(opp);
+			if (oppImg) imagePool.push(oppImg);
+		});
+		
+		// Remove duplicates while preserving order
+		return Array.from(new Set(imagePool.filter(Boolean)));
+	}, [article?.slug]);
 
 	if (!article) {
 		return (
@@ -155,9 +181,9 @@ export default function NewsArticle() {
 							<div className="mt-8 flex flex-wrap gap-2">
 								<span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Tags:</span>
 								{(article.keyTakeaways || []).slice(0, 5).map((tag, idx) => (
-									<a key={idx} href="#" className="text-xs bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1 rounded-full transition">
+									<span key={idx} className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full">
 										#{tag.split(" ")[0]}
-									</a>
+									</span>
 								))}
 							</div>
 
@@ -267,9 +293,9 @@ export default function NewsArticle() {
 								<h3 className="font-bold text-gray-900 dark:text-white mb-4 text-lg">Tags</h3>
 								<div className="flex flex-wrap gap-2">
 									{["Business", "Markets", "Growth", "Africa", "MSME", "Trade", "Innovation", "Strategy"].map((tag) => (
-										<a key={tag} href="#" className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-primary hover:text-white dark:hover:bg-primary text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full transition">
+										<span key={tag} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full">
 											{tag}
-										</a>
+										</span>
 									))}
 								</div>
 							</div>
@@ -277,46 +303,76 @@ export default function NewsArticle() {
 
 						{/* Sidebar */}
 					<aside className="lg:col-span-1 space-y-6">
-							{/* Newsletter CTA */}
-					<div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary to-primary/80 p-5 text-white shadow-lg hover:shadow-xl transition-all">
-							<h3 className="font-bold mb-2 text-lg">Subscribe to Newsletter</h3>
-							<p className="text-sm mb-4 text-white/90 leading-relaxed">Get the latest insights on African business growth and opportunities</p>
-								<form className="flex gap-2">
-									<input
-										type="email"
-										placeholder="Your email"
-										className="flex-1 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-500"
-									/>
-									<button type="submit" className="rounded-lg bg-white/20 hover:bg-white/30 px-2 py-2 transition">
-										<Send size={16} />
-									</button>
-								</form>
+							{/* Opportunities CTA */}
+					<Link to="/opportunities" className="block rounded-xl border border-primary/20 bg-gradient-to-br from-primary to-primary/80 p-5 text-white shadow-lg hover:shadow-xl transition-all">
+							<div className="flex items-start gap-3 mb-3">
+								<Briefcase size={24} className="flex-none mt-0.5" />
+								<div className="flex-1">
+									<h3 className="font-bold mb-2 text-lg">Explore Opportunities</h3>
+									<p className="text-sm mb-4 text-white/90 leading-relaxed">Discover grants, accelerators, and partnerships tailored for African MSMEs</p>
+								</div>
 							</div>
+							<div className="flex items-center gap-2 text-sm font-semibold text-white/95">
+								<span>Browse Opportunities</span>
+								<ArrowRight size={16} />
+							</div>
+							</Link>
 
 							{/* Recent News */}
 					<div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-5 shadow-md hover:shadow-lg transition-all">
 						<h3 className="font-bold text-gray-900 dark:text-white mb-4 text-lg">Recent News</h3>
 							<div className="space-y-4">
 								{related.slice(0, 4).map((article, idx) => {
-									// Get the best available image with fallbacks
-									const imageUrl = article.image || 
-										(Array.isArray(article.imageCandidates) && article.imageCandidates[0]) ||
-										`https://source.unsplash.com/1600x900/?africa,business&sig=${idx}`;
+									// Get the best available image with fallbacks from other articles/opportunities
+									const getImageWithFallback = () => {
+										// First try article's own image
+										if (article.image) return article.image;
+										if (Array.isArray(article.imageCandidates) && article.imageCandidates[0]) {
+											return article.imageCandidates[0];
+										}
+										// Fallback to available images from other articles/opportunities
+										if (availableImages.length > 0) {
+											// Use a deterministic index based on article title to get consistent image
+											const hash = article.title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+											return availableImages[hash % availableImages.length];
+										}
+										// Final fallback (shouldn't happen if we have articles/opportunities)
+										return null;
+									};
+									
+									const imageUrl = getImageWithFallback();
+									const imageCandidates = [
+										article.image,
+										...(Array.isArray(article.imageCandidates) ? article.imageCandidates : []),
+										...availableImages
+									].filter(Boolean);
 									
 									return (
 										<Link key={idx} to={article.url} className="group block">
 											<div className="mb-2 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700 aspect-video">
-												<img 
-													src={imageUrl}
-													alt={article.title}
-													className="h-full w-full object-cover group-hover:scale-105 transition"
-													onError={(e) => {
-														// If image fails, use unsplash fallback
-														if (e.currentTarget.src !== `https://source.unsplash.com/1600x900/?africa,business&sig=${idx}`) {
-															e.currentTarget.src = `https://source.unsplash.com/1600x900/?africa,business&sig=${idx}`;
-														}
-													}}
-												/>
+												{imageUrl ? (
+													<img 
+														src={imageUrl}
+														alt={article.title}
+														className="h-full w-full object-cover group-hover:scale-105 transition"
+														loading={idx < 2 ? "eager" : "lazy"}
+														fetchpriority={idx < 2 ? "high" : "auto"}
+														decoding="async"
+														onError={(e) => {
+															// Try next candidate from the pool
+															const current = e.currentTarget.src;
+															const currentIdx = imageCandidates.indexOf(current);
+															const next = imageCandidates[currentIdx + 1] || imageCandidates[0];
+															if (next && next !== current) {
+																e.currentTarget.src = next;
+															}
+														}}
+													/>
+												) : (
+													<div className="h-full w-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+														<span className="text-xs text-gray-500 dark:text-gray-400">No image</span>
+													</div>
+												)}
 											</div>
 											<p className="text-xs font-semibold text-primary mb-1">{article.category}</p>
 											<h4 className="text-xs font-semibold text-gray-900 dark:text-white group-hover:text-primary transition line-clamp-2">
@@ -346,11 +402,6 @@ export default function NewsArticle() {
 					</div>
 				</section>
 			)}
-
-			{/* Newsletter CTA */}
-			<section className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-12">
-				<NewsletterCTA />
-			</section>
 		</div>
 	);
 }
@@ -360,8 +411,23 @@ function Detail3Hero({ article }) {
 		? article.imageCandidates
 		: [article.image];
 	const [src, setSrc] = useState(candidates[0]);
+	
+	// Preload hero image for faster loading
 	useEffect(() => {
 		setSrc(candidates[0]);
+		if (candidates[0]) {
+			const link = document.createElement('link');
+			link.rel = 'preload';
+			link.as = 'image';
+			link.href = candidates[0];
+			link.fetchPriority = 'high';
+			document.head.appendChild(link);
+			return () => {
+				if (link.parentNode) {
+					link.parentNode.removeChild(link);
+				}
+			};
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [article.slug]);
 	return (

@@ -52,7 +52,7 @@ export default function Navbar() {
 				/>
 				<div
 					className={[
-						"absolute right-0 top-11 z-50 w-72 overflow-hidden rounded-xl border bg-red-50 shadow-xl ring-1 ring-red-100 transition-all duration-200 ease-out dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800",
+						"absolute right-0 top-11 z-50 w-72 overflow-hidden rounded-xl border bg-white shadow-xl ring-1 ring-gray-200 transition-all duration-200 ease-out dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800",
 						show ? "translate-y-0 scale-100 opacity-100" : "-translate-y-2 scale-95 opacity-0",
 					].join(" ")}
 				>
@@ -107,7 +107,7 @@ export default function Navbar() {
 	}
 
 	return (
-		<header className="border-b bg-red-50 dark:border-gray-800 dark:bg-[#0B1220]">
+		<header className="border-b bg-gradient-to-b from-white to-gray-50 dark:from-[#0B1220] dark:to-[#0A0F1A] dark:border-gray-800">
 			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 				<div className="flex h-16 items-center justify-between">
 					<Link to="/" className="flex items-center gap-2">
@@ -123,14 +123,21 @@ export default function Navbar() {
 								to={item.to}
 								className={({ isActive }) =>
 									[
-										"px-2 py-1 text-sm font-medium transition",
+										"px-2 py-1 text-sm font-medium transition relative group",
 										isActive
 											? "text-primary"
-											: "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white",
+											: "text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary",
 									].join(" ")
 								}
 							>
-								{item.label}
+								{({ isActive }) => (
+									<>
+										{item.label}
+										<span className={`absolute bottom-0 left-2 right-2 h-0.5 bg-primary transition-all duration-300 ${
+											isActive ? "w-full" : "w-0 group-hover:w-full"
+										}`}></span>
+									</>
+								)}
 							</NavLink>
 						))}
 					</nav>

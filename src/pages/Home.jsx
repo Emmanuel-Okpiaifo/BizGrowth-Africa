@@ -1,9 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Ticker from "../components/Ticker";
 import SectionHeader from "../components/SectionHeader";
 import NewsCard from "../components/NewsCard";
-import NewsletterCTA from "../components/NewsletterCTA";
 import MarketsStrip from "../components/MarketsStrip";
 import HomepageCTABar from "../components/HomepageCTABar";
 import { useDailyOriginalArticles } from "../data/useDailyOriginalArticles";
@@ -18,6 +17,23 @@ export default function Home() {
 	const lead = articles[0];
 	const sideHeadlines = articles.slice(1, 5);
 	const analysis = articles.slice(4, 10);
+
+	// Preload hero image for faster loading
+	useEffect(() => {
+		if (lead?.image) {
+			const link = document.createElement('link');
+			link.rel = 'preload';
+			link.as = 'image';
+			link.href = lead.image;
+			link.fetchPriority = 'high';
+			document.head.appendChild(link);
+			return () => {
+				if (link.parentNode) {
+					link.parentNode.removeChild(link);
+				}
+			};
+		}
+	}, [lead?.image]);
 
 	// Curated category sections (independent of current filter)
 	// Funding & Deals removed
@@ -46,7 +62,9 @@ export default function Home() {
 									src={lead.image}
 									alt={lead.title}
 									className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.01]"
-									loading="lazy"
+									loading="eager"
+									fetchpriority="high"
+									decoding="async"
 									onError={(e) => {
 										const cands = Array.isArray(lead.imageCandidates) && lead.imageCandidates.length
 											? lead.imageCandidates
@@ -111,22 +129,24 @@ export default function Home() {
 				<SectionHeader title="Deep Dives & Analysis" />
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 					<div className="sm:col-span-2 lg:col-span-2">
-						{analysis[0] ? <NewsCard article={analysis[0]} variant="featured" /> : null}
+						{analysis[0] ? <NewsCard article={analysis[0]} variant="featured" index={0} /> : null}
 					</div>
-					{analysis.slice(1, 3).map((a) => (
-						<NewsCard key={a.url} article={a} variant="tall" />
+					{analysis.slice(1, 3).map((a, idx) => (
+						<NewsCard key={a.url} article={a} variant="tall" index={idx + 1} />
 					))}
 				</div>
 				<div className="rounded-2xl border bg-white p-4 shadow-sm ring-1 ring-gray-200 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
 					<ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-						{analysis.slice(3, 9).map((a) => (
+						{analysis.slice(3, 9).map((a, idx) => (
 							<li key={`${a.url}-mini`}>
 								<Link to={a.url} className="group flex items-start gap-3">
 									<img
 										src={a.image}
 										alt={a.title}
 										className="h-14 w-20 flex-none rounded-lg object-cover ring-1 ring-gray-200 transition group-hover:ring-primary/30 dark:ring-gray-800"
-										loading="lazy"
+										loading={idx < 3 ? "eager" : "lazy"}
+										fetchpriority={idx < 3 ? "high" : "auto"}
+										decoding="async"
 											onError={(e) => {
 												const cands = Array.isArray(a.imageCandidates) && a.imageCandidates.length
 													? a.imageCandidates
@@ -156,10 +176,6 @@ export default function Home() {
 
 			{/* Editor's Picks removed to keep exactly three sections */}
 
-			<div id="newsletter">
-				<NewsletterCTA />
-			</div>
-
 			<section className="grid gap-4 sm:grid-cols-2">
 				<Link
 					to="/opportunities"
@@ -172,7 +188,7 @@ export default function Home() {
 						Grants, accelerators, and partnerships tailored for MSMEs.
 					</p>
 					<div className="mt-4 text-sm font-semibold text-primary">Browse →</div>
-					<div className="mt-2 text-xs text-white/80">Have an opportunity? <Link className="underline" to="/contact">Submit it</Link></div>
+					<div className="mt-2 text-xs text-white/80">Have an opportunity? <Link className="underline" to="/contact#contact-form">Submit it</Link></div>
 				</Link>
 				<Link
 					to="/procurement-tenders"
@@ -185,7 +201,7 @@ export default function Home() {
 						Public and private tenders across Africa, updated regularly.
 					</p>
 					<div className="mt-4 text-sm font-semibold text-primary">Explore →</div>
-					<div className="mt-2 text-xs text-white/80">Have a tender? <Link className="underline" to="/contact">Post it</Link></div>
+					<div className="mt-2 text-xs text-white/80">Have a tender? <Link className="underline" to="/contact#contact-form">Post it</Link></div>
 				</Link>
 			</section>
 		</div>

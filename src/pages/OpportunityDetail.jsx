@@ -39,8 +39,23 @@ export default function OpportunityDetail() {
 		return Array.from(new Set(arr.filter(Boolean)));
 	}, [opp]);
 	const [heroSrc, setHeroSrc] = useState(candidates[0]);
+	
+	// Preload hero image for faster loading
 	useEffect(() => {
 		setHeroSrc(candidates[0]);
+		if (candidates[0]) {
+			const link = document.createElement('link');
+			link.rel = 'preload';
+			link.as = 'image';
+			link.href = candidates[0];
+			link.fetchPriority = 'high';
+			document.head.appendChild(link);
+			return () => {
+				if (link.parentNode) {
+					link.parentNode.removeChild(link);
+				}
+			};
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [id]);
 
@@ -272,7 +287,7 @@ export default function OpportunityDetail() {
 								<div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-5 shadow-md hover:shadow-lg transition-all">
 									<h3 className="font-bold text-gray-900 dark:text-white mb-4 text-lg">Similar Opportunities</h3>
 									<div className="space-y-3">
-										{more.slice(0, 4).map((m) => {
+										{more.slice(0, 4).map((m, idx) => {
 											const img = getOpportunityImage(m);
 											return (
 												<Link key={m.id} to={`/opportunities/${encodeURIComponent(m.id)}`} className="group block">
@@ -281,6 +296,9 @@ export default function OpportunityDetail() {
 															src={img}
 															alt={m.title}
 															className="h-full w-full object-cover group-hover:scale-105 transition"
+															loading={idx < 2 ? "eager" : "lazy"}
+															fetchpriority={idx < 2 ? "high" : "auto"}
+															decoding="async"
 															onError={(e) => {
 																if (e.currentTarget.src !== `https://source.unsplash.com/1600x900/?africa,business&sig=${m.id}`) {
 																	e.currentTarget.src = `https://source.unsplash.com/1600x900/?africa,business&sig=${m.id}`;

@@ -1,7 +1,8 @@
-import { Facebook, X, Instagram, Send, Globe, Heart, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Facebook, X, Instagram, Send, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import SEO from "../components/SEO";
+import MembershipForm from "../components/MembershipForm";
 
 export default function Community() {
 	const socialLinks = [
@@ -82,32 +83,6 @@ export default function Community() {
 		}
 	];
 
-	const benefits = [
-		{
-			title: "Strategic Networking",
-			description: "Connect with vetted entrepreneurs, investors, and industry leaders",
-			icon: "🌐",
-			gradient: "from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30"
-		},
-		{
-			title: "Knowledge Capital",
-			description: "Access expert guidance, market research, and proven business strategies",
-			icon: "📖",
-			gradient: "from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30"
-		},
-		{
-			title: "Growth Acceleration",
-			description: "Find partnerships, funding opportunities, and business expansion channels",
-			icon: "🚀",
-			gradient: "from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30"
-		},
-		{
-			title: "Community Support",
-			description: "Get mentorship, peer advice, and emotional support from your journey",
-			icon: "💼",
-			gradient: "from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30"
-		}
-	];
 
 	return (
 		<div className="min-h-screen bg-white dark:bg-[#0B1220]">
@@ -118,7 +93,7 @@ export default function Community() {
 			/>
 
 			{/* Hero Section */}
-			<section className="relative overflow-hidden px-4 pt-8 pb-20 sm:pt-12 sm:pb-32 lg:pt-16 lg:pb-40">
+			<section className="relative overflow-hidden px-4 pt-8 pb-8 sm:pt-12 sm:pb-12 lg:pt-16 lg:pb-16">
 				{/* Decorative Background */}
 				<div className="absolute inset-0 -z-10 overflow-hidden">
 					<div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/10 to-primary/5 rounded-full blur-3xl"></div>
@@ -167,35 +142,13 @@ export default function Community() {
 				</div>
 			</section>
 
-			{/* Benefits Section */}
-			<section className="mx-auto max-w-6xl px-4 py-20">
-				<div className="text-center mb-16">
-					<h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">Why Join BizGrowth?</h2>
-					<div className="w-16 h-1 bg-gradient-to-r from-primary to-primary/60 mx-auto rounded-full mb-6"></div>
-					<p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-						Designed for serious entrepreneurs who want to scale, learn, and network strategically
-					</p>
-				</div>
-
-				<div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-					{benefits.map((benefit, idx) => (
-						<div
-							key={idx}
-							className={`relative rounded-2xl bg-gradient-to-br ${benefit.gradient} border border-gray-200 dark:border-gray-700/50 p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden`}
-						>
-							<div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full -mr-10 -mt-10"></div>
-							<div className="relative z-10">
-								<div className="text-5xl mb-4">{benefit.icon}</div>
-								<h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{benefit.title}</h3>
-								<p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{benefit.description}</p>
-							</div>
-						</div>
-					))}
-				</div>
+			{/* Membership Form Section */}
+			<section className="mx-auto max-w-6xl px-4 py-8">
+				<MembershipForm />
 			</section>
 
 			{/* Community Groups Section */}
-			<section id="join-community" className="mx-auto max-w-6xl px-4 py-20">
+			<section id="join-community" className="mx-auto max-w-6xl px-4 pt-8 pb-20">
 				<div className="text-center mb-16">
 					<h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">Join Community Groups</h2>
 					<div className="w-16 h-1 bg-gradient-to-r from-primary to-primary/60 mx-auto rounded-full mb-6"></div>
@@ -278,69 +231,6 @@ export default function Community() {
 							</a>
 						);
 					})}
-				</div>
-			</section>
-
-
-			{/* CTA Section */}
-			<section className="mx-auto max-w-6xl px-4 pt-20 pb-8">
-				<div className="relative rounded-3xl overflow-hidden">
-					{/* Premium Background */}
-					<div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/70"></div>
-					<div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -mr-48 -mt-48 blur-3xl"></div>
-					<div className="absolute bottom-0 left-0 w-72 h-72 bg-white/5 rounded-full -ml-36 -mb-36 blur-3xl"></div>
-
-					<div className="relative px-8 py-16 sm:px-12 sm:py-20">
-						<div className="grid gap-12 sm:grid-cols-2">
-							{/* Values */}
-							<div>
-								<h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-									<Heart className="text-white w-7 h-7" />
-									Our Values
-								</h3>
-								<ul className="space-y-4">
-									{[
-										{ label: "Inclusivity", desc: "Welcome at every stage of your journey" },
-										{ label: "Excellence", desc: "Committed to the highest standards" },
-										{ label: "Collaboration", desc: "United strength beats individual effort" },
-										{ label: "Integrity", desc: "Transparent and ethical always" }
-									].map((value, i) => (
-										<li key={i} className="flex gap-3">
-											<span className="text-white font-bold mt-1">✓</span>
-											<div>
-												<div className="font-semibold text-white">{value.label}</div>
-												<div className="text-sm text-white/90">{value.desc}</div>
-											</div>
-										</li>
-									))}
-								</ul>
-							</div>
-
-							{/* Guidelines */}
-							<div>
-								<h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-									<Globe className="text-white w-7 h-7" />
-									Community Standards
-								</h3>
-								<ul className="space-y-4">
-									{[
-										{ label: "Respect", desc: "Treat all members with dignity" },
-										{ label: "Knowledge Sharing", desc: "Lift others as you grow" },
-										{ label: "Quality Engagement", desc: "Add value to conversations" },
-										{ label: "Professional Conduct", desc: "Maintain business etiquette" }
-									].map((guideline, i) => (
-										<li key={i} className="flex gap-3">
-											<span className="text-white font-bold mt-1">✓</span>
-											<div>
-												<div className="font-semibold text-white">{guideline.label}</div>
-												<div className="text-sm text-white/90">{guideline.desc}</div>
-											</div>
-										</li>
-									))}
-								</ul>
-							</div>
-						</div>
-					</div>
 				</div>
 			</section>
 		</div>

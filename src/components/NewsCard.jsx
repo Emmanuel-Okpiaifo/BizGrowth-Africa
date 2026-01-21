@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import placeholderUrl from "../assets/placeholder.svg";
 
-export default function NewsCard({ article, variant = "default" }) {
+export default function NewsCard({ article, variant = "default", index = 0 }) {
 	const { title, source, image, imageCandidates, url, publishedAt, summary, category } = article;
 
 	const candidates = useMemo(() => {
@@ -46,7 +46,8 @@ export default function NewsCard({ article, variant = "default" }) {
 					src={imgSrc || placeholderUrl}
 					alt={title}
 					className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-					loading="lazy"
+					loading={index < 3 || variant === "featured" ? "eager" : "lazy"}
+					fetchpriority={index < 3 || variant === "featured" ? "high" : "auto"}
 					decoding="async"
 					onLoad={() => setLoaded(true)}
 					onError={(e) => {

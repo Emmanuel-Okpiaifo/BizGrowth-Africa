@@ -16,7 +16,7 @@ function getOrgInitials(name = "") {
 	return parts.map((p) => p[0]?.toUpperCase() || "").join("");
 }
 
-export default function OpportunityCard({ opp, saved = false, onToggleSave, framed = true, showImage = false, styleVariant = "aurora" }) {
+export default function OpportunityCard({ opp, saved = false, onToggleSave, framed = true, showImage = false, styleVariant = "aurora", index = 0 }) {
 	const amount = formatAmount(opp.amountMin, opp.amountMax, opp.currency);
 	const deadline = opp.deadline ? new Date(opp.deadline).toLocaleDateString() : "TBA";
 	const featured = !!opp.featured;
@@ -56,7 +56,8 @@ export default function OpportunityCard({ opp, saved = false, onToggleSave, fram
 							src={img}
 							alt={opp.title}
 							className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-							loading="lazy"
+							loading={index < 4 ? "eager" : "lazy"}
+							fetchpriority={index < 4 ? "high" : "auto"}
 							decoding="async"
 							onLoad={() => setLoaded(true)}
 						/>

@@ -164,7 +164,7 @@ export default function Opportunities() {
 						</div>
 					) : (
 						<div className="grid gap-6 sm:grid-cols-2">
-							{paged.map((opp) => {
+							{paged.map((opp, idx) => {
 								const date = opp.postedAt || opp.deadline;
 								const preferred = pickNewsImageForOpportunity(opp, newsArticles);
 								const cands = (() => {
@@ -183,7 +183,8 @@ export default function Opportunities() {
 													src={img}
 													alt={opp.title}
 													className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-													loading="lazy"
+													loading={idx < 4 ? "eager" : "lazy"}
+													fetchpriority={idx < 4 ? "high" : "auto"}
 													decoding="async"
 													onError={(e) => {
 														try {
