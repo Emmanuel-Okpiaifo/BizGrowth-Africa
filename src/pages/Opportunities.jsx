@@ -6,7 +6,6 @@ import { opportunities as allOpps } from "../data/opportunities.sample";
 import BrandMarquee from "../components/BrandMarquee";
 import { getOpportunityImage, buildOpportunityImageCandidates } from "../data/opportunities.images";
 import { useDailyOriginalArticles } from "../data/useDailyOriginalArticles";
-// import FeaturedCarousel from "../components/FeaturedCarousel";
 
 function hashStringToInt(str) {
 	let h = 0;

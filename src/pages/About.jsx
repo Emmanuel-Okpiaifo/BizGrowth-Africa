@@ -74,40 +74,102 @@ export default function About() {
 			/>
 
 			{/* Hero Section */}
-			<section className="relative overflow-hidden px-4 pt-8 pb-12 sm:pt-12 sm:pb-16 lg:pt-16 lg:pb-20">
-				{/* Decorative Background */}
-				<div className="absolute inset-0 -z-10 overflow-hidden">
-					<div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/10 to-primary/5 rounded-full blur-3xl"></div>
-					<div className="absolute bottom-20 left-10 w-72 h-72 bg-gradient-to-tr from-primary/8 to-transparent rounded-full blur-3xl"></div>
-				</div>
+			<section className="relative overflow-hidden">
+				{/* Left Side - Content */}
+				<div className="relative mx-auto max-w-7xl px-4 py-16 sm:py-20 lg:py-24">
+					<div className="grid lg:grid-cols-2 gap-12 items-center">
+						{/* Text Content */}
+						<div className="space-y-6 lg:pr-8">
+							<h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-gray-900 dark:text-white leading-[1.1] tracking-tight">
+								Empowering{" "}
+								<span className="text-gray-700 dark:text-gray-300">African</span>{" "}
+								<span className="text-primary">MSMEs</span>
+								<br />
+								with{" "}
+								<span className="text-gray-700 dark:text-gray-300">Intelligence</span>{" "}
+								& <span className="text-primary">Opportunity</span>
+							</h1>
 
-				<div className="mx-auto max-w-4xl">
-					<div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2">
-						<Sparkles className="w-4 h-4 text-primary" />
-						<span className="text-sm font-semibold text-primary">About BizGrowth Africa</span>
+							<div className="pt-4 space-y-3">
+								<p className="text-lg text-gray-700 dark:text-gray-300 font-medium">
+									Your trusted source for business intelligence, funding opportunities, and growth resources across Africa.
+								</p>
+							</div>
+						</div>
+
+						{/* Right Side - Visual Elements */}
+						<div className="relative lg:pl-8">
+							<div className="relative">
+								{/* Grid Pattern Background */}
+								<div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-50"></div>
+								
+								{/* Floating Cards */}
+								<div className="relative space-y-6">
+									<div className="relative bg-white dark:bg-[#0B1220] border-2 border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-xl transform rotate-2 hover:rotate-0 transition-transform duration-300">
+										<div className="flex items-center gap-3 mb-3">
+											<div className="w-12 h-12 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+												<Briefcase className="w-6 h-6 text-primary" />
+											</div>
+											<div>
+												<div className="text-2xl font-bold text-gray-900 dark:text-white">1000+</div>
+												<div className="text-sm text-gray-600 dark:text-gray-400">Opportunities</div>
+											</div>
+										</div>
+									</div>
+
+									<div className="relative bg-white dark:bg-[#0B1220] border-2 border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-xl transform -rotate-1 hover:rotate-0 transition-transform duration-300 ml-auto" style={{width: '90%'}}>
+										<div className="flex items-center gap-3 mb-3">
+											<div className="w-12 h-12 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 flex items-center justify-center">
+												<Users className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+											</div>
+											<div>
+												<div className="text-2xl font-bold text-gray-900 dark:text-white">50K+</div>
+												<div className="text-sm text-gray-600 dark:text-gray-400">MSMEs Served</div>
+											</div>
+										</div>
+									</div>
+
+									<div className="relative bg-white dark:bg-[#0B1220] border-2 border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-xl transform rotate-1 hover:rotate-0 transition-transform duration-300">
+										<div className="flex items-center gap-3 mb-3">
+											<div className="w-12 h-12 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 flex items-center justify-center">
+												<Sparkles className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+											</div>
+											<div>
+												<div className="text-2xl font-bold text-gray-900 dark:text-white">24/7</div>
+												<div className="text-sm text-gray-600 dark:text-gray-400">Updated Content</div>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								{/* Decorative Elements */}
+								<div className="absolute -top-4 -right-4 w-24 h-24 bg-primary/10 dark:bg-primary/20 rounded-full blur-2xl"></div>
+								<div className="absolute -bottom-4 -left-4 w-32 h-32 bg-primary/5 dark:bg-primary/10 rounded-full blur-3xl"></div>
+							</div>
+						</div>
 					</div>
-
-					<h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-						Empowering African MSMEs with{" "}
-						<span className="inline text-red-600 dark:text-red-400">
-							Intelligence
-						</span>
-						<span className="block lg:inline lg:ml-1 text-red-600 dark:text-red-400">
-							& Opportunity
-						</span>
-					</h1>
-
-					<p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
-						BizGrowth Africa is a business intelligence platform designed to give African MSMEs access to timely, verified, and actionable information. We provide entrepreneurs with curated business news & insights, tenders, grants, market updates, and practical business resources that support informed decision-making and sustainable growth.
-					</p>
 				</div>
+
 			</section>
 
 			{/* Dividing Line */}
-			<div className="w-full border-t border-black dark:border-white"></div>
+			<div className="relative w-full py-8">
+				<div className="absolute inset-0 flex items-center">
+					<div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
+				</div>
+				<div className="relative flex justify-center">
+					<div className="bg-white dark:bg-[#0B1220] px-6">
+						<div className="flex items-center gap-2">
+							<div className="h-1.5 w-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
+							<div className="h-1.5 w-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
+							<div className="h-1.5 w-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
+						</div>
+					</div>
+				</div>
+			</div>
 
 			{/* Our Services Section */}
-			<section className="mx-auto max-w-4xl px-4 pt-12 pb-20 lg:pt-16">
+			<section className="mx-auto max-w-7xl px-4 pt-12 pb-20 lg:pt-16">
 				<div className="text-center mb-16">
 					<h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">Our Services</h2>
 					<div className="w-16 h-1 bg-gradient-to-r from-primary to-primary/60 mx-auto rounded-full mb-6"></div>
@@ -116,39 +178,33 @@ export default function About() {
 					</p>
 				</div>
 
-				<div className="relative">
-					{/* Vertical Timeline Line */}
-					<div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary via-primary/60 to-primary/30"></div>
-
-					<div className="space-y-12">
-						{services.map((service, idx) => {
-							const Icon = service.icon;
-							
-							return (
-								<div key={idx} className="relative flex gap-8 items-start">
-									{/* Milestone Marker */}
-									<div className="relative z-10 flex-shrink-0">
-										<div className={`w-16 h-16 rounded-full ${service.bgColor} ${service.bgColorDark} flex items-center justify-center shadow-lg border-4 border-white dark:border-[#0B1220]`}>
-											<Icon className="w-7 h-7 text-white" />
-										</div>
-										{idx < services.length - 1 && (
-											<div className={`absolute left-1/2 top-16 -translate-x-1/2 w-0.5 h-12 bg-gradient-to-b ${service.connectorColor} to-transparent`}></div>
-										)}
-									</div>
-
-									{/* Content */}
-									<div className="flex-1 pt-2">
-										<h3 className={`text-2xl sm:text-3xl font-bold ${service.iconColor} mb-4`}>
-											{service.title}
-										</h3>
-										<p className="text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-											{service.description}
-										</p>
-									</div>
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+					{services.map((service, idx) => {
+						const Icon = service.icon;
+						
+						return (
+							<div 
+								key={idx} 
+								className={`group relative bg-white dark:bg-[#0B1220] border-2 border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${service.gradient}`}
+							>
+								{/* Icon */}
+								<div className={`mb-4 inline-flex items-center justify-center w-14 h-14 rounded-xl ${service.bgColor} ${service.bgColorDark} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+									<Icon className="w-7 h-7 text-white" />
 								</div>
-							);
-						})}
-					</div>
+
+								{/* Content */}
+								<h3 className={`text-xl font-bold ${service.iconColor} mb-3 group-hover:translate-x-1 transition-transform duration-300`}>
+									{service.title}
+								</h3>
+								<p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+									{service.description}
+								</p>
+
+								{/* Hover Effect Gradient */}
+								<div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${service.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10`}></div>
+							</div>
+						);
+					})}
 				</div>
 			</section>
 		</div>
