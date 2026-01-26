@@ -4,8 +4,12 @@ import Footer from "./Footer";
 import RouteProgress from "./RouteProgress";
 import ScrollToTop from "./ScrollToTop";
 import Preloader from "./Preloader";
+import { usePageTracking } from "../hooks/usePageTracking";
 
 export default function Layout() {
+	// Track page views on route changes
+	usePageTracking();
+
 	return (
 		<div className="flex min-h-screen flex-col bg-white dark:bg-[#0B1220]">
 			<Preloader />
