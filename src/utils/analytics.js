@@ -19,6 +19,15 @@ function isGtagAvailable() {
  */
 export function trackPageView(pathname, search = '') {
 	if (!isGtagAvailable()) {
+		// Retry after a short delay if gtag isn't ready yet
+		setTimeout(() => {
+			if (isGtagAvailable()) {
+				const pagePath = pathname + search;
+				window.gtag('config', GA_MEASUREMENT_ID, {
+					page_path: pagePath,
+				});
+			}
+		}, 500);
 		return;
 	}
 

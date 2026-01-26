@@ -7,7 +7,9 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-JEYX2LNTQY');
+      gtag('config', 'G-JEYX2LNTQY', {
+        page_path: window.location.pathname + window.location.search
+      });
     </script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
