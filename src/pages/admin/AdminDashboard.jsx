@@ -128,7 +128,7 @@ export default function AdminDashboard() {
 			title: 'Create Article',
 			description: 'Write and publish a new news article',
 			icon: FileText,
-			link: '/admin/articles/new',
+			link: '/articles/new',
 			gradient: 'from-blue-500 to-cyan-500',
 			action: 'Create'
 		},
@@ -136,7 +136,7 @@ export default function AdminDashboard() {
 			title: 'Add Opportunity',
 			description: 'Post a new grant or funding opportunity',
 			icon: Briefcase,
-			link: '/admin/opportunities',
+			link: '/opportunities',
 			gradient: 'from-emerald-500 to-teal-500',
 			action: 'Add'
 		},
@@ -144,7 +144,7 @@ export default function AdminDashboard() {
 			title: 'Post Tender',
 			description: 'Add a new procurement tender',
 			icon: FolderOpen,
-			link: '/admin/tenders',
+			link: '/tenders',
 			gradient: 'from-amber-500 to-orange-500',
 			action: 'Post'
 		},
@@ -388,7 +388,7 @@ export default function AdminDashboard() {
 					<div className="flex items-center justify-between mb-6">
 						<h2 className="text-xl font-bold text-gray-900 dark:text-white">News Articles</h2>
 						<Link
-							to="/admin/articles"
+							to="/articles"
 							className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition shadow-sm"
 						>
 							<Plus size={16} />
@@ -424,7 +424,7 @@ export default function AdminDashboard() {
 							return (
 								<Link
 									key={idx}
-									to={`/admin/articles/edit/${article.slug}`}
+									to={`/articles/edit/${article.slug}`}
 									className="block p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-900 hover:border-primary/30 transition group"
 								>
 									<div className="flex items-start justify-between gap-4">
@@ -453,7 +453,7 @@ export default function AdminDashboard() {
 
 					{/* View All Link */}
 					<Link
-						to="/admin/articles"
+						to="/articles"
 						className="mt-4 block text-center py-3 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-primary hover:text-primary transition font-medium"
 					>
 						View All Articles →

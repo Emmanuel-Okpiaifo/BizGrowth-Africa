@@ -1,6 +1,5 @@
 import { Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
-import AdminLayout from "./components/admin/AdminLayout";
 import Home from "./pages/Home";
 import Opportunities from "./pages/Opportunities";
 import ProcurementTenders from "./pages/ProcurementTenders";
@@ -13,12 +12,6 @@ import Markets from "./pages/Markets";
 import MarketDetail from "./pages/MarketDetail";
 import NewsArticle from "./pages/NewsArticle";
 import OpportunityDetail from "./pages/OpportunityDetail";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminArticles from "./pages/admin/AdminArticles";
-import AdminArticlesEdit from "./pages/admin/AdminArticlesEdit";
-import AdminArticlesList from "./pages/admin/AdminArticlesList";
-import AdminOpportunities from "./pages/admin/AdminOpportunities";
-import AdminTenders from "./pages/admin/AdminTenders";
 
 export default function App() {
 	return (
@@ -36,16 +29,6 @@ export default function App() {
 				<Route path="community" element={<Community />} />
 				<Route path="about" element={<About />} />
 				<Route path="contact" element={<Contact />} />
-			</Route>
-			
-			{/* Admin Routes */}
-			<Route element={<AdminLayout />}>
-				<Route path="admin" element={<AdminDashboard />} />
-				<Route path="admin/articles" element={<AdminArticlesList />} />
-				<Route path="admin/articles/new" element={<AdminArticles />} />
-				<Route path="admin/articles/edit/:slug" element={<AdminArticlesEdit />} />
-				<Route path="admin/opportunities" element={<AdminOpportunities />} />
-				<Route path="admin/tenders" element={<AdminTenders />} />
 			</Route>
 		</Routes>
 	);
