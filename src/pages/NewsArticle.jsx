@@ -5,6 +5,7 @@ import NewsCard from "../components/NewsCard";
 import { allOriginalArticles } from "../data/originals.index";
 import { opportunities } from "../data/opportunities.sample";
 import { getOpportunityImage } from "../data/opportunities.images";
+import { useGoogleSheetsArticles } from "../hooks/useGoogleSheetsArticles";
 import SEO from "../components/SEO";
 import { SITE_URL } from "../config/site";
 
@@ -22,23 +23,53 @@ function formatDate(iso) {
 
 export default function NewsArticle() {
 	const { slug } = useParams();
+	const { articles: sheetsArticles, loading: sheetsLoading } = useGoogleSheetsArticles();
 
 	// Always scroll to top when opening or switching articles
 	useEffect(() => {
 		window.scrollTo({ top: 0, behavior: "smooth" });
 	}, [slug]);
 
+	// Combine static and Google Sheets articles
+	const allArticles = useMemo(() => {
+		const staticArticles = allOriginalArticles.map(a => ({
+			slug: a.slug,
+			title: a.title,
+			source: "BizGrowth Africa",
+			image: a.canonicalImage || a.image,
+			imageCandidates: a.imageCandidates,
+			url: `/news/${a.slug}`,
+			publishedAt: a.publishedAt,
+			summary: a.summary || a.subheading,
+			category: a.category,
+			subheading: a.subheading,
+			richBody: a.richBody,
+			body: a.body,
+			content: null,
+		}));
+		
+		// Combine, prioritizing Google Sheets articles
+		const combined = [...sheetsArticles, ...staticArticles];
+		// Remove duplicates by slug, keeping Google Sheets first
+		const seen = new Set();
+		return combined.filter(article => {
+			if (seen.has(article.slug)) return false;
+			seen.add(article.slug);
+			return true;
+		});
+	}, [sheetsArticles]);
+
 	const article = useMemo(
-		() => allOriginalArticles.find((a) => a.slug === slug),
-		[slug]
+		() => allArticles.find((a) => a.slug === slug),
+		[slug, allArticles]
 	);
 
 	const related = useMemo(() => {
 		if (!article) return [];
-		const sameCategory = allOriginalArticles.filter(
+		const sameCategory = allArticles.filter(
 			(a) => a.slug !== article.slug && a.category === article.category
 		);
-		const others = allOriginalArticles.filter(
+		const others = allArticles.filter(
 			(a) => a.slug !== article.slug && a.category !== article.category
 		);
 		const picks = [...sameCategory, ...others].slice(0, 6);
@@ -46,22 +77,21 @@ export default function NewsArticle() {
 		return picks.map((a) => ({
 			title: a.title,
 			source: "BizGrowth Africa",
-			image: a.canonicalImage || a.image,
-			imageCandidates: a.imageCandidates,
+			image: a.image || '',
+			imageCandidates: a.imageCandidates || [],
 			category: a.category,
 			publishedAt: a.publishedAt,
 			url: `/news/${a.slug}`,
 		}));
-	}, [article]);
+	}, [article, allArticles]);
 
 	// Collect all available images from other articles and opportunities for fallback
 	const availableImages = useMemo(() => {
 		const imagePool = [];
 		
 		// Collect images from other articles (excluding current article)
-		allOriginalArticles.forEach((a) => {
+		allArticles.forEach((a) => {
 			if (a.slug !== article?.slug) {
-				if (a.canonicalImage) imagePool.push(a.canonicalImage);
 				if (a.image) imagePool.push(a.image);
 				if (Array.isArray(a.imageCandidates)) {
 					imagePool.push(...a.imageCandidates);
@@ -77,7 +107,18 @@ export default function NewsArticle() {
 		
 		// Remove duplicates while preserving order
 		return Array.from(new Set(imagePool.filter(Boolean)));
-	}, [article?.slug]);
+	}, [article?.slug, allArticles]);
+
+	if (sheetsLoading && !article) {
+		return (
+			<div className="mx-auto max-w-5xl px-4 py-16">
+				<div className="rounded-2xl border bg-white p-12 text-center shadow-sm ring-1 ring-gray-200 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
+					<div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+					<p className="mt-4 text-gray-600 dark:text-gray-400">Loading article...</p>
+				</div>
+			</div>
+		);
+	}
 
 	if (!article) {
 		return (
@@ -123,7 +164,7 @@ export default function NewsArticle() {
 						name: "BizGrowth Africa",
 						logo: {
 							"@type": "ImageObject",
-							url: `${SITE_URL}/vite.svg`
+							url: `${SITE_URL}/favicon.png`
 						}
 					},
 					image: [(article.imageCandidates && article.imageCandidates[0]) || article.image],
@@ -145,29 +186,38 @@ export default function NewsArticle() {
 						<div className="lg:col-span-2">
 							<article className="space-y-6 text-base leading-relaxed text-gray-800 dark:text-gray-200">
 								{/* Article Body */}
-								{Array.isArray(article.richBody) && article.richBody.length
-									? article.richBody.map((para, idx) => (
-											<p key={idx} className="transition">
-												{Array.isArray(para)
-													? para.map((span, i) =>
-															span.href ? (
-																<a key={i} href={span.href} target="_blank" rel="noreferrer" className="text-primary hover:opacity-90 font-medium">
-																	{span.text}
-																</a>
-															) : (
-																<span key={i}>{span.text}</span>
-															)
-													  )
-													: typeof para === "string"
-													? para
-													: null}
-											</p>
-									  ))
-									: (article.body || []).map((para, idx) => (
-											<p key={idx} className="transition">
-												{para}
-											</p>
-									  ))}
+								{article.content ? (
+									// Render HTML content from Google Sheets (from rich text editor)
+									<div 
+										className="article-content"
+										style={{
+											lineHeight: '1.75',
+										}}
+										dangerouslySetInnerHTML={{ __html: article.content }}
+									/>
+								) : Array.isArray(article.richBody) && article.richBody.length ? (
+									article.richBody.map((para, idx) => (
+										<p key={idx} className="transition">
+											{Array.isArray(para)
+												? para.map((span, i) =>
+														span.href ? (
+															<a key={i} href={span.href} target="_blank" rel="noreferrer" className="text-primary hover:opacity-90 font-medium">
+																{span.text}
+															</a>
+														) : (
+															<span key={i}>{span.text}</span>
+														)
+												  )
+												: typeof para === "string"
+												? para
+												: null}
+										</p>
+									))
+								) : (article.body || []).map((para, idx) => (
+									<p key={idx} className="transition">
+										{para}
+									</p>
+								))}
 
 								{/* Pull Quote */}
 								{article.pullQuote ? (
