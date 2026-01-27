@@ -137,7 +137,7 @@ export default function AdminArticlesEdit() {
 				setStatus({ type: 'success', message: 'Article updated successfully!' });
 				// Redirect to articles list after a short delay
 				setTimeout(() => {
-					navigate('/admin/articles');
+					navigate('/articles');
 				}, 1500);
 			} else {
 				setStatus({ type: 'error', message: 'Failed to update article. Please try again.' });
@@ -167,7 +167,7 @@ export default function AdminArticlesEdit() {
 				<div className="flex items-center justify-between mb-6">
 					<div className="flex items-center gap-3">
 						<Link
-							to="/admin/articles"
+							to="/articles"
 							className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
 						>
 							<ArrowLeft size={18} />

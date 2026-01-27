@@ -46,7 +46,7 @@ export default function AdminArticlesList() {
 						Refresh
 					</button>
 					<Link
-						to="/admin/articles/new"
+						to="/articles/new"
 						className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 transition shadow-lg"
 					>
 						<Plus size={20} />
@@ -164,7 +164,7 @@ export default function AdminArticlesList() {
 								{/* Actions */}
 								<div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-800">
 									<Link
-										to={`/admin/articles/edit/${article.slug || idx}`}
+										to={`/articles/edit/${article.slug || idx}`}
 										className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white transition text-sm font-medium"
 									>
 										<Edit size={16} />

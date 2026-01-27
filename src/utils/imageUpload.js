@@ -28,7 +28,9 @@ export async function uploadImage(file, type = 'general') {
 	formData.append('type', type);
 
 	try {
-		const response = await fetch('/api/upload-image.php', {
+		// Use production API URL (works from both main site and admin subdomain)
+		const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.bizgrowthafrica.com';
+		const response = await fetch(`${apiBaseUrl}/api/upload-image.php`, {
 			method: 'POST',
 			body: formData
 		});

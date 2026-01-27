@@ -1,18 +1,24 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, FileText, Briefcase, FolderOpen, LogOut, Menu, X, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
+import { getCurrentUser, clearAuthSession } from "../../utils/adminAuth";
 
 export default function AdminLayout() {
 	const location = useLocation();
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 	const [dark, setDark] = useState(false);
+	const [currentUser, setCurrentUser] = useState(null);
 
-	// Initialize dark mode from localStorage
+	// Initialize dark mode from localStorage and get current user
 	useEffect(() => {
 		const stored = localStorage.getItem("theme");
 		const enabled = stored ? stored === "dark" : false;
 		document.documentElement.classList.toggle("dark", enabled);
 		setDark(enabled);
+		
+		// Get current logged-in user
+		const user = getCurrentUser();
+		setCurrentUser(user);
 	}, []);
 
 	function toggleTheme() {
@@ -23,10 +29,10 @@ export default function AdminLayout() {
 	}
 
 	const navItems = [
-		{ path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-		{ path: '/admin/articles', label: 'Articles', icon: FileText },
-		{ path: '/admin/opportunities', label: 'Opportunities', icon: Briefcase },
-		{ path: '/admin/tenders', label: 'Tenders', icon: FolderOpen },
+		{ path: '/', label: 'Dashboard', icon: LayoutDashboard },
+		{ path: '/articles', label: 'Articles', icon: FileText },
+		{ path: '/opportunities', label: 'Opportunities', icon: Briefcase },
+		{ path: '/tenders', label: 'Tenders', icon: FolderOpen },
 	];
 
 	return (
@@ -37,7 +43,7 @@ export default function AdminLayout() {
 					<div className="flex h-16 items-center justify-between">
 						{/* Logo & Title */}
 						<Link 
-							to="/admin" 
+							to="/" 
 							className="flex items-center gap-3 group transition-transform duration-300 hover:scale-105"
 						>
 							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-red-700 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
@@ -79,6 +85,14 @@ export default function AdminLayout() {
 
 						{/* Actions */}
 						<div className="flex items-center gap-2 sm:gap-3">
+							{/* Current User - Hidden on mobile */}
+							{currentUser && (
+								<div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-300">
+									<div className="w-2 h-2 rounded-full bg-green-500"></div>
+									<span className="font-medium">{currentUser}</span>
+								</div>
+							)}
+							
 							{/* Dark Mode Toggle - Hidden on mobile, visible on desktop */}
 							<button
 								type="button"
@@ -99,13 +113,21 @@ export default function AdminLayout() {
 								</div>
 							</button>
 
-							<Link
-								to="/"
+							<a
+								href="https://bizgrowthafrica.com"
+								target="_blank"
+								rel="noopener noreferrer"
 								className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 hover:scale-105 active:scale-95"
 							>
 								View Site
-							</Link>
-							<button className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all duration-300 hover:scale-105 active:scale-95">
+							</a>
+							<button 
+								onClick={() => {
+									clearAuthSession();
+									window.location.reload();
+								}}
+								className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all duration-300 hover:scale-105 active:scale-95"
+							>
 								<LogOut size={18} />
 								Logout
 							</button>
@@ -162,13 +184,24 @@ export default function AdminLayout() {
 							);
 						})}
 						<div className="pt-2 border-t border-gray-200 dark:border-gray-800 mt-2">
-							<Link
-								to="/"
+							{/* Current User in Mobile Menu */}
+							{currentUser && (
+								<div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-lg bg-gray-100 dark:bg-gray-800">
+									<div className="w-2 h-2 rounded-full bg-green-500"></div>
+									<span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+										Logged in as: <span className="text-primary">{currentUser}</span>
+									</span>
+								</div>
+							)}
+							<a
+								href="https://bizgrowthafrica.com"
+								target="_blank"
+								rel="noopener noreferrer"
 								onClick={() => setSidebarOpen(false)}
 								className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 hover:scale-105 active:scale-95"
 							>
 								View Site
-							</Link>
+							</a>
 							<button
 								onClick={() => {
 									setSidebarOpen(false);
@@ -183,7 +216,11 @@ export default function AdminLayout() {
 								</div>
 							</button>
 							<button
-								onClick={() => setSidebarOpen(false)}
+								onClick={() => {
+									clearAuthSession();
+									setSidebarOpen(false);
+									window.location.reload();
+								}}
 								className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all duration-300"
 							>
 								<LogOut size={18} />
@@ -207,9 +244,9 @@ export default function AdminLayout() {
 							© {new Date().getFullYear()} BizGrowth Africa Admin Panel
 						</div>
 						<div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-							<Link to="/" className="hover:text-primary transition">View Website</Link>
+							<a href="https://bizgrowthafrica.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition">View Website</a>
 							<span>•</span>
-							<Link to="/contact" className="hover:text-primary transition">Support</Link>
+							<a href="https://bizgrowthafrica.com/contact" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition">Support</a>
 						</div>
 					</div>
 				</div>
