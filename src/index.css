@@ -16,3 +16,36 @@
     @apply text-primary hover:opacity-90;
   }
 }
+
+@layer components {
+  .article-content {
+    @apply text-gray-800 dark:text-gray-200;
+  }
+  .article-content p {
+    @apply mb-4 leading-relaxed;
+  }
+  .article-content h1, .article-content h2, .article-content h3 {
+    @apply font-bold mt-6 mb-4 text-gray-900 dark:text-white;
+  }
+  .article-content h2 {
+    @apply text-2xl;
+  }
+  .article-content h3 {
+    @apply text-xl;
+  }
+  .article-content ul, .article-content ol {
+    @apply mb-4 ml-6;
+  }
+  .article-content li {
+    @apply mb-2;
+  }
+  .article-content a {
+    @apply text-primary hover:underline;
+  }
+  .article-content img {
+    @apply rounded-lg my-4 max-w-full h-auto;
+  }
+  .article-content blockquote {
+    @apply border-l-4 border-primary pl-4 italic my-4 text-gray-700 dark:text-gray-300;
+  }
+}

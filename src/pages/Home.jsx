@@ -6,13 +6,26 @@ import NewsCard from "../components/NewsCard";
 import MarketsStrip from "../components/MarketsStrip";
 import HomepageCTABar from "../components/HomepageCTABar";
 import { useDailyOriginalArticles } from "../data/useDailyOriginalArticles";
+import { useGoogleSheetsArticles } from "../hooks/useGoogleSheetsArticles";
 import SEO from "../components/SEO";
 
 export default function Home() {
-	const { articles } = useDailyOriginalArticles();
+	const { articles: staticArticles } = useDailyOriginalArticles();
+	const { articles: sheetsArticles, loading: sheetsLoading } = useGoogleSheetsArticles();
+	
+	// Combine static and Google Sheets articles, prioritizing Google Sheets
+	const articles = useMemo(() => {
+		const combined = [...sheetsArticles, ...staticArticles];
+		// Remove duplicates by slug, keeping Google Sheets articles first
+		const seen = new Set();
+		return combined.filter(article => {
+			if (seen.has(article.slug)) return false;
+			seen.add(article.slug);
+			return true;
+		});
+	}, [sheetsArticles, staticArticles]);
 
 	const trending = articles.slice(0, 8);
-	// const picks = articles.slice(8, 16); // removed to keep exactly 3 content sections after hero
 
 	const lead = articles[0];
 	const sideHeadlines = articles.slice(1, 5);
@@ -34,9 +47,6 @@ export default function Home() {
 			};
 		}
 	}, [lead?.image]);
-
-	// Curated category sections (independent of current filter)
-	// Funding & Deals removed
 
 	return (
 		<div className="space-y-10">
@@ -120,9 +130,6 @@ export default function Home() {
 
 			<MarketsStrip />
 
-			{/* Latest Headlines section removed */}
-
-			{/* Funding & Deals section removed */}
 
 			{/* Trending Stories */}
 			<section className="space-y-4">

@@ -1,22 +1,42 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Newspaper } from "lucide-react";
 import SectionHeader from "../components/SectionHeader";
 import NewsCard from "../components/NewsCard";
-import { allOriginalArticles } from "../data/originals.index";
 import CategoryPills from "../components/CategoryPills";
 import SEO from "../components/SEO";
+import { allOriginalArticles } from "../data/originals.index";
+import { useGoogleSheetsArticles } from "../hooks/useGoogleSheetsArticles";
 
 export default function NewsInsights() {
-  const articles = allOriginalArticles.map((a) => ({
-		title: a.title,
-		source: "BizGrowth Africa",
-    image: a.canonicalImage || a.image,
-    imageCandidates: a.imageCandidates,
-		url: `/news/${a.slug}`,
-		publishedAt: a.publishedAt,
-		summary: a.summary || a.subheading,
-		category: a.category,
-	})).slice(0, 3);
+	const { articles: sheetsArticles, loading: sheetsLoading } = useGoogleSheetsArticles();
+	
+	// Combine static and Google Sheets articles
+	const allArticles = useMemo(() => {
+		const staticArticles = allOriginalArticles.map((a) => ({
+			title: a.title,
+			source: "BizGrowth Africa",
+			image: a.canonicalImage || a.image,
+			imageCandidates: a.imageCandidates,
+			url: `/news/${a.slug}`,
+			publishedAt: a.publishedAt,
+			summary: a.summary || a.subheading,
+			category: a.category,
+			slug: a.slug,
+		}));
+		
+		// Combine, prioritizing Google Sheets articles
+		const combined = [...sheetsArticles, ...staticArticles];
+		// Remove duplicates by slug
+		const seen = new Set();
+		return combined.filter(article => {
+			if (seen.has(article.slug)) return false;
+			seen.add(article.slug);
+			return true;
+		});
+	}, [sheetsArticles]);
+	
+	// Show only first 3 articles
+	const articles = allArticles.slice(0, 3);
 	const categories = Array.from(new Set(articles.map((a) => a.category))).sort();
 
 	// Preload first article image for faster loading
@@ -57,13 +77,25 @@ export default function NewsInsights() {
 			<SectionHeader title="Latest" />
 
 			{/* Full-width dense grid of cards with no unused sidebar space */}
-			<div>
-				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					{articles.map((a, idx) => (
-						<NewsCard key={a.url} article={a} index={idx} />
-					))}
+			{sheetsLoading && articles.length === 0 ? (
+				<div className="text-center py-12">
+					<div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+					<p className="mt-4 text-gray-600 dark:text-gray-400">Loading articles...</p>
 				</div>
-			</div>
+			) : articles.length === 0 ? (
+				<div className="text-center py-12 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0B1220]">
+					<Newspaper className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+					<p className="text-gray-600 dark:text-gray-400">No articles available</p>
+				</div>
+			) : (
+				<div>
+					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+						{articles.map((a, idx) => (
+							<NewsCard key={a.url} article={a} index={idx} />
+						))}
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

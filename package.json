@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:php": "php -S localhost:8000 -t .",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:php\"",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -14,6 +16,9 @@
     "@fortawesome/free-brands-svg-icons": "^7.1.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/react-fontawesome": "^3.1.1",
+    "@tiptap/extension-image": "^3.17.1",
+    "@tiptap/react": "^3.17.1",
+    "@tiptap/starter-kit": "^3.17.1",
     "lucide-react": "0.562.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
