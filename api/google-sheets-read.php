@@ -17,8 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     json_error('Method not allowed', 405);
 }
 
-// Get parameters
-$sheetName = $_GET['sheet'] ?? 'Articles';
+// Get parameters (sheet = tab name, e.g. Articles, Opportunities, Tenders - must match exactly)
+$sheetName = isset($_GET['sheet']) ? trim((string) $_GET['sheet']) : 'Articles';
 $range = $_GET['range'] ?? 'A1:Z1000';
 
 // Get API key and spreadsheet ID from environment or config

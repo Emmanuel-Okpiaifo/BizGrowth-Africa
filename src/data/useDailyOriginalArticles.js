@@ -33,17 +33,21 @@ export function useDailyOriginalArticles() {
 		const rotated = rotateByDate(allOriginalArticles, todayKey);
 		// Map to homepage/article-card shape and stamp today's date to simulate daily freshness
 		const todayIso = new Date().toISOString();
-		return rotated.map((a) => ({
-			slug: a.slug,
-			title: a.title,
-			source: "BizGrowth Africa",
-			image: a.canonicalImage || a.image,
-			imageCandidates: a.imageCandidates,
-			url: `/news/${a.slug}`,
-			publishedAt: todayIso,
-			summary: a.summary || a.subheading,
-			category: a.category,
-		}));
+		return rotated.map((a) => {
+			const img = a.canonicalImage || a.image;
+			return {
+				slug: a.slug,
+				title: a.title,
+				source: "BizGrowth Africa",
+				image: img,
+				heroImage: img,
+				imageCandidates: a.imageCandidates || (img ? [img] : []),
+				url: `/news/${a.slug}`,
+				publishedAt: todayIso,
+				summary: a.summary || a.subheading,
+				category: a.category,
+			};
+		});
 	}, [todayKey]);
 
 	return { articles, todayKey };

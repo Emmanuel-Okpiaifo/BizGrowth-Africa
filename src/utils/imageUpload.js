@@ -41,7 +41,18 @@ export async function uploadImage(file, type = 'general') {
 		}
 
 		const result = await response.json();
-		return result.url;
+		console.log('Upload response:', result);
+		
+		// The PHP script now returns absolute URLs, but handle both cases
+		let imageUrl = result.url;
+		if (imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+			// If relative URL, prepend the API base URL (without /api)
+			const baseUrl = apiBaseUrl.replace(/\/api$/, '').replace(/\/$/, '');
+			imageUrl = baseUrl + (imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl);
+		}
+		
+		console.log('Final image URL:', imageUrl);
+		return imageUrl;
 	} catch (error) {
 		console.error('Image upload error:', error);
 		throw error;

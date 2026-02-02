@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:admin": "vite --config vite.config.admin.js",
     "dev:php": "php -S localhost:8000 -t .",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:php\"",
+    "dev:admin:all": "concurrently \"npm run dev:admin\" \"npm run dev:php\"",
     "build": "vite build",
     "build:admin": "vite build --config vite.config.admin.js && node scripts/rename-admin-index.js",
+    "preview:admin": "vite preview --config vite.config.admin.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },

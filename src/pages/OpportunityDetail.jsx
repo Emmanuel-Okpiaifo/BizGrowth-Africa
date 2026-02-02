@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import SEO from "../components/SEO";
-import { opportunities } from "../data/opportunities.sample";
+import { opportunities as placeholderOpps } from "../data/opportunities.sample";
 import { getOpportunityImage, buildOpportunityImageCandidates } from "../data/opportunities.images";
+import { useGoogleSheetsOpportunities } from "../hooks/useGoogleSheetsOpportunities";
 import { Calendar, MapPin, BadgeDollarSign, Tag, ArrowRight, Building2 } from "lucide-react";
 
 function formatAmount(min, max, currency = "USD") {
@@ -15,7 +16,33 @@ function formatAmount(min, max, currency = "USD") {
 
 export default function OpportunityDetail() {
 	const { id } = useParams();
-	const opp = opportunities.find((o) => o.id === id);
+	const { opportunities: sheetsOpps, loading } = useGoogleSheetsOpportunities();
+	
+	// Combine Google Sheets opportunities with placeholders
+	const allOpportunities = useMemo(() => {
+		const combined = [...sheetsOpps, ...placeholderOpps];
+		// Remove duplicates by ID, keeping Google Sheets first
+		const seen = new Set();
+		return combined.filter(opp => {
+			const key = opp.id;
+			if (seen.has(key)) return false;
+			seen.add(key);
+			return true;
+		});
+	}, [sheetsOpps]);
+	
+	const opp = allOpportunities.find((o) => o.id === id);
+
+	if (loading) {
+		return (
+			<div className="mx-auto max-w-3xl px-4 py-16">
+				<div className="rounded-2xl border bg-white p-12 text-center shadow-sm ring-1 ring-gray-200 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
+					<div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+					<p className="mt-4 text-gray-600 dark:text-gray-400">Loading opportunity...</p>
+				</div>
+			</div>
+		);
+	}
 
 	if (!opp) {
 		return (
@@ -31,18 +58,22 @@ export default function OpportunityDetail() {
 		);
 	}
 
-	const more = opportunities.filter((o) => o.id !== opp.id).slice(0, 6);
+	const more = allOpportunities.filter((o) => o.id !== opp.id).slice(0, 6);
 
-	// Images
+	// Images - Prioritize heroImage if available, with final picsum fallback
+	const picsumFallback = `https://picsum.photos/seed/${encodeURIComponent(opp.id || opp.title || 'opp')}/1600/900`;
 	const candidates = useMemo(() => {
-		const arr = [getOpportunityImage(opp), ...buildOpportunityImageCandidates(opp)];
-		return Array.from(new Set(arr.filter(Boolean)));
-	}, [opp]);
-	const [heroSrc, setHeroSrc] = useState(candidates[0]);
+		const heroImage = opp.heroImage || '';
+		const fallbackImages = [getOpportunityImage(opp), ...buildOpportunityImageCandidates(opp)].filter(Boolean);
+		const uniqueFallbacks = Array.from(new Set(fallbackImages));
+		const list = heroImage ? [heroImage, ...uniqueFallbacks] : uniqueFallbacks;
+		return list.length > 0 ? [...list, picsumFallback] : [picsumFallback];
+	}, [opp, picsumFallback]);
+	const [heroSrc, setHeroSrc] = useState(candidates[0] || picsumFallback);
 	
 	// Preload hero image for faster loading
 	useEffect(() => {
-		setHeroSrc(candidates[0]);
+		setHeroSrc(candidates[0] || '');
 		if (candidates[0]) {
 			const link = document.createElement('link');
 			link.rel = 'preload';
@@ -57,7 +88,7 @@ export default function OpportunityDetail() {
 			};
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [id]);
+	}, [id, opp.heroImage]);
 
 	return (
 		<div className="min-h-screen bg-white dark:bg-gray-900">
@@ -84,9 +115,10 @@ export default function OpportunityDetail() {
 									fetchpriority="high"
 									decoding="async"
 									onError={(e) => {
-										const i = candidates.indexOf(e.currentTarget.src);
+										const current = e.currentTarget.src;
+										const i = candidates.indexOf(current);
 										const next = candidates[i + 1] || candidates[0];
-										if (next && next !== e.currentTarget.src) setHeroSrc(next);
+										if (next && next !== current) setHeroSrc(next);
 									}}
 								/>
 								{opp.category ? (

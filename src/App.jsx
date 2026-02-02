@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { ErrorBoundary } from "./components/admin/ErrorBoundary";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Opportunities from "./pages/Opportunities";
@@ -12,9 +13,11 @@ import Markets from "./pages/Markets";
 import MarketDetail from "./pages/MarketDetail";
 import NewsArticle from "./pages/NewsArticle";
 import OpportunityDetail from "./pages/OpportunityDetail";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 export default function App() {
 	return (
+		<ErrorBoundary>
 		<Routes>
 			<Route element={<Layout />}>
 				<Route index element={<Home />} />
@@ -29,7 +32,9 @@ export default function App() {
 				<Route path="community" element={<Community />} />
 				<Route path="about" element={<About />} />
 				<Route path="contact" element={<Contact />} />
+				<Route path="privacy-policy" element={<PrivacyPolicy />} />
 			</Route>
 		</Routes>
+		</ErrorBoundary>
 	);
 }

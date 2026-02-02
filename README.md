@@ -50,7 +50,7 @@ npm run preview
   - `NewsArticle.jsx` — single article page (rich body, citations, stats, related)
 - `src/components/` — shared UI components
   - `SEO.jsx` — sets meta tags, canonical, OG/Twitter, JSON-LD
-  - `NewsCard.jsx`, `NewsInlineCard.jsx`, `SectionHeader.jsx`, `NewsletterCTA.jsx`, etc.
+  - `NewsCard.jsx`, `SectionHeader.jsx`, `HomepageCTABar.jsx`, etc.
   - `RouteProgress.jsx` — subtle top progress bar on route changes
 - `src/data/` — data and helpers
   - `articles.original.js` — seed set of BizGrowth original articles
@@ -99,17 +99,19 @@ npm run preview
 - Accuracy first: inline citations in article bodies point to authoritative sources (central banks, multilaterals, exchanges, research providers, etc.).
 
 ## Deployment notes
-- This is a Vite app; deploy on any static hosting (Netlify, Vercel, Cloudflare Pages, S3 + CDN).
+- This is a Vite app; deploy on cPanel (Syskay) with PHP API proxy.
 - Ensure `SITE_URL` matches the production domain before building.
-- Consider generating a dynamic sitemap at build time (include all `news/:slug` URLs).
+- Admin panel is deployed on separate subdomain: `admin.bizgrowthafrica.com`
+- See `BizGrowth_Africa_Complete_Documentation.md` for full deployment instructions.
 
-### cPanel (Syskay) with PHP API proxy
-1) Build the React app and upload `dist/` contents into `/public_html/`.
-2) Upload the `api/` folder into `/public_html/api` (keep structure).
-3) Create a keys file OUTSIDE web root:
-   `/home/<CPANEL_USER>/secure/bizgrowth_keys.php` with:
-   ```php
-   <?php
+### Quick Deployment Reference
+1) Build main website: `npm run build` → Upload `dist/` to `public_html/`
+2) Build admin panel: `npm run build:admin` → Upload `dist-admin/` to admin subdomain folder
+3) Upload `api/` folder to `public_html/api/`
+4) Upload `.htaccess` to both main site and admin subdomain
+5) Set up environment variables in cPanel
+
+**For complete setup instructions, see `BizGrowth_Africa_Complete_Documentation.md`**
    return [
      'ALPHAVANTAGE_API_KEY' => 'YOUR_KEY',
      'FRED_API_KEY' => 'YOUR_KEY',

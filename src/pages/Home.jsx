@@ -33,11 +33,12 @@ export default function Home() {
 
 	// Preload hero image for faster loading
 	useEffect(() => {
-		if (lead?.image) {
+		const heroUrl = lead?.heroImage || lead?.image;
+		if (heroUrl) {
 			const link = document.createElement('link');
 			link.rel = 'preload';
 			link.as = 'image';
-			link.href = lead.image;
+			link.href = heroUrl;
 			link.fetchPriority = 'high';
 			document.head.appendChild(link);
 			return () => {
@@ -46,7 +47,7 @@ export default function Home() {
 				}
 			};
 		}
-	}, [lead?.image]);
+	}, [lead?.heroImage, lead?.image]);
 
 	return (
 		<div className="space-y-10">
@@ -69,19 +70,22 @@ export default function Home() {
 						>
 							<div className="relative aspect-[3/4] sm:aspect-[4/3] lg:aspect-[16/9]">
 								<img
-									src={lead.image}
+									src={lead.heroImage || lead.image}
 									alt={lead.title}
 									className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.01]"
 									loading="eager"
 									fetchpriority="high"
 									decoding="async"
 									onError={(e) => {
+										const hero = lead.heroImage || '';
 										const cands = Array.isArray(lead.imageCandidates) && lead.imageCandidates.length
 											? lead.imageCandidates
-											: [lead.image];
-										const idx = cands.findIndex((u) => u === e.currentTarget.src);
-										const next = cands[idx + 1];
-										e.currentTarget.src = next || cands[0];
+											: [lead.image].filter(Boolean);
+										const allCandidates = hero ? [hero, ...cands] : cands;
+										const fallback = `https://picsum.photos/seed/${encodeURIComponent(lead.slug || lead.title || 'lead')}/1600/900`;
+										const idx = [...allCandidates, fallback].findIndex((u) => u === e.currentTarget.src);
+										const next = [...allCandidates, fallback][idx + 1] || fallback;
+										e.currentTarget.src = next;
 									}}
 								/>
 								<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
@@ -148,20 +152,23 @@ export default function Home() {
 							<li key={`${a.url}-mini`}>
 								<Link to={a.url} className="group flex items-start gap-3">
 									<img
-										src={a.image}
+										src={a.heroImage || a.image}
 										alt={a.title}
 										className="h-14 w-20 flex-none rounded-lg object-cover ring-1 ring-gray-200 transition group-hover:ring-primary/30 dark:ring-gray-800"
 										loading={idx < 3 ? "eager" : "lazy"}
 										fetchpriority={idx < 3 ? "high" : "auto"}
 										decoding="async"
-											onError={(e) => {
-												const cands = Array.isArray(a.imageCandidates) && a.imageCandidates.length
-													? a.imageCandidates
-													: [a.image];
-												const idx = cands.findIndex((u) => u === e.currentTarget.src);
-												const next = cands[idx + 1];
-												e.currentTarget.src = next || cands[0];
-											}}
+										onError={(e) => {
+											const hero = a.heroImage || '';
+											const cands = Array.isArray(a.imageCandidates) && a.imageCandidates.length
+												? a.imageCandidates
+												: [a.image].filter(Boolean);
+											const allCandidates = hero ? [hero, ...cands] : cands;
+											const fallback = `https://picsum.photos/seed/${encodeURIComponent(a.slug || a.title || 'news')}/400/300`;
+											const idx = [...allCandidates, fallback].findIndex((u) => u === e.currentTarget.src);
+											const next = [...allCandidates, fallback][idx + 1] || fallback;
+											e.currentTarget.src = next;
+										}}
 									/>
 									<div>
 										<p className="line-clamp-2 text-sm font-semibold text-gray-900 transition group-hover:text-primary dark:text-white">

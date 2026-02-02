@@ -48,17 +48,24 @@ export async function getSheetData(sheetName, range = 'A1:Z1000') {
 		const rows = data.values.slice(1);
 		console.log('Number of rows:', rows.length);
 
-		// Convert to array of objects
+		// Convert to array of objects with lowercase keys (so title/Title/status/Status all work)
 		const result = rows
 			.map((row, rowIndex) => {
 				const obj = {};
 				headers.forEach((header, index) => {
-					// Trim header names to handle any whitespace
 					const cleanHeader = header ? header.trim() : '';
-					obj[cleanHeader] = row[index] || '';
+					const value = row[index] ?? '';
+					obj[cleanHeader] = typeof value === 'string' ? value.trim() : value;
 				});
-				console.log(`Row ${rowIndex + 1}:`, obj);
-				return obj;
+				// Normalize keys to lowercase so hooks can use opp.title, opp.status regardless of sheet header case
+				const normalized = {};
+				Object.keys(obj).forEach((k) => {
+					if (k) normalized[k.toLowerCase()] = obj[k];
+				});
+				if (import.meta.env.DEV && rowIndex < 2) {
+					console.log(`Sheet "${sheetName}" row ${rowIndex + 1}:`, normalized);
+				}
+				return normalized;
 			})
 			.filter((row, rowIndex) => {
 				// Filter out completely empty rows
@@ -76,7 +83,8 @@ export async function getSheetData(sheetName, range = 'A1:Z1000') {
 		return result;
 	} catch (error) {
 		console.error('Error fetching from Google Sheets:', error);
-		return [];
+		// Rethrow so hooks can set error state and show a message (e.g. Opportunities page)
+		throw error;
 	}
 }
 
@@ -188,6 +196,63 @@ export async function updateSheetRow(sheetName, rowIndex, data) {
 		return true;
 	} catch (error) {
 		console.error('Error updating Google Sheets:', error);
+		return false;
+	}
+}
+
+/**
+ * Delete a row from Google Sheet
+ * @param {string} sheetName - Name of the sheet tab
+ * @param {number} rowIndex - Row index (1-based, where 1 = first data row after header)
+ * @returns {Promise<boolean>} Success status
+ */
+export async function deleteSheetRow(sheetName, rowIndex) {
+	// Use PHP proxy to avoid CORS issues with Google Apps Script
+	// Use production API URL (works from both local and production)
+	const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.bizgrowthafrica.com';
+	const proxyUrl = `${apiBaseUrl}/api/google-sheets-proxy.php`;
+	
+	try {
+		const response = await fetch(proxyUrl, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				action: 'delete',
+				sheet: sheetName,
+				row: rowIndex
+			})
+		});
+
+		const responseText = await response.text();
+		console.log('Delete response:', responseText);
+
+		if (!response.ok) {
+			throw new Error(`Failed to delete row: ${response.status} - ${responseText}`);
+		}
+
+		// Try to parse as JSON
+		let result;
+		try {
+			result = JSON.parse(responseText);
+		} catch (e) {
+			throw new Error(`Invalid JSON response: ${responseText}`);
+		}
+
+		if (result.success === true) {
+			console.log('✅ Successfully deleted row from Google Sheets');
+			return true;
+		}
+
+		if (result.error) {
+			console.error('❌ Google Apps Script error:', result.error);
+			throw new Error(result.error);
+		}
+
+		return false;
+	} catch (error) {
+		console.error('Error deleting from Google Sheets:', error);
 		return false;
 	}
 }

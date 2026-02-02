@@ -7,6 +7,11 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
+      // Set default consent mode to denied (will be updated when user accepts)
+      gtag('consent', 'default', {
+        'analytics_storage': 'denied',
+        'ad_storage': 'denied'
+      });
       gtag('config', 'G-JEYX2LNTQY', {
         page_path: window.location.pathname + window.location.search
       });

@@ -2,10 +2,11 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Briefcase, Search, ArrowRight } from "lucide-react";
 import SEO from "../components/SEO";
-import { opportunities as allOpps } from "../data/opportunities.sample";
+import { opportunities as placeholderOpps } from "../data/opportunities.sample";
 import BrandMarquee from "../components/BrandMarquee";
 import { getOpportunityImage, buildOpportunityImageCandidates } from "../data/opportunities.images";
 import { useDailyOriginalArticles } from "../data/useDailyOriginalArticles";
+import { useGoogleSheetsOpportunities } from "../hooks/useGoogleSheetsOpportunities";
 
 function hashStringToInt(str) {
 	let h = 0;
@@ -31,10 +32,35 @@ function pickNewsImageForOpportunity(opp, articles) {
 }
 
 export default function Opportunities() {
+	const { opportunities: sheetsOpps, loading: sheetsLoading, error: sheetsError } = useGoogleSheetsOpportunities();
+	
+	// Combine Google Sheets opportunities with placeholders
+	const allOpps = useMemo(() => {
+		// Map Google Sheets opportunities to match placeholder format
+		const mappedSheets = sheetsOpps.map(opp => ({
+			...opp,
+			id: opp.id || `opp-${opp.title?.toLowerCase().replace(/\s+/g, '-')}`,
+			// Ensure all required fields are present
+			featured: opp.featured === true || opp.featured === 'true',
+			tags: Array.isArray(opp.tags) ? opp.tags : (opp.tags ? [opp.tags] : [])
+		}));
+		
+		// Combine with placeholders, prioritizing Google Sheets
+		const combined = [...mappedSheets, ...placeholderOpps];
+		// Remove duplicates by ID/title, keeping Google Sheets first
+		const seen = new Set();
+		return combined.filter(opp => {
+			const key = opp.id || opp.title;
+			if (seen.has(key)) return false;
+			seen.add(key);
+			return true;
+		});
+	}, [sheetsOpps]);
+	
 	const categories = ["All", "Grant", "Accelerator", "Competition", "Fellowship", "Training", "Impact Loan"];
 	const regions = ["All", "West Africa", "East Africa", "Southern Africa", "North Africa", "Pan‑Africa"];
-	const countries = ["All", ...Array.from(new Set(allOpps.map((o) => o.country)))];
-	const tags = ["All", ...Array.from(new Set(allOpps.flatMap((o) => o.tags || [])))];
+	const countries = ["All", ...Array.from(new Set(allOpps.map((o) => o.country).filter(Boolean)))];
+	const tags = ["All", ...Array.from(new Set(allOpps.flatMap((o) => o.tags || []).filter(Boolean)))];
 
 	const [q, setQ] = useState("");
 	const [cat, setCat] = useState("All");
@@ -107,6 +133,12 @@ export default function Opportunities() {
 				</div>
 			</header>
 
+			{sheetsError && (
+				<div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+					Could not load opportunities from the server. Showing sample opportunities. ({sheetsError})
+				</div>
+			)}
+
 			{/* Hero Carousel removed per request */}
 
 			<div className="grid gap-6 lg:grid-cols-[300px,1fr]">
@@ -166,6 +198,8 @@ export default function Opportunities() {
 							{paged.map((opp, idx) => {
 								const date = opp.postedAt || opp.deadline;
 								const preferred = pickNewsImageForOpportunity(opp, newsArticles);
+								// Prioritize heroImage if available
+								const hero = opp.heroImage || '';
 								const cands = (() => {
 									const arr = [];
 									if (preferred) arr.push(preferred);
@@ -173,7 +207,7 @@ export default function Opportunities() {
 									// unique while preserving order
 									return Array.from(new Set(arr.filter(Boolean)));
 								})();
-								const img = cands[0] || getOpportunityImage(opp);
+								const img = hero || cands[0] || getOpportunityImage(opp);
 								return (
 									<article key={opp.id} className="relative">
 										<Link to={`/opportunities/${encodeURIComponent(opp.id)}`} className="group block overflow-hidden rounded-xl">
@@ -188,8 +222,10 @@ export default function Opportunities() {
 													onError={(e) => {
 														try {
 															const current = e.currentTarget.src;
-															const idx = cands.indexOf(current);
-															const next = cands[idx + 1] || cands[0];
+															const hero = opp.heroImage || '';
+															const allCandidates = hero ? [hero, ...cands] : cands;
+															const idx = allCandidates.indexOf(current);
+															const next = allCandidates[idx + 1] || allCandidates[0];
 															if (next && next !== current) {
 																e.currentTarget.src = next;
 															} else {
