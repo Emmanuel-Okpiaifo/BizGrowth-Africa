@@ -32,21 +32,26 @@ export default function NewsArticle() {
 
 	// Combine static and Google Sheets articles
 	const allArticles = useMemo(() => {
-		const staticArticles = allOriginalArticles.map(a => ({
-			slug: a.slug,
-			title: a.title,
-			source: "BizGrowth Africa",
-			image: a.canonicalImage || a.image,
-			imageCandidates: a.imageCandidates,
-			url: `/news/${a.slug}`,
-			publishedAt: a.publishedAt,
-			summary: a.summary || a.subheading,
-			category: a.category,
-			subheading: a.subheading,
-			richBody: a.richBody,
-			body: a.body,
-			content: null,
-		}));
+		const staticArticles = allOriginalArticles.map(a => {
+			const img = a.canonicalImage || a.image;
+			const candidates = Array.isArray(a.imageCandidates) && a.imageCandidates.length ? a.imageCandidates : (img ? [img] : []);
+			return {
+				slug: a.slug,
+				title: a.title,
+				source: "BizGrowth Africa",
+				image: img,
+				heroImage: img,
+				imageCandidates: candidates,
+				url: `/news/${a.slug}`,
+				publishedAt: a.publishedAt,
+				summary: a.summary || a.subheading,
+				category: a.category,
+				subheading: a.subheading,
+				richBody: a.richBody,
+				body: a.body,
+				content: null,
+			};
+		});
 		
 		// Combine, prioritizing Google Sheets articles
 		const combined = [...sheetsArticles, ...staticArticles];
@@ -77,8 +82,9 @@ export default function NewsArticle() {
 		return picks.map((a) => ({
 			title: a.title,
 			source: "BizGrowth Africa",
-			image: a.image || '',
-			imageCandidates: a.imageCandidates || [],
+			image: a.image || a.heroImage || '',
+			heroImage: a.heroImage || a.image || '',
+			imageCandidates: a.imageCandidates || (a.image ? [a.image] : []),
 			category: a.category,
 			publishedAt: a.publishedAt,
 			url: `/news/${a.slug}`,
@@ -92,6 +98,7 @@ export default function NewsArticle() {
 		// Collect images from other articles (excluding current article)
 		allArticles.forEach((a) => {
 			if (a.slug !== article?.slug) {
+				if (a.heroImage) imagePool.push(a.heroImage);
 				if (a.image) imagePool.push(a.image);
 				if (Array.isArray(a.imageCandidates)) {
 					imagePool.push(...a.imageCandidates);
@@ -375,26 +382,25 @@ export default function NewsArticle() {
 								{related.slice(0, 4).map((article, idx) => {
 									// Get the best available image with fallbacks from other articles/opportunities
 									const getImageWithFallback = () => {
-										// First try article's own image
+										if (article.heroImage) return article.heroImage;
 										if (article.image) return article.image;
 										if (Array.isArray(article.imageCandidates) && article.imageCandidates[0]) {
 											return article.imageCandidates[0];
 										}
-										// Fallback to available images from other articles/opportunities
 										if (availableImages.length > 0) {
-											// Use a deterministic index based on article title to get consistent image
 											const hash = article.title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
 											return availableImages[hash % availableImages.length];
 										}
-										// Final fallback (shouldn't happen if we have articles/opportunities)
-										return null;
+										return `https://picsum.photos/seed/${encodeURIComponent(article.title || 'news')}/800/450`;
 									};
 									
 									const imageUrl = getImageWithFallback();
 									const imageCandidates = [
+										article.heroImage,
 										article.image,
 										...(Array.isArray(article.imageCandidates) ? article.imageCandidates : []),
-										...availableImages
+										...availableImages,
+										`https://picsum.photos/seed/${encodeURIComponent(article.title || 'news')}/800/450`
 									].filter(Boolean);
 									
 									return (
@@ -409,7 +415,6 @@ export default function NewsArticle() {
 														fetchpriority={idx < 2 ? "high" : "auto"}
 														decoding="async"
 														onError={(e) => {
-															// Try next candidate from the pool
 															const current = e.currentTarget.src;
 															const currentIdx = imageCandidates.indexOf(current);
 															const next = imageCandidates[currentIdx + 1] || imageCandidates[0];
@@ -457,19 +462,33 @@ export default function NewsArticle() {
 }
 
 function Detail3Hero({ article }) {
-	const candidates = Array.isArray(article.imageCandidates) && article.imageCandidates.length
+	const heroImage = (article.heroImage || '').trim();
+	const fallbackCandidates = Array.isArray(article.imageCandidates) && article.imageCandidates.length
 		? article.imageCandidates
-		: [article.image];
-	const [src, setSrc] = useState(candidates[0]);
+		: [(article.image || '').trim()].filter(Boolean);
 	
-	// Preload hero image for faster loading
+	const candidates = useMemo(() => {
+		const seed = encodeURIComponent(article.slug || article.title || 'article');
+		const picsum = `https://picsum.photos/seed/${seed}/1600/900`;
+		const list = heroImage ? [heroImage, ...fallbackCandidates] : fallbackCandidates;
+		return list.length > 0 ? [...list, picsum] : [picsum];
+	}, [heroImage, JSON.stringify(fallbackCandidates), article.slug, article.title]);
+	
+	const [src, setSrc] = useState(() => candidates[0] || '');
+	
 	useEffect(() => {
-		setSrc(candidates[0]);
-		if (candidates[0]) {
+		const newSrc = candidates[0];
+		if (newSrc && newSrc !== src) {
+			setSrc(newSrc);
+		}
+	}, [candidates]);
+	
+	useEffect(() => {
+		if (src) {
 			const link = document.createElement('link');
 			link.rel = 'preload';
 			link.as = 'image';
-			link.href = candidates[0];
+			link.href = src;
 			link.fetchPriority = 'high';
 			document.head.appendChild(link);
 			return () => {
@@ -478,8 +497,7 @@ function Detail3Hero({ article }) {
 				}
 			};
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [article.slug]);
+	}, [src]);
 	return (
 			<section className="relative overflow-hidden bg-black w-screen -ml-[calc((100vw-100%)/2)] -mt-[39px]">
 				<div className="relative aspect-[4/5] sm:aspect-[3/2] lg:aspect-[2.5/1] w-full">
@@ -491,9 +509,12 @@ function Detail3Hero({ article }) {
 					fetchpriority="high"
 					decoding="async"
 					onError={(e) => {
-						const idx = candidates.findIndex((u) => u === e.currentTarget.src);
+						const current = e.currentTarget.src;
+						const idx = candidates.findIndex((u) => u === current);
 						const next = candidates[idx + 1];
-						setSrc(next || candidates[0]);
+						if (next && next !== current) {
+							setSrc(next);
+						}
 					}}
 				/>
 				<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />

@@ -36,10 +36,22 @@ if ($file['size'] > $maxSize) {
 	json_error('File size exceeds 5MB limit', 400);
 }
 
-// Create upload directory based on type
-$uploadDir = __DIR__ . '/../public/uploads/' . $type . '/';
+// Determine the correct upload directory
+// On server: /home/bizgrow1/public_html/uploads/
+// API is at: /home/bizgrow1/public_html/api/
+// So uploads should be at: /home/bizgrow1/public_html/uploads/ (one level up from api)
+$uploadDir = __DIR__ . '/../uploads/' . $type . '/';
+
+// Create directory if it doesn't exist
 if (!is_dir($uploadDir)) {
-	mkdir($uploadDir, 0755, true);
+	if (!mkdir($uploadDir, 0755, true)) {
+		json_error('Failed to create upload directory: ' . $uploadDir, 500);
+	}
+}
+
+// Verify directory is writable
+if (!is_writable($uploadDir)) {
+	json_error('Upload directory is not writable: ' . $uploadDir, 500);
 }
 
 // Generate unique filename
@@ -49,15 +61,42 @@ $filepath = $uploadDir . $filename;
 
 // Move uploaded file
 if (!move_uploaded_file($file['tmp_name'], $filepath)) {
-	json_error('Failed to save file', 500);
+	json_error('Failed to save file. Check directory permissions. Path: ' . $filepath, 500);
 }
 
-// Get the URL path (relative to site root)
-$urlPath = '/uploads/' . $type . '/' . $filename;
+// Verify file was actually saved
+if (!file_exists($filepath)) {
+	json_error('File was not saved. Path: ' . $filepath, 500);
+}
 
-// Return success with URL
+// Set proper file permissions (readable by web server)
+chmod($filepath, 0644);
+
+// Get the absolute URL
+// Determine the base URL from the request
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+$host = $_SERVER['HTTP_HOST'] ?? 'www.bizgrowthafrica.com';
+$baseUrl = $protocol . $host;
+
+// Return absolute URL
+$urlPath = $baseUrl . '/uploads/' . $type . '/' . $filename;
+
+// Verify file is readable and get its size
+$fileSize = filesize($filepath);
+$isReadable = is_readable($filepath);
+
+// Return success with absolute URL
 json_ok([
 	'success' => true,
 	'url' => $urlPath,
-	'filename' => $filename
+	'filename' => $filename,
+	'fileSize' => $fileSize,
+	'fileReadable' => $isReadable,
+	'debug' => [
+		'uploadDir' => $uploadDir,
+		'filepath' => $filepath,
+		'baseUrl' => $baseUrl,
+		'fileExists' => file_exists($filepath),
+		'filePermissions' => substr(sprintf('%o', fileperms($filepath)), -4)
+	]
 ]);

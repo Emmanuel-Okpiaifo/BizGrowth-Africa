@@ -161,6 +161,36 @@ export default function AdminArticlesEdit() {
 		);
 	}
 
+	// No slug in URL (invalid route)
+	if (!slug || !String(slug).trim()) {
+		return (
+			<div className="max-w-5xl mx-auto">
+				<div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-8 text-center">
+					<h2 className="text-xl font-bold text-amber-800 dark:text-amber-200 mb-2">Invalid URL</h2>
+					<p className="text-gray-600 dark:text-gray-400 mb-4">No article slug was provided. Please go to the articles list and choose an article to edit.</p>
+					<Link to="/articles" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90">
+						<ArrowLeft size={18} /> Back to Articles
+					</Link>
+				</div>
+			</div>
+		);
+	}
+
+	// Article not found in sheet
+	if (status.type === 'error' && status.message === 'Article not found') {
+		return (
+			<div className="max-w-5xl mx-auto">
+				<div className="rounded-2xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 p-8 text-center">
+					<h2 className="text-xl font-bold text-red-800 dark:text-red-200 mb-2">Article not found</h2>
+					<p className="text-gray-600 dark:text-gray-400 mb-4">No article with slug &quot;{slug}&quot; was found. It may have been deleted or the slug may be incorrect.</p>
+					<Link to="/articles" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90">
+						<ArrowLeft size={18} /> Back to Articles
+					</Link>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<ErrorBoundary>
 			<div className="max-w-5xl mx-auto space-y-6">

@@ -3,15 +3,21 @@ import { Link } from "react-router-dom";
 import placeholderUrl from "../assets/placeholder.svg";
 
 export default function NewsCard({ article, variant = "default", index = 0 }) {
-	const { title, source, image, imageCandidates, url, publishedAt, summary, category } = article;
+	const { title, source, image, imageCandidates, url, publishedAt, summary, category, heroImage } = article;
 
 	const candidates = useMemo(() => {
+		// Prioritize heroImage if available
+		const hero = heroImage || '';
 		const list = Array.isArray(imageCandidates) && imageCandidates.length ? imageCandidates : [];
-		const first = image || placeholderUrl;
-		// Ensure first is at the front and unique
-		const unique = [first, ...list].filter(Boolean).filter((v, i, arr) => arr.indexOf(v) === i);
-		return unique;
-	}, [image, imageCandidates]);
+		const regularImage = image || placeholderUrl;
+		
+		// Use heroImage first, then regular image, then candidates
+		const unique = [hero, regularImage, ...list]
+			.filter(Boolean)
+			.filter((v, i, arr) => arr.indexOf(v) === i);
+		
+		return unique.length > 0 ? unique : [placeholderUrl];
+	}, [heroImage, image, imageCandidates]);
 
 	const [imgSrc, setImgSrc] = useState(candidates[0] || placeholderUrl);
 	const [loaded, setLoaded] = useState(false);

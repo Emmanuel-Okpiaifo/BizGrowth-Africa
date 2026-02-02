@@ -4,6 +4,7 @@ import Footer from "./Footer";
 import RouteProgress from "./RouteProgress";
 import ScrollToTop from "./ScrollToTop";
 import Preloader from "./Preloader";
+import CookieConsent from "./CookieConsent";
 import { usePageTracking } from "../hooks/usePageTracking";
 
 export default function Layout() {
@@ -22,6 +23,7 @@ export default function Layout() {
 				</div>
 			</main>
 			<Footer />
+			<CookieConsent />
 		</div>
 	);
 }

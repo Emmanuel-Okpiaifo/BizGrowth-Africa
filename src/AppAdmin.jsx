@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { ErrorBoundary } from "./components/admin/ErrorBoundary";
 import AdminAuthGuard from "./components/admin/AdminAuthGuard";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -6,7 +7,9 @@ import AdminArticles from "./pages/admin/AdminArticles";
 import AdminArticlesEdit from "./pages/admin/AdminArticlesEdit";
 import AdminArticlesList from "./pages/admin/AdminArticlesList";
 import AdminOpportunities from "./pages/admin/AdminOpportunities";
+import AdminOpportunitiesList from "./pages/admin/AdminOpportunitiesList";
 import AdminTenders from "./pages/admin/AdminTenders";
+import AdminTendersList from "./pages/admin/AdminTendersList";
 
 /**
  * Admin-only App - for subdomain deployment
@@ -15,6 +18,7 @@ import AdminTenders from "./pages/admin/AdminTenders";
  */
 export default function AppAdmin() {
 	return (
+		<ErrorBoundary>
 		<AdminAuthGuard>
 			<Routes>
 				{/* Admin Routes - no /admin prefix since we're on admin subdomain */}
@@ -22,14 +26,20 @@ export default function AppAdmin() {
 					<Route path="/" element={<AdminDashboard />} />
 					<Route path="articles" element={<AdminArticlesList />} />
 					<Route path="articles/new" element={<AdminArticles />} />
+					<Route path="articles/new/:draftId" element={<AdminArticles />} />
 					<Route path="articles/edit/:slug" element={<AdminArticlesEdit />} />
-					<Route path="opportunities" element={<AdminOpportunities />} />
-					<Route path="tenders" element={<AdminTenders />} />
+					<Route path="opportunities" element={<AdminOpportunitiesList />} />
+					<Route path="opportunities/new" element={<AdminOpportunities />} />
+					<Route path="opportunities/new/:draftId" element={<AdminOpportunities />} />
+					<Route path="tenders" element={<AdminTendersList />} />
+					<Route path="tenders/new" element={<AdminTenders />} />
+					<Route path="tenders/new/:draftId" element={<AdminTenders />} />
 				</Route>
 				
 				{/* Catch all - redirect to root */}
 				<Route path="*" element={<Navigate to="/" replace />} />
 			</Routes>
 		</AdminAuthGuard>
+		</ErrorBoundary>
 	);
 }

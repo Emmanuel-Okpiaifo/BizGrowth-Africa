@@ -12,17 +12,21 @@ export default function NewsInsights() {
 	
 	// Combine static and Google Sheets articles
 	const allArticles = useMemo(() => {
-		const staticArticles = allOriginalArticles.map((a) => ({
-			title: a.title,
-			source: "BizGrowth Africa",
-			image: a.canonicalImage || a.image,
-			imageCandidates: a.imageCandidates,
-			url: `/news/${a.slug}`,
-			publishedAt: a.publishedAt,
-			summary: a.summary || a.subheading,
-			category: a.category,
-			slug: a.slug,
-		}));
+		const staticArticles = allOriginalArticles.map((a) => {
+			const img = a.canonicalImage || a.image;
+			return {
+				title: a.title,
+				source: "BizGrowth Africa",
+				image: img,
+				heroImage: img,
+				imageCandidates: a.imageCandidates || (img ? [img] : []),
+				url: `/news/${a.slug}`,
+				publishedAt: a.publishedAt,
+				summary: a.summary || a.subheading,
+				category: a.category,
+				slug: a.slug,
+			};
+		});
 		
 		// Combine, prioritizing Google Sheets articles
 		const combined = [...sheetsArticles, ...staticArticles];
@@ -41,11 +45,12 @@ export default function NewsInsights() {
 
 	// Preload first article image for faster loading
 	useEffect(() => {
-		if (articles[0]?.image) {
+		const firstImg = articles[0]?.heroImage || articles[0]?.image;
+		if (firstImg) {
 			const link = document.createElement('link');
 			link.rel = 'preload';
 			link.as = 'image';
-			link.href = articles[0].image;
+			link.href = firstImg;
 			link.fetchPriority = 'high';
 			document.head.appendChild(link);
 			return () => {

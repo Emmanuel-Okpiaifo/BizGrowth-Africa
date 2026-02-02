@@ -19,17 +19,72 @@ export function useGoogleSheetsOpportunities() {
 			const transformed = data
 				.filter(opp => {
 					const hasTitle = opp.title && opp.title.trim() !== '';
-					return hasTitle;
+					if (!hasTitle) return false;
+					
+					// Filter by status and scheduled time
+					const rawStatus = opp.status ? String(opp.status).trim() : '';
+					const oppStatus = rawStatus ? rawStatus.toLowerCase() : '';
+					const scheduledAt = opp.scheduledAt ? String(opp.scheduledAt).trim() : '';
+					
+					// If status is empty, treat as published (show alongside placeholders)
+					if (!oppStatus || oppStatus === '') {
+						return true;
+					}
+					
+					// Don't show drafts
+					if (oppStatus === 'draft') {
+						return false;
+					}
+					
+					// Handle scheduled posts
+					if (oppStatus === 'scheduled') {
+						if (!scheduledAt) {
+							return false; // Scheduled but no time set
+						}
+						
+						// Parse scheduledAt - handle timezone
+						const now = new Date();
+						let scheduled;
+						
+						if (scheduledAt.includes('+') || scheduledAt.includes('Z')) {
+							scheduled = new Date(scheduledAt);
+						} else if (scheduledAt.includes('T')) {
+							scheduled = new Date(scheduledAt + 'Z');
+						} else {
+							scheduled = new Date(scheduledAt + 'T00:00:00Z');
+						}
+						
+						if (isNaN(scheduled.getTime())) {
+							return false;
+						}
+						
+						// Compare UTC times
+						const nowUTC = now.getTime();
+						const scheduledUTC = scheduled.getTime();
+						
+						// If scheduled time hasn't passed yet, don't show
+						if (nowUTC < scheduledUTC) {
+							return false;
+						}
+					}
+					
+					// Only show if status is 'published' or scheduled time has passed
+					return oppStatus === 'published' || (oppStatus === 'scheduled' && scheduledAt);
 				})
 				.map(opp => {
-					// Parse tags if it's a JSON string
+					// Parse tags (may be JSON string, comma-separated string, or already array from sheet)
 					let tags = [];
-					if (opp.tags) {
-						try {
-							tags = JSON.parse(opp.tags);
-						} catch {
-							// If not JSON, try comma-separated
-							tags = opp.tags.split(',').map(t => t.trim()).filter(Boolean);
+					const rawTags = opp.tags;
+					if (rawTags != null && rawTags !== '') {
+						if (Array.isArray(rawTags)) {
+							tags = rawTags.filter(Boolean);
+						} else if (typeof rawTags === 'string') {
+							try {
+								const parsed = JSON.parse(rawTags);
+								tags = Array.isArray(parsed) ? parsed : rawTags.split(',').map(t => String(t).trim()).filter(Boolean);
+							} catch {
+								tags = rawTags.split(',').map(t => String(t).trim()).filter(Boolean);
+							}
 						}
 					}
 					
@@ -47,6 +102,7 @@ export function useGoogleSheetsOpportunities() {
 						postedAt: opp.postedAt || opp.createdAt || new Date().toISOString().split('T')[0],
 						link: (opp.link || '').trim(),
 						tags: tags,
+						heroImage: (opp.heroImage || '').trim(), // Hero/banner image for hero section
 						featured: opp.featured === 'true' || opp.featured === true,
 						description: (opp.description || '').trim(),
 						createdAt: opp.createdAt || new Date().toISOString()

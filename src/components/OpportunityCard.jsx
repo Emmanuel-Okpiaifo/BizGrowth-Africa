@@ -21,7 +21,11 @@ export default function OpportunityCard({ opp, saved = false, onToggleSave, fram
 	const deadline = opp.deadline ? new Date(opp.deadline).toLocaleDateString() : "TBA";
 	const featured = !!opp.featured;
 	const orgInitials = getOrgInitials(opp.org);
-	const img = useMemo(() => (showImage ? getOpportunityImage(opp) : null), [showImage, opp]);
+	// Prioritize heroImage if available, then fall back to getOpportunityImage
+	const img = useMemo(() => {
+		if (!showImage) return null;
+		return opp.heroImage || getOpportunityImage(opp);
+	}, [showImage, opp.heroImage, opp]);
 	const [loaded, setLoaded] = useState(false);
 	const isAurora = styleVariant === "aurora";
 	const innerBase =

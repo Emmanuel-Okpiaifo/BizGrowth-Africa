@@ -26,19 +26,116 @@ export function useGoogleSheetsArticles() {
 					const hasSlug = article.slug && article.slug.trim() !== '';
 					if (!hasTitle || !hasSlug) {
 						console.log('Filtering out article (missing title or slug):', article);
+						return false;
 					}
-					return hasTitle && hasSlug;
+					
+					// Filter by status and scheduled time
+					// Trim and normalize status field (handle whitespace, case, etc.)
+					const rawStatus = article.status ? String(article.status).trim() : '';
+					const articleStatus = rawStatus ? rawStatus.toLowerCase() : '';
+					const scheduledAt = article.scheduledAt ? String(article.scheduledAt).trim() : '';
+					
+					// Debug logging (only in development)
+					if (import.meta.env.DEV) {
+						console.log(`[FILTER] Article "${article.title}" - Raw Status: "${rawStatus}", Normalized: "${articleStatus}", ScheduledAt: "${scheduledAt}"`);
+					}
+					
+					// STRICT FILTERING: Only show if status is explicitly 'published'
+					// OR if status is 'scheduled' AND scheduled time has passed
+					
+					// If status is empty or not set, DON'T show (safer default)
+					if (!articleStatus || articleStatus === '') {
+						if (import.meta.env.DEV) {
+							console.log(`[FILTER] Filtering out article with empty status: "${article.title}"`);
+						}
+						return false;
+					}
+					
+					// Don't show drafts
+					if (articleStatus === 'draft') {
+						if (import.meta.env.DEV) {
+							console.log(`[FILTER] Filtering out draft article: "${article.title}"`);
+						}
+						return false;
+					}
+					
+					// Handle scheduled posts
+					if (articleStatus === 'scheduled') {
+						if (!scheduledAt) {
+							if (import.meta.env.DEV) {
+								console.log(`[FILTER] Scheduled article "${article.title}" has no scheduledAt, filtering out`);
+							}
+							return false; // Scheduled but no time set - don't show
+						}
+						
+						// Check if scheduled time has passed
+						const now = new Date();
+						let scheduled;
+						
+						// Parse scheduledAt - handle timezone
+						if (scheduledAt.includes('+') || scheduledAt.includes('Z')) {
+							scheduled = new Date(scheduledAt);
+						} else if (scheduledAt.includes('T')) {
+							// Has time but no timezone - assume UTC (since we stored it as UTC)
+							scheduled = new Date(scheduledAt + 'Z');
+						} else {
+							// Date only - treat as midnight UTC
+							scheduled = new Date(scheduledAt + 'T00:00:00Z');
+						}
+						
+						// Validate date
+						if (isNaN(scheduled.getTime())) {
+							if (import.meta.env.DEV) {
+								console.log(`[FILTER] Invalid scheduledAt for article "${article.title}": "${scheduledAt}"`);
+							}
+							return false;
+						}
+						
+						// Compare UTC times
+						const nowUTC = now.getTime();
+						const scheduledUTC = scheduled.getTime();
+						
+						// If scheduled time hasn't passed yet, don't show
+						if (nowUTC < scheduledUTC) {
+							if (import.meta.env.DEV) {
+								console.log(`[FILTER] Article "${article.title}" is scheduled for ${scheduledAt}, not showing yet`);
+							}
+							return false; // Not yet time to publish
+						}
+						// If time has passed, allow it through (will show as published)
+					}
+					
+					// Only show if status is explicitly 'published' or scheduled time has passed
+					if (articleStatus !== 'published' && articleStatus !== 'scheduled') {
+						if (import.meta.env.DEV) {
+							console.log(`[FILTER] Filtering out article with status "${articleStatus}": "${article.title}"`);
+						}
+						return false;
+					}
+					
+					// Final check: if status is 'published', show it
+					if (articleStatus === 'published') {
+						return true;
+					}
+					
+					// If we get here and status is 'scheduled', the time must have passed (checked above)
+					return articleStatus === 'scheduled';
+					
+					return true;
 				})
 				.map(article => {
 					// Log the raw article data to debug
 					console.log('Processing article:', article);
 					
+					const heroImg = (article.heroImage || '').trim();
+					const img = (article.image || '').trim();
 					return {
 						slug: (article.slug || '').trim(),
 						title: (article.title || '').trim(),
 						source: "BizGrowth Africa",
-						image: (article.image || '').trim(),
-						imageCandidates: article.image && article.image.trim() ? [article.image.trim()] : [],
+						image: img || heroImg,
+						heroImage: heroImg,
+						imageCandidates: [heroImg, img].filter(Boolean),
 						url: `/news/${(article.slug || '').trim()}`,
 						publishedAt: article.publishedAt || article.createdAt || new Date().toISOString(),
 						summary: (article.summary || article.subheading || '').trim(),

@@ -1,14 +1,18 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Briefcase, FolderOpen, LayoutDashboard, Plus, List, TrendingUp, Clock, CheckCircle2, Users, Eye, BarChart3, Calendar, ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react';
-import { useGoogleSheetsArticles } from '../../hooks/useGoogleSheetsArticles';
-import { useGoogleSheetsOpportunities } from '../../hooks/useGoogleSheetsOpportunities';
-import { useGoogleSheetsTenders } from '../../hooks/useGoogleSheetsTenders';
+import { FileText, Briefcase, FolderOpen, LayoutDashboard, Plus, List, TrendingUp, Clock, CheckCircle2, Users, Eye, BarChart3, Calendar, ArrowUpRight, ArrowDownRight, Activity, Play } from 'lucide-react';
+import { useGoogleSheetsArticlesAdmin } from '../../hooks/useGoogleSheetsArticlesAdmin';
+import { useGoogleSheetsOpportunitiesAdmin } from '../../hooks/useGoogleSheetsOpportunitiesAdmin';
+import { useGoogleSheetsTendersAdmin } from '../../hooks/useGoogleSheetsTendersAdmin';
+import { publishScheduledPosts } from '../../utils/publishScheduled';
+import { getTimeAgo } from '../../utils/timeUtils';
 
 export default function AdminDashboard() {
-	const { articles: allArticles, loading: articlesLoading, error: articlesError } = useGoogleSheetsArticles();
-	const { opportunities: allOpportunities, loading: opportunitiesLoading, error: opportunitiesError } = useGoogleSheetsOpportunities();
-	const { tenders: allTenders, loading: tendersLoading, error: tendersError } = useGoogleSheetsTenders();
+	const { articles: allArticles, loading: articlesLoading, error: articlesError, refresh: refreshArticles } = useGoogleSheetsArticlesAdmin();
+	const { opportunities: allOpportunities, loading: opportunitiesLoading, error: opportunitiesError, refresh: refreshOpportunities } = useGoogleSheetsOpportunitiesAdmin();
+	const { tenders: allTenders, loading: tendersLoading, error: tendersError, refresh: refreshTenders } = useGoogleSheetsTendersAdmin();
+	const [publishing, setPublishing] = useState(false);
+	const [publishResult, setPublishResult] = useState(null);
 	
 	// Calculate real stats from Google Sheets
 	const totalArticles = articlesError ? 0 : allArticles.length;
@@ -16,10 +20,15 @@ export default function AdminDashboard() {
 	const totalTenders = tendersError ? 0 : allTenders.length;
 	
 	const publishedToday = articlesError ? 0 : allArticles.filter(a => {
-		if (!a.publishedAt) return false;
-		const pubDate = new Date(a.publishedAt);
+		if (!a.publishedAt || (a.status || 'published').toLowerCase() !== 'published') return false;
+		// Parse publishedAt with timezone handling
+		const pubDate = getTimeAgo(a.publishedAt) ? new Date(a.publishedAt.includes('+') || a.publishedAt.includes('Z') ? a.publishedAt : a.publishedAt + '+01:00') : null;
+		if (!pubDate) return false;
 		const today = new Date();
-		return pubDate.toDateString() === today.toDateString();
+		// Compare dates in GMT+1
+		const pubDateGMT1 = new Date(pubDate.toLocaleString('en-US', { timeZone: 'Africa/Lagos' }));
+		const todayGMT1 = new Date(today.toLocaleString('en-US', { timeZone: 'Africa/Lagos' }));
+		return pubDateGMT1.toDateString() === todayGMT1.toDateString();
 	}).length;
 	
 	// Calculate articles this month
@@ -28,8 +37,16 @@ export default function AdminDashboard() {
 		const now = new Date();
 		const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 		return allArticles.filter(a => {
-			if (!a.publishedAt) return false;
-			const pubDate = new Date(a.publishedAt);
+			if (!a.publishedAt || (a.status || 'published').toLowerCase() !== 'published') return false;
+			let pubDateStr = a.publishedAt;
+			if (!pubDateStr.includes('+') && !pubDateStr.includes('Z')) {
+				if (pubDateStr.includes('T')) {
+					pubDateStr = pubDateStr + '+01:00';
+				} else {
+					pubDateStr = pubDateStr + 'T00:00:00+01:00';
+				}
+			}
+			const pubDate = new Date(pubDateStr);
 			return pubDate >= startOfMonth;
 		}).length;
 	}, [allArticles, articlesError]);
@@ -41,8 +58,16 @@ export default function AdminDashboard() {
 		const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 		const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 		return allArticles.filter(a => {
-			if (!a.publishedAt) return false;
-			const pubDate = new Date(a.publishedAt);
+			if (!a.publishedAt || (a.status || 'published').toLowerCase() !== 'published') return false;
+			let pubDateStr = a.publishedAt;
+			if (!pubDateStr.includes('+') && !pubDateStr.includes('Z')) {
+				if (pubDateStr.includes('T')) {
+					pubDateStr = pubDateStr + '+01:00';
+				} else {
+					pubDateStr = pubDateStr + 'T00:00:00+01:00';
+				}
+			}
+			const pubDate = new Date(pubDateStr);
 			return pubDate >= startOfLastMonth && pubDate <= endOfLastMonth;
 		}).length;
 	}, [allArticles, articlesError]);
@@ -136,7 +161,7 @@ export default function AdminDashboard() {
 			title: 'Add Opportunity',
 			description: 'Post a new grant or funding opportunity',
 			icon: Briefcase,
-			link: '/opportunities',
+			link: '/opportunities/new',
 			gradient: 'from-emerald-500 to-teal-500',
 			action: 'Add'
 		},
@@ -144,7 +169,7 @@ export default function AdminDashboard() {
 			title: 'Post Tender',
 			description: 'Add a new procurement tender',
 			icon: FolderOpen,
-			link: '/tenders',
+			link: '/tenders/new',
 			gradient: 'from-amber-500 to-orange-500',
 			action: 'Post'
 		},
@@ -156,22 +181,22 @@ export default function AdminDashboard() {
 		
 		// Get recent articles (last 2)
 		allArticles.slice(0, 2).forEach(article => {
-			const pubDate = article.publishedAt ? new Date(article.publishedAt) : new Date();
-			const now = new Date();
-			const diffHours = Math.floor((now - pubDate) / (1000 * 60 * 60));
-			let timeAgo = '';
-			if (diffHours < 1) timeAgo = 'Just now';
-			else if (diffHours < 24) timeAgo = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-			else {
-				const diffDays = Math.floor(diffHours / 24);
-				timeAgo = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+			const status = (article.status || 'published').toLowerCase();
+			let timeAgo;
+			
+			if (status === 'published' && article.publishedAt) {
+				timeAgo = getTimeAgo(article.publishedAt);
+			} else if (article.createdAt) {
+				timeAgo = getTimeAgo(article.createdAt);
+			} else {
+				timeAgo = 'Recently';
 			}
 			
 			activities.push({
 				type: 'article',
 				title: article.title,
 				time: timeAgo,
-				status: article.publishedAt ? 'published' : 'draft'
+				status: status
 			});
 		});
 		
@@ -223,17 +248,83 @@ export default function AdminDashboard() {
 		return activities.slice(0, 3);
 	}, [allArticles, allOpportunities, allTenders]);
 
+	// Handle publishing scheduled posts
+	const handlePublishScheduled = async () => {
+		setPublishing(true);
+		setPublishResult(null);
+		try {
+			const result = await publishScheduledPosts();
+			setPublishResult(result);
+			// Wait a moment for Google Sheets to update, then refresh data
+			// Refresh multiple times to ensure we get the updated status
+			setTimeout(() => {
+				refreshArticles();
+				refreshOpportunities();
+				refreshTenders();
+			}, 1000);
+			setTimeout(() => {
+				refreshArticles();
+				refreshOpportunities();
+				refreshTenders();
+			}, 3000);
+		} catch (error) {
+			setPublishResult({
+				published: 0,
+				errors: [error.message],
+				timestamp: new Date().toISOString()
+			});
+		} finally {
+			setPublishing(false);
+		}
+	};
+
 	return (
 		<div className="space-y-8">
 			{/* Header */}
 			<div className="relative">
 				<div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-blue-500/10 dark:from-primary/20 dark:via-transparent dark:to-blue-500/20 rounded-3xl blur-3xl"></div>
-				<div className="relative">
-					<h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2 bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-						Dashboard
-					</h1>
-					<p className="text-gray-600 dark:text-gray-400">Manage your content and track performance</p>
+				<div className="relative flex items-center justify-between">
+					<div>
+						<h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2 bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+							Dashboard
+						</h1>
+						<p className="text-gray-600 dark:text-gray-400">Manage your content and track performance</p>
+					</div>
+					<button
+						onClick={handlePublishScheduled}
+						disabled={publishing}
+						className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						<Play size={16} />
+						{publishing ? 'Publishing...' : 'Publish Scheduled'}
+					</button>
 				</div>
+				{publishResult && (
+					<div className={`mt-4 p-4 rounded-lg border ${
+						publishResult.published > 0
+							? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+							: publishResult.errors && publishResult.errors.length > 0
+							? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'
+							: 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800'
+					}`}>
+						<p className={`text-sm font-medium ${
+							publishResult.published > 0
+								? 'text-green-800 dark:text-green-300'
+								: 'text-gray-800 dark:text-gray-300'
+						}`}>
+							{publishResult.published > 0
+								? `✅ Published ${publishResult.published} scheduled post${publishResult.published > 1 ? 's' : ''}`
+								: 'No scheduled posts to publish'}
+						</p>
+						{publishResult.errors && publishResult.errors.length > 0 && (
+							<ul className="mt-2 text-xs text-amber-800 dark:text-amber-300 list-disc list-inside">
+								{publishResult.errors.map((error, idx) => (
+									<li key={idx}>{error}</li>
+								))}
+							</ul>
+						)}
+					</div>
+				)}
 			</div>
 
 			{/* Stats Grid */}
@@ -411,15 +502,19 @@ export default function AdminDashboard() {
 								<p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Loading articles...</p>
 							</div>
 						) : allArticles.length > 0 ? allArticles.slice(0, 3).map((article, idx) => {
-							const timeAgo = article.publishedAt ? (() => {
-								const pubDate = new Date(article.publishedAt);
-								const now = new Date();
-								const diffHours = Math.floor((now - pubDate) / (1000 * 60 * 60));
-								if (diffHours < 1) return 'Just now';
-								if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-								const diffDays = Math.floor(diffHours / 24);
-								return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-							})() : 'Recently';
+							const timeAgo = (() => {
+								const status = (article.status || 'published').toLowerCase();
+								
+								if (status === 'published' && article.publishedAt) {
+									// Use publishedAt for published articles
+									return getTimeAgo(article.publishedAt);
+								} else if (article.createdAt) {
+									// Use createdAt for drafts/scheduled
+									return getTimeAgo(article.createdAt);
+								}
+								
+								return 'Recently';
+							})();
 							
 							return (
 								<Link
