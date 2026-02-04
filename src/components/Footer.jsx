@@ -218,8 +218,8 @@ export default function Footer() {
 						</ul>
 					</div>
 
-					{/* Newsletter Section */}
-					<div className="space-y-4">
+					{/* Newsletter Section — direct link: /community#newsletter */}
+					<div id="newsletter" className="space-y-4 scroll-mt-20">
 						<div>
 							<h4 className="text-sm font-bold uppercase tracking-wider text-gray-900 dark:text-white mb-2">
 								Newsletter

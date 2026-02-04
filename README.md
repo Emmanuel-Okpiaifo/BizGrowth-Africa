@@ -111,13 +111,19 @@ npm run preview
 4) Upload `.htaccess` to both main site and admin subdomain
 5) Set up environment variables in cPanel
 
+**Market data (Alpha Vantage)**  
+African FX rates (USD/ZAR, USD/NGN, etc.) on `/markets` use the [Alpha Vantage API](https://www.alphavantage.co/support/#api-key). You can set your key in either place:
+- **.env** (project root): add `ALPHAVANTAGE_API_KEY=your_key` and ensure the PHP API can read it (e.g. same server as the app).
+- **server-config/bizgrowth_keys.php**: return `['ALPHAVANTAGE_API_KEY' => 'your_key']`.  
+Use a free key from https://www.alphavantage.co/support/#api-key. See `.env.example` for a template.
+
 **For complete setup instructions, see `BizGrowth_Africa_Complete_Documentation.md`**
    return [
      'ALPHAVANTAGE_API_KEY' => 'YOUR_KEY',
      'FRED_API_KEY' => 'YOUR_KEY',
    ];
    ```
-4) In cPanel, set environment variable `BIZGROWTH_KEYS_PATH` to that absolute path (or upload `server-config/bizgrowth_keys.php` on server and do NOT commit).
+4) In cPanel, set environment variable `BIZGROWTH_KEYS_PATH` to that absolute path (or upload `server-config/bizgrowth_keys.php` on server and do NOT commit). Alternatively, set `ALPHAVANTAGE_API_KEY` in your server environment or in a project `.env` file so the API can load it.
 5) Ensure cache directory is writable: `/public_html/api/_cache/` (chmod 755/775).
 6) Frontend calls:
    - `/api/market/snapshot.php?ids=USDZAR,USDNGN,BTCUSD,ETHUSD`

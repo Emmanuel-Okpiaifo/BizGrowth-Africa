@@ -135,17 +135,17 @@ export default function AdminDashboard() {
 	}, [allOpportunities, opportunitiesError]);
 	
 	const stats = [
-		{ label: 'Total Articles', value: String(totalArticles), change: articlesTrend, trend: articlesThisMonth >= articlesLastMonth ? 'up' : 'down', icon: FileText, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', gradient: 'from-blue-500 to-cyan-500' },
-		{ label: 'Opportunities', value: String(totalOpportunities), change: activeOpportunities > 0 ? `${activeOpportunities} active` : '0 active', trend: 'up', icon: Briefcase, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30', gradient: 'from-emerald-500 to-teal-500' },
-		{ label: 'Active Tenders', value: String(activeTenders), change: `${totalTenders} total`, trend: 'up', icon: FolderOpen, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30', gradient: 'from-amber-500 to-orange-500' },
-		{ label: 'Published Today', value: String(publishedToday), change: publishedToday > 0 ? 'Great!' : 'None yet', trend: publishedToday > 0 ? 'up' : 'down', icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10 dark:bg-primary/20', gradient: 'from-primary to-red-700' },
+		{ label: 'Total Articles', value: articlesLoading ? '—' : String(totalArticles), change: articlesTrend, trend: articlesThisMonth >= articlesLastMonth ? 'up' : 'down', icon: FileText, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', gradient: 'from-blue-500 to-cyan-500' },
+		{ label: 'Opportunities', value: opportunitiesLoading ? '—' : String(totalOpportunities), change: activeOpportunities > 0 ? `${activeOpportunities} active` : '0 active', trend: 'up', icon: Briefcase, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30', gradient: 'from-emerald-500 to-teal-500' },
+		{ label: 'Active Tenders', value: tendersLoading ? '—' : String(activeTenders), change: `${totalTenders} total`, trend: 'up', icon: FolderOpen, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30', gradient: 'from-amber-500 to-orange-500' },
+		{ label: 'Published Today', value: articlesLoading ? '—' : String(publishedToday), change: publishedToday > 0 ? 'Great!' : 'None yet', trend: publishedToday > 0 ? 'up' : 'down', icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10 dark:bg-primary/20', gradient: 'from-primary to-red-700' },
 	];
 
 	const analytics = [
-		{ label: 'This Month', value: String(articlesThisMonth), change: articlesTrend, trend: articlesThisMonth >= articlesLastMonth ? 'up' : 'down', icon: Calendar, color: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-50 dark:bg-pink-950/30' },
-		{ label: 'Top Category', value: topCategory, change: categoryCounts[topCategory] ? `${categoryCounts[topCategory]} articles` : '0', trend: 'up', icon: BarChart3, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-950/30' },
-		{ label: 'New Opportunities', value: String(opportunitiesThisMonth), change: 'This month', trend: 'up', icon: Briefcase, color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-950/30' },
-		{ label: 'Categories', value: String(Object.keys(categoryCounts).length), change: `${totalArticles} total`, trend: 'up', icon: Activity, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-950/30' },
+		{ label: 'This Month', value: articlesLoading ? '—' : String(articlesThisMonth), change: articlesTrend, trend: articlesThisMonth >= articlesLastMonth ? 'up' : 'down', icon: Calendar, color: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-50 dark:bg-pink-950/30' },
+		{ label: 'Top Category', value: articlesLoading ? '—' : (topCategory || 'None'), change: (categoryCounts[topCategory] ?? 0) ? `${categoryCounts[topCategory]} articles` : '0', trend: 'up', icon: BarChart3, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-950/30' },
+		{ label: 'New Opportunities', value: opportunitiesLoading ? '—' : String(opportunitiesThisMonth), change: 'This month', trend: 'up', icon: Briefcase, color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-950/30' },
+		{ label: 'Categories', value: articlesLoading ? '—' : String(Object.keys(categoryCounts).length), change: `${totalArticles} total`, trend: 'up', icon: Activity, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-950/30' },
 	];
 
 	const quickActions = [

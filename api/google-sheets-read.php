@@ -1,7 +1,8 @@
 <?php
 /**
  * Google Sheets Read Proxy
- * Reads data from Google Sheets server-side to avoid API key restrictions
+ * Reads data from Google Sheets server-side to avoid API key restrictions.
+ * (Scheduled-publish check runs on the main site load only, not here, to keep admin reads fast.)
  */
 
 require_once __DIR__ . '/_lib/response.php';
@@ -21,9 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 $sheetName = isset($_GET['sheet']) ? trim((string) $_GET['sheet']) : 'Articles';
 $range = $_GET['range'] ?? 'A1:Z1000';
 
-// Get API key and spreadsheet ID from environment or config
-$apiKey = 'AIzaSyBZfPhyU2ktSlkkqr2KQsvyO20_Af5Wg40';
-$spreadsheetId = '1UvV9_w8UDXcDC1G8_p6Z0TWj5O7W9_DXPBcCNHMwr7w';
+// Same spreadsheet as admin dashboard: main site and admin both read from this single source.
+// Prefer env vars (e.g. from .env or server) so one config drives both; fallback to defaults.
+$apiKey = getenv('GOOGLE_SHEETS_API_KEY') ?: getenv('VITE_GOOGLE_SHEETS_API_KEY') ?: 'AIzaSyBZfPhyU2ktSlkkqr2KQsvyO20_Af5Wg40';
+$spreadsheetId = getenv('GOOGLE_SHEETS_ID') ?: getenv('VITE_GOOGLE_SHEETS_ID') ?: '1UvV9_w8UDXcDC1G8_p6Z0TWj5O7W9_DXPBcCNHMwr7w';
 
 if (!$apiKey || !$spreadsheetId) {
     json_error('Google Sheets API not configured', 500);

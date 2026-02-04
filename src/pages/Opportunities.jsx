@@ -1,8 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Briefcase, Search, ArrowRight } from "lucide-react";
 import SEO from "../components/SEO";
-import { opportunities as placeholderOpps } from "../data/opportunities.sample";
 import BrandMarquee from "../components/BrandMarquee";
 import { getOpportunityImage, buildOpportunityImageCandidates } from "../data/opportunities.images";
 import { useDailyOriginalArticles } from "../data/useDailyOriginalArticles";
@@ -33,28 +32,15 @@ function pickNewsImageForOpportunity(opp, articles) {
 
 export default function Opportunities() {
 	const { opportunities: sheetsOpps, loading: sheetsLoading, error: sheetsError } = useGoogleSheetsOpportunities();
-	
-	// Combine Google Sheets opportunities with placeholders
+
+	// Use only Google Sheets opportunities (no placeholder/sample data)
 	const allOpps = useMemo(() => {
-		// Map Google Sheets opportunities to match placeholder format
-		const mappedSheets = sheetsOpps.map(opp => ({
+		return sheetsOpps.map(opp => ({
 			...opp,
 			id: opp.id || `opp-${opp.title?.toLowerCase().replace(/\s+/g, '-')}`,
-			// Ensure all required fields are present
 			featured: opp.featured === true || opp.featured === 'true',
 			tags: Array.isArray(opp.tags) ? opp.tags : (opp.tags ? [opp.tags] : [])
 		}));
-		
-		// Combine with placeholders, prioritizing Google Sheets
-		const combined = [...mappedSheets, ...placeholderOpps];
-		// Remove duplicates by ID/title, keeping Google Sheets first
-		const seen = new Set();
-		return combined.filter(opp => {
-			const key = opp.id || opp.title;
-			if (seen.has(key)) return false;
-			seen.add(key);
-			return true;
-		});
 	}, [sheetsOpps]);
 	
 	const categories = ["All", "Grant", "Accelerator", "Competition", "Fellowship", "Training", "Impact Loan"];
@@ -91,10 +77,18 @@ export default function Opportunities() {
 			items.sort((a, b) => (b.amountMax || 0) - (a.amountMax || 0));
 		}
 		return items;
-	}, [featuredOnly, cat, region, country, tag, q, sort]);
+	}, [allOpps, featuredOnly, cat, region, country, tag, q, sort]);
 
-	// Limit listing to 3 items (as requested)
-	const paged = filtered.slice(0, 3);
+	const PER_PAGE = 10;
+	const [page, setPage] = useState(1);
+	const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+	const currentPage = Math.min(page, totalPages);
+	const paged = useMemo(() => filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE), [filtered, currentPage]);
+
+	// Reset to page 1 when filters change; clamp page when total pages shrinks
+	useEffect(() => setPage(1), [cat, region, country, tag, q, sort, featuredOnly]);
+	useEffect(() => { if (page > totalPages && totalPages >= 1) setPage(totalPages); }, [totalPages, page]);
+
 	const { articles: newsArticles } = useDailyOriginalArticles();
 
 	return (
@@ -133,9 +127,22 @@ export default function Opportunities() {
 				</div>
 			</header>
 
+			{sheetsLoading && (
+				<div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+					<span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+					Loading opportunities from the database…
+				</div>
+			)}
+
 			{sheetsError && (
 				<div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
-					Could not load opportunities from the server. Showing sample opportunities. ({sheetsError})
+					Could not load opportunities. Please try again later. ({sheetsError})
+				</div>
+			)}
+
+			{!sheetsLoading && !sheetsError && allOpps.length > 0 && (
+				<div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 px-4 py-2 text-sm text-emerald-800 dark:text-emerald-200">
+					Showing {allOpps.length} opportunit{allOpps.length === 1 ? 'y' : 'ies'}.
 				</div>
 			)}
 
@@ -189,13 +196,31 @@ export default function Opportunities() {
 				{/* Main Content */}
 				<section className="space-y-6" id="featured">
 					<div id="all" />
-					{paged.length === 0 ? (
+					{sheetsLoading ? (
+						<div className="grid gap-6 sm:grid-cols-2">
+							{[1, 2, 3, 4].map((i) => (
+								<div key={i} className="rounded-xl border bg-white dark:border-gray-800 dark:bg-[#0B1220] overflow-hidden animate-pulse">
+									<div className="aspect-[16/9] bg-gray-200 dark:bg-gray-700" />
+									<div className="p-4 space-y-2">
+										<div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+										<div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+										<div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+										<div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
+									</div>
+								</div>
+							))}
+						</div>
+					) : paged.length === 0 ? (
 						<div className="rounded-2xl border bg-red-50 p-10 text-center text-sm text-gray-600 ring-1 ring-red-100 dark:border-gray-800 dark:bg-[#0B1220] dark:text-gray-300 dark:ring-gray-800">
-							No opportunities match your filters. Try broadening your search.
+							{allOpps.length === 0
+								? (sheetsError ? "Could not load opportunities. Please try again later." : "No opportunities have been published yet. Check back soon.")
+								: "No opportunities match your filters. Try broadening your search."}
 						</div>
 					) : (
 						<div className="grid gap-6 sm:grid-cols-2">
 							{paged.map((opp, idx) => {
+								// Use same id as hook/detail page for correct routing
+								const oppId = opp.id || `opp-${String(opp.title || '').toLowerCase().replace(/\s+/g, '-')}`;
 								const date = opp.postedAt || opp.deadline;
 								const preferred = pickNewsImageForOpportunity(opp, newsArticles);
 								// Prioritize heroImage if available
@@ -209,8 +234,8 @@ export default function Opportunities() {
 								})();
 								const img = hero || cands[0] || getOpportunityImage(opp);
 								return (
-									<article key={opp.id} className="relative">
-										<Link to={`/opportunities/${encodeURIComponent(opp.id)}`} className="group block overflow-hidden rounded-xl">
+									<article key={oppId} className="relative">
+										<Link to={`/opportunities/${encodeURIComponent(oppId)}`} className="group block overflow-hidden rounded-xl">
 											<div className="relative aspect-[16/9]">
 												<img
 													src={img}
@@ -230,7 +255,7 @@ export default function Opportunities() {
 																e.currentTarget.src = next;
 															} else {
 																// final fallback to picsum seed by title
-																e.currentTarget.src = `https://picsum.photos/seed/${encodeURIComponent(opp.id || opp.title || "opp")}/1600/900`;
+																e.currentTarget.src = `https://picsum.photos/seed/${encodeURIComponent(oppId)}/1600/900`;
 															}
 														} catch {}
 													}}
@@ -247,12 +272,12 @@ export default function Opportunities() {
 										<div className="mt-2 text-[12px] text-gray-600 dark:text-gray-400">
 											<ul className="flex flex-wrap items-center gap-2">
 												<li className="flex items-center gap-1">
-													<span>{date ? new Date(date).toLocaleDateString() : "TBA"}</span>
+													<span>{date ? new Date(date).toLocaleDateString() : "Not Specified"}</span>
 												</li>
 											</ul>
 										</div>
 										<h3 className="title-medium-dark size-lg mb-0 mt-1 text-[18px] font-semibold leading-snug text-gray-900 hover:text-primary dark:text-white">
-											<Link to={`/opportunities/${encodeURIComponent(opp.id)}`}>{opp.title}</Link>
+											<Link to={`/opportunities/${encodeURIComponent(oppId)}`}>{opp.title}</Link>
 										</h3>
 										{opp.description ? (
 											<p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-gray-700 dark:text-gray-300">
@@ -261,7 +286,7 @@ export default function Opportunities() {
 										) : null}
 										<div className="mt-3">
 											<Link
-												to={`/opportunities/${encodeURIComponent(opp.id)}`}
+												to={`/opportunities/${encodeURIComponent(oppId)}`}
 												className="inline-flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-gray-900 transition hover:bg-red-100 dark:border-gray-700 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
 											>
 												Read more <ArrowRight size={14} />
@@ -272,7 +297,48 @@ export default function Opportunities() {
 							})}
 						</div>
 					)}
-					{/* Pagination removed since we now show only 3 items */}
+					{/* Pagination: 10 per page */}
+					{filtered.length > PER_PAGE && (
+						<nav className="flex flex-wrap items-center justify-center gap-2 pt-8" aria-label="Opportunities pagination">
+							<button
+								type="button"
+								onClick={() => setPage((p) => Math.max(1, p - 1))}
+								disabled={currentPage <= 1}
+								className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-primary hover:bg-primary/5 hover:text-primary disabled:pointer-events-none disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:border-primary dark:hover:bg-primary/10"
+							>
+								Previous
+							</button>
+							<div className="flex items-center gap-1">
+								{Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+									<button
+										key={p}
+										type="button"
+										onClick={() => setPage(p)}
+										className={`min-w-[2.25rem] rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+											p === currentPage
+												? "border-primary bg-primary text-white dark:border-primary dark:bg-primary"
+												: "border-gray-300 text-gray-700 hover:border-primary hover:text-primary dark:border-gray-600 dark:text-gray-300 dark:hover:border-primary"
+										}`}
+									>
+										{p}
+									</button>
+								))}
+							</div>
+							<button
+								type="button"
+								onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+								disabled={currentPage >= totalPages}
+								className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-primary hover:bg-primary/5 hover:text-primary disabled:pointer-events-none disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:border-primary dark:hover:bg-primary/10"
+							>
+								Next
+							</button>
+						</nav>
+					)}
+					{filtered.length > 0 && (
+						<p className="pt-4 text-center text-sm text-gray-500 dark:text-gray-400">
+							Showing {(currentPage - 1) * PER_PAGE + 1}–{Math.min(currentPage * PER_PAGE, filtered.length)} of {filtered.length}
+						</p>
+					)}
 				</section>
 			</div>
 		</div>

@@ -29,6 +29,25 @@ if (!$data) {
     json_error('Invalid JSON data', 400);
 }
 
+// Ensure "values" is sent for append so Apps Script gets correct column count (fixes "data has 1 but range has 14")
+$articlesColumns = ['title', 'slug', 'category', 'subheading', 'summary', 'content', 'image', 'heroImage', 'whyItMatters', 'publishedAt', 'author', 'status', 'scheduledAt', 'createdAt'];
+$opportunitiesColumns = ['title', 'org', 'country', 'region', 'category', 'amountMin', 'amountMax', 'currency', 'deadline', 'postedAt', 'link', 'tags', 'featured', 'description', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
+$tendersColumns = ['title', 'agency', 'category', 'country', 'region', 'deadline', 'postedAt', 'link', 'description', 'eligibility', 'value', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
+
+if (isset($data['action']) && $data['action'] === 'append' && isset($data['data']) && is_array($data['data']) && empty($data['values'])) {
+    $sheet = isset($data['sheet']) ? $data['sheet'] : '';
+    $rowData = $data['data'];
+    $columns = $sheet === 'Articles' ? $articlesColumns : ($sheet === 'Opportunities' ? $opportunitiesColumns : ($sheet === 'Tenders' ? $tendersColumns : null));
+    if ($columns) {
+        $row = [];
+        foreach ($columns as $key) {
+            $v = isset($rowData[$key]) ? $rowData[$key] : '';
+            $row[] = $v === null || $v === '' ? '' : (is_array($v) || is_object($v) ? json_encode($v) : (string) $v);
+        }
+        $data['values'] = [$row];
+    }
+}
+
 // Log the request for debugging (remove in production)
 error_log('Google Sheets Proxy Request: ' . json_encode($data));
 

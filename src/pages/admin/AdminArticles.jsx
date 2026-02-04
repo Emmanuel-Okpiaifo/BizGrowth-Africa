@@ -7,8 +7,11 @@ import { ErrorBoundary } from '../../components/admin/ErrorBoundary';
 import { toGMTPlus1ISO, getMinScheduleDateTime } from '../../utils/scheduling';
 import { uploadImage } from '../../utils/imageUpload';
 import { saveDraft, getDraft, deleteDraft } from '../../utils/draftStorage';
+import { getCurrentUser } from '../../utils/adminAuth';
 
 const CATEGORIES = ['Fintech', 'Policy', 'Funding', 'Markets', 'SMEs', 'Reports'];
+
+const defaultAuthor = () => getCurrentUser() || 'BizGrowth Africa Editorial';
 
 export default function AdminArticles() {
 	const { draftId } = useParams();
@@ -22,8 +25,9 @@ export default function AdminArticles() {
 		content: '',
 		image: '',
 		heroImage: '',
+		whyItMatters: '',
 		publishedAt: new Date().toISOString().split('T')[0],
-		author: 'BizGrowth Africa Editorial'
+		author: defaultAuthor()
 	});
 	const [isScheduled, setIsScheduled] = useState(false);
 	const [scheduledDateTime, setScheduledDateTime] = useState('');
@@ -46,8 +50,9 @@ export default function AdminArticles() {
 					content: draft.content || '',
 					image: draft.image || '',
 					heroImage: draft.heroImage || '',
+					whyItMatters: draft.whyItMatters || '',
 					publishedAt: draft.publishedAt || new Date().toISOString().split('T')[0],
-					author: draft.author || 'BizGrowth Africa Editorial'
+					author: draft.author || defaultAuthor()
 				});
 				setCurrentDraftId(draftId);
 				setStatus({ type: 'success', message: 'Draft loaded. Continue editing...' });
@@ -106,6 +111,7 @@ export default function AdminArticles() {
 				content: formData.content,
 				image: formData.image,
 				heroImage: formData.heroImage,
+				whyItMatters: formData.whyItMatters || '',
 				publishedAt: formData.publishedAt,
 				author: formData.author,
 				status: postStatus,
@@ -139,8 +145,9 @@ export default function AdminArticles() {
 						content: '',
 						image: '',
 						heroImage: '',
+						whyItMatters: '',
 						publishedAt: new Date().toISOString().split('T')[0],
-						author: 'BizGrowth Africa Editorial'
+						author: formData.author || defaultAuthor()
 					});
 					setIsScheduled(false);
 					setScheduledDateTime('');
@@ -363,6 +370,19 @@ export default function AdminArticles() {
 					/>
 				</div>
 
+				<div>
+					<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+						Why it matters for African MSMEs
+					</label>
+					<textarea
+						value={formData.whyItMatters}
+						onChange={(e) => setFormData(prev => ({ ...prev, whyItMatters: e.target.value }))}
+						rows={3}
+						className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none resize-none"
+						placeholder="1–2 sentences on why this story matters for African small businesses"
+					/>
+				</div>
+
 				{/* Content */}
 				<div>
 					<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -467,6 +487,7 @@ export default function AdminArticles() {
 									content: formData.content || '',
 									image: formData.image || '',
 									heroImage: formData.heroImage || '',
+									whyItMatters: formData.whyItMatters || '',
 									publishedAt: formData.publishedAt,
 									author: formData.author
 								};

@@ -21,14 +21,12 @@ if (!$configPath) {
   $configPath = __DIR__ . '/../server-config/bizgrowth_keys.php';
 }
 $status['configPath'] = $configPath;
-if (is_file($configPath)) {
-  $cfg = include $configPath;
-  $status['keys']['alphaVantage'] = !empty($cfg['ALPHAVANTAGE_API_KEY']);
-  $status['keys']['fred'] = !empty($cfg['FRED_API_KEY']);
-} else {
-  $status['keys']['alphaVantage'] = false;
-  $status['keys']['fred'] = false;
+$cfg = [];
+if ($configPath && is_file($configPath)) {
+  $cfg = (array) include $configPath;
 }
+$status['keys']['alphaVantage'] = !empty($cfg['ALPHAVANTAGE_API_KEY']) || !empty(getenv('ALPHAVANTAGE_API_KEY'));
+$status['keys']['fred'] = !empty($cfg['FRED_API_KEY']) || !empty(getenv('FRED_API_KEY'));
 
 $status['cache']['writable'] = is_writable($status['cache']['path']);
 

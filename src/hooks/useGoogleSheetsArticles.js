@@ -14,9 +14,7 @@ export function useGoogleSheetsArticles() {
 		try {
 			setLoading(true);
 			setError(null);
-			console.log('Loading articles from Google Sheets...');
 			const data = await getSheetData('Articles');
-			console.log('Raw data from Google Sheets:', data);
 			
 			// Transform Google Sheets data to match expected article format
 			const transformed = data
@@ -25,7 +23,6 @@ export function useGoogleSheetsArticles() {
 					const hasTitle = article.title && article.title.trim() !== '';
 					const hasSlug = article.slug && article.slug.trim() !== '';
 					if (!hasTitle || !hasSlug) {
-						console.log('Filtering out article (missing title or slug):', article);
 						return false;
 					}
 					
@@ -40,110 +37,39 @@ export function useGoogleSheetsArticles() {
 						console.log(`[FILTER] Article "${article.title}" - Raw Status: "${rawStatus}", Normalized: "${articleStatus}", ScheduledAt: "${scheduledAt}"`);
 					}
 					
-					// STRICT FILTERING: Only show if status is explicitly 'published'
-					// OR if status is 'scheduled' AND scheduled time has passed
-					
-					// If status is empty or not set, DON'T show (safer default)
+					// Only show when status is 'published'. Scheduled and draft never show until status changes to published.
 					if (!articleStatus || articleStatus === '') {
-						if (import.meta.env.DEV) {
-							console.log(`[FILTER] Filtering out article with empty status: "${article.title}"`);
-						}
 						return false;
 					}
-					
-					// Don't show drafts
 					if (articleStatus === 'draft') {
-						if (import.meta.env.DEV) {
-							console.log(`[FILTER] Filtering out draft article: "${article.title}"`);
-						}
 						return false;
 					}
-					
-					// Handle scheduled posts
 					if (articleStatus === 'scheduled') {
-						if (!scheduledAt) {
-							if (import.meta.env.DEV) {
-								console.log(`[FILTER] Scheduled article "${article.title}" has no scheduledAt, filtering out`);
-							}
-							return false; // Scheduled but no time set - don't show
-						}
-						
-						// Check if scheduled time has passed
-						const now = new Date();
-						let scheduled;
-						
-						// Parse scheduledAt - handle timezone
-						if (scheduledAt.includes('+') || scheduledAt.includes('Z')) {
-							scheduled = new Date(scheduledAt);
-						} else if (scheduledAt.includes('T')) {
-							// Has time but no timezone - assume UTC (since we stored it as UTC)
-							scheduled = new Date(scheduledAt + 'Z');
-						} else {
-							// Date only - treat as midnight UTC
-							scheduled = new Date(scheduledAt + 'T00:00:00Z');
-						}
-						
-						// Validate date
-						if (isNaN(scheduled.getTime())) {
-							if (import.meta.env.DEV) {
-								console.log(`[FILTER] Invalid scheduledAt for article "${article.title}": "${scheduledAt}"`);
-							}
-							return false;
-						}
-						
-						// Compare UTC times
-						const nowUTC = now.getTime();
-						const scheduledUTC = scheduled.getTime();
-						
-						// If scheduled time hasn't passed yet, don't show
-						if (nowUTC < scheduledUTC) {
-							if (import.meta.env.DEV) {
-								console.log(`[FILTER] Article "${article.title}" is scheduled for ${scheduledAt}, not showing yet`);
-							}
-							return false; // Not yet time to publish
-						}
-						// If time has passed, allow it through (will show as published)
+						return false; // Do not show on main site until backend has changed status to published
 					}
-					
-					// Only show if status is explicitly 'published' or scheduled time has passed
-					if (articleStatus !== 'published' && articleStatus !== 'scheduled') {
-						if (import.meta.env.DEV) {
-							console.log(`[FILTER] Filtering out article with status "${articleStatus}": "${article.title}"`);
-						}
-						return false;
-					}
-					
-					// Final check: if status is 'published', show it
-					if (articleStatus === 'published') {
-						return true;
-					}
-					
-					// If we get here and status is 'scheduled', the time must have passed (checked above)
-					return articleStatus === 'scheduled';
-					
-					return true;
+					return articleStatus === 'published';
 				})
 				.map(article => {
-					// Log the raw article data to debug
-					console.log('Processing article:', article);
-					
-					const heroImg = (article.heroImage || '').trim();
-					const img = (article.image || '').trim();
+					// Sheet keys are normalized to lowercase; support "whyItMatters" and "Why It Matters" column names
+					const whyItMattersRaw = article.whyitmatters ?? article['why it matters'] ?? article.whyItMatters ?? '';
+					const heroImg = (article.heroimage ?? article['hero image'] ?? article.heroImage ?? '').toString().trim();
+					const img = (article.image ?? '').toString().trim();
 					return {
 						slug: (article.slug || '').trim(),
 						title: (article.title || '').trim(),
 						source: "BizGrowth Africa",
 						image: img || heroImg,
-						heroImage: heroImg,
+						heroImage: heroImg || img,
 						imageCandidates: [heroImg, img].filter(Boolean),
 						url: `/news/${(article.slug || '').trim()}`,
-						publishedAt: article.publishedAt || article.createdAt || new Date().toISOString(),
+						publishedAt: article.publishedat || article.publishedAt || article.createdat || article.createdAt || new Date().toISOString(),
 						summary: (article.summary || article.subheading || '').trim(),
 						category: (article.category || 'Uncategorized').trim(),
 						subheading: (article.subheading || '').trim(),
-						content: (article.content || '').trim(), // HTML content from rich text editor
-						richBody: null, // Will be parsed from content if needed
-						body: null, // Will be parsed from content if needed
+						content: (article.content || '').trim(),
+						richBody: null,
+						body: null,
+						whyItMatters: (typeof whyItMattersRaw === 'string' ? whyItMattersRaw : '').trim(),
 						author: (article.author || 'BizGrowth Africa Editorial').trim(),
 					};
 				})
@@ -154,7 +80,6 @@ export function useGoogleSheetsArticles() {
 					return dateB - dateA;
 				});
 			
-			console.log('Transformed articles:', transformed);
 			setArticles(transformed);
 			setError(null);
 		} catch (err) {

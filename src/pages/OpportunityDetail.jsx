@@ -1,37 +1,63 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import SEO from "../components/SEO";
-import { opportunities as placeholderOpps } from "../data/opportunities.sample";
 import { getOpportunityImage, buildOpportunityImageCandidates } from "../data/opportunities.images";
 import { useGoogleSheetsOpportunities } from "../hooks/useGoogleSheetsOpportunities";
 import { Calendar, MapPin, BadgeDollarSign, Tag, ArrowRight, Building2 } from "lucide-react";
 
 function formatAmount(min, max, currency = "USD") {
-	if ((min ?? 0) === 0 && (max ?? 0) === 0) return "Non‑dilutive / In‑kind";
-	const fmt = (v) => (typeof v === "number" ? v.toLocaleString() : "");
-	if (min && max && min !== max) return `${currency} ${fmt(min)}–${fmt(max)}`;
-	const val = max || min || 0;
+	const hasMin = min != null && min !== '' && !Number.isNaN(Number(min)) && Number(min) > 0;
+	const hasMax = max != null && max !== '' && !Number.isNaN(Number(max)) && Number(max) > 0;
+	if (!hasMin && !hasMax) return "Not Specified";
+	const fmt = (v) => (typeof v === "number" ? v.toLocaleString() : String(v));
+	if (hasMin && hasMax && min !== max) return `${currency} ${fmt(Number(min))}–${fmt(Number(max))}`;
+	const val = hasMax ? Number(max) : hasMin ? Number(min) : 0;
 	return `${currency} ${fmt(val)}`;
 }
 
 export default function OpportunityDetail() {
-	const { id } = useParams();
+	const { id: rawId } = useParams();
+	const id = rawId ? decodeURIComponent(rawId) : '';
 	const { opportunities: sheetsOpps, loading } = useGoogleSheetsOpportunities();
-	
-	// Combine Google Sheets opportunities with placeholders
+
+	// Use only Google Sheets opportunities (no placeholder/sample data)
 	const allOpportunities = useMemo(() => {
-		const combined = [...sheetsOpps, ...placeholderOpps];
-		// Remove duplicates by ID, keeping Google Sheets first
-		const seen = new Set();
-		return combined.filter(opp => {
-			const key = opp.id;
-			if (seen.has(key)) return false;
-			seen.add(key);
-			return true;
-		});
+		return sheetsOpps.map(opp => ({
+			...opp,
+			id: opp.id || `opp-${opp.title?.toLowerCase().replace(/\s+/g, '-')}`,
+		}));
 	}, [sheetsOpps]);
 	
 	const opp = allOpportunities.find((o) => o.id === id);
+
+	// All hooks must run on every render (before any early return)
+	const candidates = useMemo(() => {
+		if (!opp) return [];
+		const picsum = `https://picsum.photos/seed/${encodeURIComponent(opp.id || opp.title || 'opp')}/1600/900`;
+		const heroImage = opp.heroImage || '';
+		const fallbackImages = [getOpportunityImage(opp), ...buildOpportunityImageCandidates(opp)].filter(Boolean);
+		const uniqueFallbacks = Array.from(new Set(fallbackImages));
+		const list = heroImage ? [heroImage, ...uniqueFallbacks] : uniqueFallbacks;
+		return list.length > 0 ? [...list, picsum] : [picsum];
+	}, [opp]);
+	const [heroSrc, setHeroSrc] = useState('');
+	
+	useEffect(() => {
+		if (!opp || !candidates.length) return;
+		const src = candidates[0];
+		setHeroSrc(src);
+		if (src) {
+			const link = document.createElement('link');
+			link.rel = 'preload';
+			link.as = 'image';
+			link.href = src;
+			link.fetchPriority = 'high';
+			document.head.appendChild(link);
+			return () => {
+				if (link.parentNode) link.parentNode.removeChild(link);
+			};
+		}
+	}, [id, opp?.heroImage, candidates]);
 
 	if (loading) {
 		return (
@@ -59,36 +85,7 @@ export default function OpportunityDetail() {
 	}
 
 	const more = allOpportunities.filter((o) => o.id !== opp.id).slice(0, 6);
-
-	// Images - Prioritize heroImage if available, with final picsum fallback
-	const picsumFallback = `https://picsum.photos/seed/${encodeURIComponent(opp.id || opp.title || 'opp')}/1600/900`;
-	const candidates = useMemo(() => {
-		const heroImage = opp.heroImage || '';
-		const fallbackImages = [getOpportunityImage(opp), ...buildOpportunityImageCandidates(opp)].filter(Boolean);
-		const uniqueFallbacks = Array.from(new Set(fallbackImages));
-		const list = heroImage ? [heroImage, ...uniqueFallbacks] : uniqueFallbacks;
-		return list.length > 0 ? [...list, picsumFallback] : [picsumFallback];
-	}, [opp, picsumFallback]);
-	const [heroSrc, setHeroSrc] = useState(candidates[0] || picsumFallback);
-	
-	// Preload hero image for faster loading
-	useEffect(() => {
-		setHeroSrc(candidates[0] || '');
-		if (candidates[0]) {
-			const link = document.createElement('link');
-			link.rel = 'preload';
-			link.as = 'image';
-			link.href = candidates[0];
-			link.fetchPriority = 'high';
-			document.head.appendChild(link);
-			return () => {
-				if (link.parentNode) {
-					link.parentNode.removeChild(link);
-				}
-			};
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [id, opp.heroImage]);
+	const displayHeroSrc = heroSrc || candidates[0] || `https://picsum.photos/seed/${encodeURIComponent(opp.id || opp.title || 'opp')}/1600/900`;
 
 	return (
 		<div className="min-h-screen bg-white dark:bg-gray-900">
@@ -163,7 +160,7 @@ export default function OpportunityDetail() {
 										Apply Now <ArrowRight size={18} />
 									</a>
 									<p className="text-sm text-gray-700 dark:text-gray-300">
-										<strong>Deadline:</strong> {opp.deadline ? new Date(opp.deadline).toLocaleDateString() : "TBA"}
+										<strong>Deadline:</strong> {opp.deadline && String(opp.deadline).trim() ? new Date(opp.deadline).toLocaleDateString() : "Not Specified"}
 									</p>
 								</div>
 
@@ -284,7 +281,7 @@ export default function OpportunityDetail() {
 										<Calendar size={20} className="text-primary flex-none mt-0.5" />
 										<div>
 											<div className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Deadline</div>
-											<div className="mt-1 font-bold text-gray-900 dark:text-white">{opp.deadline ? new Date(opp.deadline).toLocaleDateString() : "TBA"}</div>
+											<div className="mt-1 font-bold text-gray-900 dark:text-white">{opp.deadline && String(opp.deadline).trim() ? new Date(opp.deadline).toLocaleDateString() : "Not Specified"}</div>
 										</div>
 									</div>
 									<div className="flex items-start gap-3">

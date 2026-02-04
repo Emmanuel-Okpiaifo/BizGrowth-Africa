@@ -1,82 +1,54 @@
-import { FileText, Search, Filter, ArrowRight } from "lucide-react";
-import SectionHeader from "../components/SectionHeader";
-import CategoryPills from "../components/CategoryPills";
-import PlaceholderBlock from "../components/PlaceholderBlock";
-import Pagination from "../components/Pagination";
+import { Link } from "react-router-dom";
+import { FileText, ArrowRight, Sparkles } from "lucide-react";
 import SEO from "../components/SEO";
 
 export default function ProcurementTenders() {
-	const categories = ["IT & Telecoms", "Construction", "Healthcare", "Energy", "Logistics"];
 	return (
-		<div className="space-y-8">
+		<div className="min-h-[80vh] flex flex-col">
 			<SEO
-				title="Procurement & Tenders — BizGrowth Africa"
-				description="Explore verified procurement opportunities and tender notices from public and private sectors across Africa. Access structured information to help MSMEs identify relevant contracts and strengthen compliance."
+				title="Procurement & Tenders — Coming Soon | BizGrowth Africa"
+				description="Curated procurement opportunities and tender notices for African MSMEs. This section is coming soon."
 				canonicalPath="/procurement-tenders"
 			/>
-			<header className="rounded-2xl bg-gradient-to-br from-primary/10 via-white to-primary/5 p-6 dark:via-[#0B1220]">
-				<h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-white">
-					<FileText size={22} /> Procurement & Tenders
-				</h1>
-				<p className="mt-1 text-gray-600 dark:text-gray-300">
-					Explore tender notices, eligibility, and timelines from public and private sector sources.
-				</p>
-			</header>
+			{/* Hero-style Coming Soon */}
+			<section className="relative flex-1 flex items-center justify-center overflow-hidden px-4 py-24 sm:py-32">
+				{/* Background gradients and shapes */}
+				<div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-white to-emerald-500/5 dark:from-[#0B1220] dark:via-[#0f172a] dark:to-primary/10" />
+				<div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full bg-primary/10 blur-3xl dark:bg-primary/20" />
+				<div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-emerald-400/10 blur-3xl dark:bg-emerald-500/10" />
+				<div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(220,38,38,0.12),transparent)] dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(220,38,38,0.15),transparent)]" />
 
-			<div className="grid gap-3 sm:grid-cols-3">
-				<div className="sm:col-span-2">
-					<div className="flex items-center gap-2">
-						<div className="flex-1">
-							<input
-								placeholder="Search tenders..."
-								className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition placeholder:text-gray-400 focus:border-primary dark:border-gray-700 dark:bg-transparent dark:text-white"
-							/>
-						</div>
-						<button className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:border-primary hover:text-primary dark:border-gray-700 dark:text-gray-200">
-							<Search size={14} /> Search
-						</button>
+				<div className="relative z-10 max-w-2xl mx-auto text-center">
+					{/* Icon */}
+					<div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-white shadow-xl shadow-primary/25 mb-8 animate-[pulse_3s_ease-in-out_infinite]">
+						<FileText className="w-10 h-10 sm:w-12 sm:h-12" strokeWidth={2} />
+					</div>
+					<div className="inline-flex items-center gap-2 rounded-full bg-primary/10 dark:bg-primary/20 px-4 py-2 text-sm font-semibold text-primary dark:text-primary/90 mb-6">
+						<Sparkles className="w-4 h-4" />
+						Coming Soon
+					</div>
+					<h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-4">
+						Procurement & Tenders
+					</h1>
+					<p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mb-10 max-w-lg mx-auto leading-relaxed">
+						We’re building a dedicated space for verified procurement opportunities and tender notices from public and private sectors across Africa.
+					</p>
+					<div className="flex flex-wrap items-center justify-center gap-4">
+						<Link
+							to="/opportunities"
+							className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-primary/25 transition hover:opacity-90 hover:shadow-xl hover:shadow-primary/30"
+						>
+							Explore Opportunities <ArrowRight className="w-5 h-5" />
+						</Link>
+						<Link
+							to="/"
+							className="inline-flex items-center gap-2 rounded-xl border-2 border-gray-300 dark:border-gray-600 px-6 py-3.5 text-base font-semibold text-gray-700 dark:text-gray-300 transition hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary"
+						>
+							Back to Home
+						</Link>
 					</div>
 				</div>
-				<div className="flex items-center justify-end">
-					<a href="#" className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
-						<Filter size={14} /> Filters
-					</a>
-				</div>
-			</div>
-			<CategoryPills categories={categories} />
-
-			<SectionHeader
-				title="Open Tenders"
-				action={
-					<a href="#" className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
-						Search <Search size={14} />
-					</a>
-				}
-			/>
-			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-				{Array.from({ length: 3 }).map((_, i) => (
-					<div key={i} className="rounded-xl border bg-white p-5 shadow-sm ring-1 ring-gray-200 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
-						<h3 className="font-semibold text-gray-900 dark:text-white">Tender Notice {i + 1}</h3>
-						<p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-							Agency • Category • Closing: TBA
-						</p>
-						<a href="#" className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-							View Details <ArrowRight size={14} />
-						</a>
-					</div>
-				))}
-			</div>
-
-			<SectionHeader title="How to Bid (Guide placeholders)" />
-			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-				<PlaceholderBlock title="Eligibility Checklist" />
-				<PlaceholderBlock title="Bid Proposal Template" />
-				<PlaceholderBlock title="Compliance & Certificates" />
-			</div>
-
-			<Pagination />
+			</section>
 		</div>
 	);
 }
-
-

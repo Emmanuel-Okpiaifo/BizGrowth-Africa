@@ -3,9 +3,9 @@ import { useParams, Link } from "react-router-dom";
 import { Facebook, Twitter, Linkedin, Link as LinkIcon, Briefcase, ArrowRight } from "lucide-react";
 import NewsCard from "../components/NewsCard";
 import { allOriginalArticles } from "../data/originals.index";
-import { opportunities } from "../data/opportunities.sample";
 import { getOpportunityImage } from "../data/opportunities.images";
 import { useGoogleSheetsArticles } from "../hooks/useGoogleSheetsArticles";
+import { useGoogleSheetsOpportunities } from "../hooks/useGoogleSheetsOpportunities";
 import SEO from "../components/SEO";
 import { SITE_URL } from "../config/site";
 
@@ -24,6 +24,7 @@ function formatDate(iso) {
 export default function NewsArticle() {
 	const { slug } = useParams();
 	const { articles: sheetsArticles, loading: sheetsLoading } = useGoogleSheetsArticles();
+	const { opportunities: sheetOpportunities } = useGoogleSheetsOpportunities();
 
 	// Always scroll to top when opening or switching articles
 	useEffect(() => {
@@ -91,7 +92,7 @@ export default function NewsArticle() {
 		}));
 	}, [article, allArticles]);
 
-	// Collect all available images from other articles and opportunities for fallback
+	// Collect all available images from other articles and opportunities (Google Sheets only) for fallback
 	const availableImages = useMemo(() => {
 		const imagePool = [];
 		
@@ -106,15 +107,15 @@ export default function NewsArticle() {
 			}
 		});
 		
-		// Collect images from opportunities
-		opportunities.forEach((opp) => {
-			const oppImg = getOpportunityImage(opp);
+		// Collect images from opportunities (Google Sheets only)
+		sheetOpportunities.forEach((opp) => {
+			const oppImg = opp.heroImage || getOpportunityImage(opp);
 			if (oppImg) imagePool.push(oppImg);
 		});
 		
 		// Remove duplicates while preserving order
 		return Array.from(new Set(imagePool.filter(Boolean)));
-	}, [article?.slug, allArticles]);
+	}, [article?.slug, allArticles, sheetOpportunities]);
 
 	if (sheetsLoading && !article) {
 		return (
@@ -152,7 +153,7 @@ export default function NewsArticle() {
 				title={`${article.title} — BizGrowth Africa`}
 				description={article.subheading || article.summary || ""}
 				type="article"
-				image={(article.imageCandidates && article.imageCandidates[0]) || article.image}
+				image={article.heroImage || article.image || (article.imageCandidates && article.imageCandidates[0])}
 				canonicalPath={`/news/${article.slug}`}
 				publishedTime={article.publishedAt}
 				jsonLd={{
@@ -174,7 +175,7 @@ export default function NewsArticle() {
 							url: `${SITE_URL}/favicon.png`
 						}
 					},
-					image: [(article.imageCandidates && article.imageCandidates[0]) || article.image],
+					image: [article.heroImage || article.image || (article.imageCandidates && article.imageCandidates[0])].filter(Boolean),
 					mainEntityOfPage: {
 						"@type": "WebPage",
 						"@id": `${SITE_URL}/news/${article.slug}`
@@ -326,7 +327,7 @@ export default function NewsArticle() {
 							<div className="mt-10 rounded-lg border-l-4 border-primary bg-white dark:bg-gray-800 dark:border-gray-700 p-6">
 								<h3 className="text-lg font-bold text-primary uppercase tracking-wide">Why it matters for African MSMEs</h3>
 								<p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed">
-									{article.whyItMatters || "Understanding these market dynamics helps African businesses make informed decisions about growth, expansion, and adaptation to changing economic conditions."}
+									{(article.whyItMatters && article.whyItMatters.trim()) ? article.whyItMatters : "Understanding these market dynamics helps African businesses make informed decisions about growth, expansion, and adaptation to changing economic conditions."}
 								</p>
 							</div>
 

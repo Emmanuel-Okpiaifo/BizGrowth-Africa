@@ -19,6 +19,8 @@ export default function AdminArticlesEdit() {
 		summary: '',
 		content: '',
 		image: '',
+		heroImage: '',
+		whyItMatters: '',
 		publishedAt: new Date().toISOString().split('T')[0],
 		author: 'BizGrowth Africa Editorial'
 	});
@@ -66,6 +68,8 @@ export default function AdminArticlesEdit() {
 					summary: (article.summary || '').trim(),
 					content: (article.content || '').trim(),
 					image: (article.image || '').trim(),
+					heroImage: (article.heroImage || '').trim(),
+					whyItMatters: (article.whyitmatters ?? article['why it matters'] ?? article.whyItMatters ?? '').toString().trim(),
 					publishedAt: article.publishedAt ? article.publishedAt.split('T')[0] : (article.createdAt ? article.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]),
 					author: (article.author || 'BizGrowth Africa Editorial').trim(),
 					createdAt: article.createdAt || new Date().toISOString()
@@ -124,7 +128,9 @@ export default function AdminArticlesEdit() {
 				subheading: formData.subheading,
 				summary: formData.summary,
 				content: formData.content,
-				image: formData.image,
+				image: formData.image || '',
+				heroImage: formData.heroImage || '',
+				whyItMatters: formData.whyItMatters || '',
 				publishedAt: formData.publishedAt,
 				author: formData.author,
 				createdAt: formData.createdAt || new Date().toISOString()
@@ -268,6 +274,18 @@ export default function AdminArticlesEdit() {
 								placeholder="https://example.com/image.jpg"
 							/>
 						</div>
+						<div>
+							<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+								Hero image URL (featured)
+							</label>
+							<input
+								type="url"
+								value={formData.heroImage}
+								onChange={(e) => setFormData(prev => ({ ...prev, heroImage: e.target.value }))}
+								className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+								placeholder="https://example.com/hero.jpg"
+							/>
+						</div>
 					</div>
 
 					{/* Subheading & Summary */}
@@ -294,6 +312,19 @@ export default function AdminArticlesEdit() {
 							rows={3}
 							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none resize-none"
 							placeholder="Brief summary of the article"
+						/>
+					</div>
+
+					<div>
+						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+							Why it matters for African MSMEs
+						</label>
+						<textarea
+							value={formData.whyItMatters}
+							onChange={(e) => setFormData(prev => ({ ...prev, whyItMatters: e.target.value }))}
+							rows={3}
+							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none resize-none"
+							placeholder="1–2 sentences on why this story matters for African small businesses"
 						/>
 					</div>
 

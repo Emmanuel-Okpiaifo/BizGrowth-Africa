@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, Eye, EyeOff, Loader2, User } from 'lucide-react';
-import { validateCredentials, setAuthSession } from '../../utils/adminAuth';
+import { validateCredentials, setAuthSession, getUserByUsername } from '../../utils/adminAuth';
 
 /**
  * Admin Login Component
@@ -30,10 +30,10 @@ export default function AdminLogin({ onLogin }) {
 		// Simulate a small delay for better UX
 		await new Promise(resolve => setTimeout(resolve, 400));
 
-		// Validate credentials
+		// Validate credentials and store canonical username (correct casing, e.g. "Adeola")
 		if (validateCredentials(username.trim(), password)) {
-			// Store in sessionStorage (clears when tab closes)
-			setAuthSession(username.trim());
+			const user = getUserByUsername(username.trim());
+			setAuthSession(user ? user.username : username.trim());
 			onLogin();
 		} else {
 			setError('Invalid username or password. Please try again.');
