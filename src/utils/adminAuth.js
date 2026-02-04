@@ -3,7 +3,7 @@
  * Manages multiple user credentials
  */
 
-// Admin users configuration
+// Admin users configuration (Rachael, Mayowa, Eniola already present — do not duplicate)
 // In production, this could be loaded from environment variables or a secure API
 const ADMIN_USERS = [
 	{
