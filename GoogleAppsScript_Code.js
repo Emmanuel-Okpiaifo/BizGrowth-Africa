@@ -81,3 +81,61 @@ function doGet(e) {
     timestamp: new Date().toISOString()
   })).setMimeType(ContentService.MimeType.JSON);
 }
+
+/**
+ * Auto-publish scheduled posts when their scheduled time has been reached.
+ * Run this on a time-driven trigger (e.g. every 5 or 15 minutes) so status
+ * changes from "scheduled" to "published" without the main website or cron.
+ *
+ * Set up trigger: In Apps Script editor → Triggers (clock icon) → Add Trigger
+ * → Choose function: publishDueScheduledPosts
+ * → Event: Time-driven → Minute timer → Every 5 minutes (or Every 15 minutes)
+ * → Save
+ */
+function publishDueScheduledPosts() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var now = new Date();
+  var sheetNames = ['Articles', 'Opportunities', 'Tenders'];
+  var timeZone = 'Africa/Lagos';
+  var publishedAtValue = Utilities.formatDate(now, timeZone, "yyyy-MM-dd'T'HH:mm:ss'+01:00'");
+
+  sheetNames.forEach(function(sheetName) {
+    var sheet = ss.getSheetByName(sheetName);
+    if (!sheet) return;
+    var lastRow = sheet.getLastRow();
+    var lastCol = sheet.getLastColumn();
+    if (lastRow < 2 || lastCol < 1) return;
+
+    var data = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+    var headers = data[0];
+    var headersLower = headers.map(function(h) {
+      return (h != null && h.toString) ? h.toString().trim().toLowerCase() : '';
+    });
+    var statusColIndex = headersLower.indexOf('status');
+    var scheduledAtColIndex = headersLower.indexOf('scheduledat');
+    var publishedAtColIndex = headersLower.indexOf('publishedat');
+    if (statusColIndex === -1 || scheduledAtColIndex === -1) return;
+
+    for (var r = 1; r < data.length; r++) {
+      var row = data[r];
+      var status = (row[statusColIndex] != null && row[statusColIndex].toString) ? row[statusColIndex].toString().trim().toLowerCase() : '';
+      var scheduledAt = (row[scheduledAtColIndex] != null && row[scheduledAtColIndex].toString) ? row[scheduledAtColIndex].toString().trim() : '';
+      if (status !== 'scheduled' || !scheduledAt) continue;
+
+      var scheduledDate;
+      try {
+        scheduledDate = new Date(scheduledAt);
+      } catch (e) {
+        continue;
+      }
+      if (isNaN(scheduledDate.getTime())) continue;
+      if (now.getTime() < scheduledDate.getTime()) continue;
+
+      var sheetRow = r + 1;
+      sheet.getRange(sheetRow, statusColIndex + 1).setValue('published');
+      if (publishedAtColIndex !== -1) {
+        sheet.getRange(sheetRow, publishedAtColIndex + 1).setValue(publishedAtValue);
+      }
+    }
+  });
+}
