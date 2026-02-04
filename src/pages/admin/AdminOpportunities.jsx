@@ -8,7 +8,7 @@ import { toGMTPlus1ISO, getMinScheduleDateTime } from '../../utils/scheduling';
 import { uploadImage } from '../../utils/imageUpload';
 import { saveDraft, getDraft, deleteDraft } from '../../utils/draftStorage';
 
-const CATEGORIES = ['Grant', 'Accelerator', 'Competition', 'Fellowship', 'Training', 'Impact Loan'];
+const CATEGORIES = ['Grant', 'Accelerator', 'Competition', 'Fellowship', 'Training', 'Impact Loan', 'Scholarship'];
 const REGIONS = ['West Africa', 'East Africa', 'Southern Africa', 'Central Africa', 'North Africa', 'Pan-African'];
 
 export default function AdminOpportunities() {

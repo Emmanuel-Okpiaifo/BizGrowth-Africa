@@ -27,6 +27,8 @@ function categorySynonyms(category) {
 			return ["workshop", "bootcamp", "skills", "classroom"];
 		case "Impact Loan":
 			return ["finance", "credit", "loan", "capital"];
+		case "Scholarship":
+			return ["scholarship", "study", "education", "academic"];
 		default:
 			return ["business", "msme", "entrepreneurship"];
 	}
