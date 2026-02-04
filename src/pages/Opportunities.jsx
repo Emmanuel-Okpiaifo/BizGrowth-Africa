@@ -7,6 +7,9 @@ import { getOpportunityImage, buildOpportunityImageCandidates } from "../data/op
 import { useDailyOriginalArticles } from "../data/useDailyOriginalArticles";
 import { useGoogleSheetsOpportunities } from "../hooks/useGoogleSheetsOpportunities";
 
+// Single source of truth for category filter options (including Scholarship)
+const OPPORTUNITY_CATEGORIES = ["All", "Grant", "Accelerator", "Competition", "Fellowship", "Training", "Impact Loan", "Scholarship"];
+
 function hashStringToInt(str) {
 	let h = 0;
 	const s = String(str);
@@ -43,10 +46,9 @@ export default function Opportunities() {
 		}));
 	}, [sheetsOpps]);
 	
-	const categories = ["All", "Grant", "Accelerator", "Competition", "Fellowship", "Training", "Impact Loan"];
 	const regions = ["All", "West Africa", "East Africa", "Southern Africa", "North Africa", "Pan‑Africa"];
 	const countries = ["All", ...Array.from(new Set(allOpps.map((o) => o.country).filter(Boolean)))];
-	const tags = ["All", ...Array.from(new Set(allOpps.flatMap((o) => o.tags || []).filter(Boolean)))];
+	const tags = ["All", ...Array.from(new Set(["Scholarship", ...allOpps.flatMap((o) => o.tags || []).filter(Boolean)]))];
 
 	const [q, setQ] = useState("");
 	const [cat, setCat] = useState("All");
@@ -162,18 +164,23 @@ export default function Opportunities() {
 									className="w-full bg-transparent outline-none"
 								/>
 							</label>
-							<select value={cat} onChange={(e) => setCat(e.target.value)} className="rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white">
-								{categories.map((c) => (<option key={c} value={c}>{c}</option>))}
+							<label className="text-xs font-semibold text-gray-600 dark:text-gray-400">Category</label>
+							<select value={cat} onChange={(e) => setCat(e.target.value)} className="rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white" aria-label="Filter by category">
+								{OPPORTUNITY_CATEGORIES.map((c) => (<option key={c} value={c}>{c}</option>))}
 							</select>
-							<select value={region} onChange={(e) => setRegion(e.target.value)} className="rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white">
+							<label className="text-xs font-semibold text-gray-600 dark:text-gray-400">Region</label>
+							<select value={region} onChange={(e) => setRegion(e.target.value)} className="rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white" aria-label="Filter by region">
 								{regions.map((r) => (<option key={r} value={r}>{r}</option>))}
 							</select>
-							<select value={country} onChange={(e) => setCountry(e.target.value)} className="rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white">
+							<label className="text-xs font-semibold text-gray-600 dark:text-gray-400">Country</label>
+							<select value={country} onChange={(e) => setCountry(e.target.value)} className="rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white" aria-label="Filter by country">
 								{countries.map((r) => (<option key={r} value={r}>{r}</option>))}
 							</select>
-							<select value={tag} onChange={(e) => setTag(e.target.value)} className="rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white">
+							<label className="text-xs font-semibold text-gray-600 dark:text-gray-400">Tag</label>
+							<select value={tag} onChange={(e) => setTag(e.target.value)} className="rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white" aria-label="Filter by tag">
 								{tags.map((r) => (<option key={r} value={r}>{r}</option>))}
 							</select>
+							<label className="text-xs font-semibold text-gray-600 dark:text-gray-400">Sort</label>
 							<select value={sort} onChange={(e) => setSort(e.target.value)} className="rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white">
 								<option>Deadline</option>
 								<option>Newest</option>

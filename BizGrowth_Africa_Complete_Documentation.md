@@ -361,7 +361,7 @@ title | org | country | region | category | amountMin | amountMax | currency | d
 - `org` - Organization name
 - `country` - Country name
 - `region` - Region (West Africa, East Africa, etc.)
-- `category` - Grant, Accelerator, Competition, Fellowship, Training, Impact Loan
+- `category` - Grant, Accelerator, Competition, Fellowship, Training, Impact Loan, Scholarship
 - `amountMin` - Minimum funding amount (number)
 - `amountMax` - Maximum funding amount (number)
 - `currency` - Currency code (USD, NGN, etc.)
@@ -424,92 +424,11 @@ title | agency | category | country | region | deadline | postedAt | link | desc
 
 ### Step 5: Set Up Google Apps Script (For Write Access)
 
+Use the **canonical script** in this project: **`GoogleAppsScript_Code.js`**. It supports append, update, delete, and auto-publishing of scheduled posts.
+
 1. In your Google Sheet, click **Extensions** → **Apps Script**
 2. Delete the default code
-3. Paste the following code:
-
-```javascript
-function doPost(e) {
-  try {
-    const data = JSON.parse(e.postData.contents);
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(data.sheet);
-    
-    if (!sheet) {
-      return ContentService.createTextOutput(JSON.stringify({ 
-        success: false, 
-        error: 'Sheet not found. Make sure you have a sheet named "' + data.sheet + '"' 
-      }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-    
-    if (data.action === 'append') {
-      // Prefer explicit values array (fixes "data has 1 but range has 14" when headers/case don't match)
-      let row;
-      if (data.values && Array.isArray(data.values[0])) {
-        row = data.values[0];
-      } else {
-        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-        row = headers.map(header => {
-          if (!header || header.trim() === '') return '';
-          const key = header.trim();
-          return data.data[key] ?? data.data[key.toLowerCase()] ?? '';
-        });
-      }
-      sheet.appendRow(row);
-      
-      return ContentService.createTextOutput(JSON.stringify({ 
-        success: true,
-        message: 'Row appended successfully'
-      }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-    
-    if (data.action === 'update') {
-      let row;
-      if (data.values && Array.isArray(data.values[0])) {
-        row = data.values[0];
-      } else {
-        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-        row = headers.map(header => {
-          if (!header || header.trim() === '') return '';
-          const key = header.trim();
-          return data.data[key] ?? data.data[key.toLowerCase()] ?? '';
-        });
-      }
-      // Update row (row index is 1-based, +1 for header row). getRange(row, col, numRows, numCols)
-      sheet.getRange(data.row + 1, 1, 1, row.length).setValues([row]);
-      
-      return ContentService.createTextOutput(JSON.stringify({ 
-        success: true,
-        message: 'Row updated successfully'
-      }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-    
-    return ContentService.createTextOutput(JSON.stringify({ 
-      success: false, 
-      error: 'Invalid action. Use "append" or "update"' 
-    }))
-      .setMimeType(ContentService.MimeType.JSON);
-      
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ 
-      success: false, 
-      error: error.toString() 
-    }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({ 
-    message: 'Google Sheets API is running',
-    timestamp: new Date().toISOString()
-  }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-```
-
+3. Open **`GoogleAppsScript_Code.js`** in this project folder, copy its **entire contents**, and paste into the Apps Script editor.
 4. Click **"Deploy"** → **"New deployment"**
 5. Select type: **"Web app"**
 6. Configure:
@@ -518,6 +437,17 @@ function doGet(e) {
    - Who has access: **"Anyone"** (required for CORS)
 7. Click **"Deploy"**
 8. **Copy the Web app URL** - you'll need this for `.env`
+
+#### Fix: "The number of columns in the data does not match the number of columns in the range"
+
+If you see this error when publishing or scheduling from the admin, your **deployed** Apps Script may be outdated.
+
+1. Open your Google Sheet → **Extensions** → **Apps Script**.
+2. Select all existing code (Ctrl+A / Cmd+A) and delete it.
+3. Open **`GoogleAppsScript_Code.js`** in this project, copy its **entire contents**, and paste into the Apps Script editor.
+4. Click **Save** → **Deploy** → **Manage deployments** → **Edit** (pencil) → **Version** → **New version** → **Deploy**.
+
+The script builds each row from your sheet’s Row 1 headers and the payload `data` (case-insensitive), so `status` and `scheduledAt` always go into the correct columns. Ensure Row 1 has headers for at least: **status**, **scheduledAt**, and (for Articles) **publishedAt**. If these columns were missing, add them so new rows line up correctly.
 
 ### Step 6: Get Spreadsheet ID
 
@@ -1198,7 +1128,26 @@ Add these columns to your Google Sheets (if not already present):
 3. System checks all sheets and publishes posts whose time has arrived
 4. Status updates from `scheduled` to `published`
 
-#### Option 2: Automatic Publishing (Cron Job - Recommended)
+#### Option 2: Automatic Publishing via Google Apps Script (Recommended — No Cron)
+
+Scheduled posts can be published automatically by the **Google Apps Script** itself, with no main website or server cron required.
+
+1. Open your **Google Sheet** (the one used for Articles/Opportunities/Tenders).
+2. Go to **Extensions** → **Apps Script**.
+3. Ensure the script includes the function **`publishDueScheduledPosts`** (see project file **`GoogleAppsScript_Code.js`**).
+4. In the Apps Script editor, click the **clock icon** (**Triggers**) in the left sidebar.
+5. Click **+ Add Trigger** (bottom right).
+6. Set:
+   - **Choose function:** `publishDueScheduledPosts`
+   - **Choose deployment:** Head
+   - **Select event source:** Time-driven
+   - **Select type of time-based trigger:** Minute timer
+   - **Select minute interval:** Every 5 minutes (or Every 15 minutes)
+7. Click **Save** and authorize the script if prompted.
+
+After this, the script runs every 5 (or 15) minutes. Any row with **status** = `scheduled` and **scheduledAt** ≤ current time is updated to **status** = `published` and **publishedAt** = now. The main website does not trigger publishing.
+
+#### Option 3: Automatic Publishing (Server Cron Job)
 
 **For cPanel:**
 
@@ -1220,11 +1169,7 @@ Add these columns to your Google Sheets (if not already present):
 
 **For Other Hosting:**
 
-Use external cron services:
-- **EasyCron** (https://www.easycron.com/)
-- **Cron-job.org** (https://cron-job.org/)
-
-Set URL to: `https://www.bizgrowthafrica.com/api/publish-scheduled.php` with POST method.
+Use external cron services (e.g. EasyCron, Cron-job.org) and set URL to: `https://www.bizgrowthafrica.com/api/publish-scheduled.php` with POST method.
 
 ### PHP Endpoint Configuration
 
@@ -1445,10 +1390,19 @@ public_html/
 2. Set `uploads/` folder permissions to **755** (writable)
 3. Ensure PHP files have **644** permissions
 
-#### Step 8: Configure Environment Variables
-Update the hardcoded values in PHP files if needed:
-- `api/google-sheets-read.php` - API key and Spreadsheet ID
-- Or use cPanel environment variables (recommended)
+#### Step 8: Configure Environment Variables and Upload .env to cPanel
+
+**Upload .env to cPanel (File Manager):**
+
+1. In cPanel File Manager, go to your site root (e.g. `public_html`).
+2. Upload the `.env` file to **either**:
+   - The folder that contains the `api` folder → `public_html/.env`
+   - Or inside the API folder → `public_html/api/.env`
+3. The market API reads `ALPHAVANTAGE_API_KEY` from `.env` so the homepage "Latest Markets" strip and `/markets` work.
+4. Ensure `api/_cache/` is writable (chmod 755 or 775).
+5. Do **not** commit `.env` to git; upload it manually to cPanel.
+
+**Other env configuration:** Update hardcoded values in PHP if needed, or use cPanel environment variables (e.g. for `GOOGLE_APPS_SCRIPT_URL`, `GOOGLE_SHEETS_ID`, `GOOGLE_SHEETS_API_KEY`).
 
 #### Step 9: Test Deployment
 1. Visit your website: `https://www.bizgrowthafrica.com`
@@ -1742,10 +1696,11 @@ npm install package-name@latest
 ## Additional Resources
 
 ### Documentation Files
-- **`BizGrowth_Africa_Complete_Documentation.md`** - This comprehensive documentation file replaces all previous setup guides
+- **`BizGrowth_Africa_Complete_Documentation.md`** - This file: full setup, deployment, scheduling, and troubleshooting
 - **`README.md`** - Quick project overview and getting started
-- **`GOOGLE_APPS_SCRIPT_CODE.js`** - Google Apps Script code for Google Sheets operations
-- Keep this document updated with any changes
+- **`GoogleAppsScript_Code.js`** - Canonical Google Apps Script for Sheets (append/update/delete + auto-publish scheduled posts). Copy into Extensions → Apps Script, then deploy.
+- **`PRIVACY_POLICY.md`** - Legal privacy policy (also displayed on `/privacy-policy`). Keep for reference; do not delete.
+- Keep this document updated when you add features or change deployment.
 
 ### Support
 - Website: https://bizgrowthafrica.com
@@ -1934,6 +1889,9 @@ The following setup and guide files have been consolidated into this documentati
 - ✅ `SUBDOMAIN_TROUBLESHOOTING.md` - Content moved to "Admin Subdomain Setup" troubleshooting
 - ✅ `PASSWORD_PROTECTION_FIX.md` - Content moved to "Admin Authentication" section
 - ✅ `INSTALL_PHP_WINDOWS.md` - Content moved to "Initial Setup & Installation" section
+- ✅ `SCHEDULED_PUBLISH_TRIGGER.md` - Content moved to "Post Scheduling Setup" (Option 2: Google Apps Script trigger)
+- ✅ `GOOGLE_APPS_SCRIPT_UPDATE.md` - Content moved to "Google Sheets CMS Setup" (column mismatch fix)
+- ✅ `ENV_UPLOAD.txt` - Content moved to "Deployment Guide" (Upload .env to cPanel)
 
 **All setup instructions are now in this single comprehensive documentation file.**
 
@@ -1942,16 +1900,19 @@ The following setup and guide files have been consolidated into this documentati
 ## Cleanup Summary (January 2026)
 
 ### Deleted Setup/Guide Files (Consolidated into Documentation)
-- ✅ `SCHEDULING_SETUP.md` → Moved to "Post Scheduling Setup" section
-- ✅ `ADMIN_PASSWORD_SETUP.md` → Moved to "Admin Authentication" section
-- ✅ `ADMIN_SUBDOMAIN_SETUP.md` → Moved to "Admin Subdomain Setup" section
-- ✅ `ADMIN_ACCESS_SETUP.md` → Moved to "Admin Subdomain Setup" section
-- ✅ `ADMIN_AUTHENTICATION_GUIDE.md` → Moved to "Admin Authentication" section
-- ✅ `ADMIN_LOCALHOST_ACCESS.md` → Moved to "Initial Setup & Installation" section
-- ✅ `ADMIN_SUBDOMAIN_FIX.md` → Moved to "Admin Subdomain Setup" troubleshooting
-- ✅ `SUBDOMAIN_TROUBLESHOOTING.md` → Moved to "Admin Subdomain Setup" troubleshooting
-- ✅ `PASSWORD_PROTECTION_FIX.md` → Moved to "Admin Authentication" section
-- ✅ `INSTALL_PHP_WINDOWS.md` → Moved to "Initial Setup & Installation" section
+- ✅ `SCHEDULING_SETUP.md` → "Post Scheduling Setup"
+- ✅ `ADMIN_PASSWORD_SETUP.md` → "Admin Authentication"
+- ✅ `ADMIN_SUBDOMAIN_SETUP.md` → "Admin Subdomain Setup"
+- ✅ `ADMIN_ACCESS_SETUP.md` → "Admin Subdomain Setup"
+- ✅ `ADMIN_AUTHENTICATION_GUIDE.md` → "Admin Authentication"
+- ✅ `ADMIN_LOCALHOST_ACCESS.md` → "Initial Setup & Installation"
+- ✅ `ADMIN_SUBDOMAIN_FIX.md` → "Admin Subdomain Setup" troubleshooting
+- ✅ `SUBDOMAIN_TROUBLESHOOTING.md` → "Admin Subdomain Setup" troubleshooting
+- ✅ `PASSWORD_PROTECTION_FIX.md` → "Admin Authentication"
+- ✅ `INSTALL_PHP_WINDOWS.md` → "Initial Setup & Installation"
+- ✅ `SCHEDULED_PUBLISH_TRIGGER.md` → "Post Scheduling Setup" (Option 2: Apps Script trigger)
+- ✅ `GOOGLE_APPS_SCRIPT_UPDATE.md` → "Google Sheets CMS Setup" (column mismatch fix)
+- ✅ `ENV_UPLOAD.txt` → "Deployment Guide" (Upload .env to cPanel)
 
 ### Deleted Unused Files
 - ✅ `.htaccess.admin` - Duplicate of `.htaccess` (not needed)
@@ -1961,6 +1922,10 @@ The following setup and guide files have been consolidated into this documentati
 - ✅ `netlify.toml` - Netlify deployment config (not used with cPanel)
 - ✅ `vercel.json` - Vercel deployment config (not used with cPanel)
 - ✅ `public/_redirects` - Netlify redirects (not used with cPanel)
+- ✅ **`SCHEDULED_PUBLISH_TRIGGER.md`** - Content merged into "Post Scheduling Setup" (Option 2: Google Apps Script time-driven trigger)
+- ✅ **`GOOGLE_APPS_SCRIPT_UPDATE.md`** - Content merged into "Google Sheets CMS Setup" (Fix: column mismatch)
+- ✅ **`ENV_UPLOAD.txt`** - Content merged into "Deployment Guide" (Upload .env to cPanel)
+- ✅ **`GOOGLE_APPS_SCRIPT_CODE.js`** - Older duplicate; use **`GoogleAppsScript_Code.js`** only (has `publishDueScheduledPosts` and correct row building)
 
 ### Updated Files
 - ✅ `README.md` - Removed references to non-existent components (NewsInlineCard, NewsletterCTA)

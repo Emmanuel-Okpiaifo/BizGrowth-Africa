@@ -1,7 +1,0 @@
-User-agent: *
-Allow: /
-
-# Point to the sitemap
-Sitemap: https://bizgrowthafrica.com/sitemap.xml
-
-
