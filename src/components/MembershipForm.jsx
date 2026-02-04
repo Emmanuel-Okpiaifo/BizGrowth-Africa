@@ -323,19 +323,30 @@ const MembershipForm = ({
         )}
       </div>
 
-      {/* Success Modal */}
+      {/* Success modal – matches site design (primary red, light/dark) */}
       {showSuccessModal && (
-        <div className="sample-overlay active" onClick={closeSuccessModal}>
-          <div className="sample-modal" onClick={(e) => e.stopPropagation()}>
-            <button 
-              className="sample-close" 
+        <div className="membership-modal-overlay" onClick={closeSuccessModal}>
+          <div className="membership-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="membership-modal-close"
               onClick={closeSuccessModal}
               aria-label="Close"
             />
-            <h3 className="sample-title">You're on the membership list 🎉</h3>
-            <p className="sample-sub">
-              Thanks for joining BizGrowth Africa. We'll send you exclusive opportunities and key updates.
+            <div className="membership-modal-icon-wrap">
+              <span className="membership-modal-icon" aria-hidden>✓</span>
+            </div>
+            <h3 className="membership-modal-title">You Are On The Membership List</h3>
+            <p className="membership-modal-message">
+              Thanks for joining BizGrowth Africa. We will send you exclusive opportunities and key updates.
             </p>
+            <button
+              type="button"
+              className="membership-modal-btn"
+              onClick={closeSuccessModal}
+            >
+              Done
+            </button>
           </div>
         </div>
       )}

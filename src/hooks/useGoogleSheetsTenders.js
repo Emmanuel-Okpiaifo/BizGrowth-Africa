@@ -21,60 +21,14 @@ export function useGoogleSheetsTenders() {
 					const hasTitle = tender.title && tender.title.trim() !== '';
 					if (!hasTitle) return false;
 					
-					// Filter by status and scheduled time
+					// Only show when status is 'published'. Scheduled and draft never show until status changes to published.
 					const rawStatus = tender.status ? String(tender.status).trim() : '';
 					const tenderStatus = rawStatus ? rawStatus.toLowerCase() : '';
-					const scheduledAt = tender.scheduledAt ? String(tender.scheduledAt).trim() : '';
-					
-					// STRICT FILTERING: Only show if status is explicitly 'published'
-					// OR if status is 'scheduled' AND scheduled time has passed
-					
-					// If status is empty, don't show (safer default)
-					if (!tenderStatus || tenderStatus === '') {
-						return false;
-					}
-					
-					// Don't show drafts
-					if (tenderStatus === 'draft') {
-						return false;
-					}
-					
-					// Handle scheduled posts
-					if (tenderStatus === 'scheduled') {
-						if (!scheduledAt) {
-							return false; // Scheduled but no time set
-						}
-						
-						// Parse scheduledAt - handle timezone
-						const now = new Date();
-						let scheduled;
-						
-						if (scheduledAt.includes('+') || scheduledAt.includes('Z')) {
-							scheduled = new Date(scheduledAt);
-						} else if (scheduledAt.includes('T')) {
-							scheduled = new Date(scheduledAt + 'Z');
-						} else {
-							scheduled = new Date(scheduledAt + 'T00:00:00Z');
-						}
-						
-						if (isNaN(scheduled.getTime())) {
-							return false;
-						}
-						
-						// Compare UTC times
-						const nowUTC = now.getTime();
-						const scheduledUTC = scheduled.getTime();
-						
-						// If scheduled time hasn't passed yet, don't show
-						if (nowUTC < scheduledUTC) {
-							return false;
-						}
-					}
-					
-					// Only show if status is 'published' or scheduled time has passed
-					return tenderStatus === 'published' || (tenderStatus === 'scheduled' && scheduledAt);
-					
-					return true;
+
+					if (!tenderStatus || tenderStatus === '') return true; // No status: treat as published (legacy)
+					if (tenderStatus === 'draft') return false;
+					if (tenderStatus === 'scheduled') return false; // Do not show until status is published
+					return tenderStatus === 'published';
 				})
 				.map(tender => {
 					return {
@@ -90,7 +44,7 @@ export function useGoogleSheetsTenders() {
 						description: (tender.description || '').trim(),
 						eligibility: (tender.eligibility || '').trim(),
 						value: (tender.value || '').trim(),
-						heroImage: (tender.heroImage || '').trim(), // Hero/banner image for hero section
+						heroImage: (tender.heroimage ?? tender['hero image'] ?? tender.heroImage ?? '').toString().trim(), // Uploaded image from admin (sheet keys are lowercase)
 						createdAt: tender.createdAt || new Date().toISOString()
 					};
 				})

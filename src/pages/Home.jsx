@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import Ticker from "../components/Ticker";
 import SectionHeader from "../components/SectionHeader";
 import NewsCard from "../components/NewsCard";
-import MarketsStrip from "../components/MarketsStrip";
+import HomeOpportunitiesGrid from "../components/HomeOpportunitiesGrid";
 import HomepageCTABar from "../components/HomepageCTABar";
 import { useDailyOriginalArticles } from "../data/useDailyOriginalArticles";
 import { useGoogleSheetsArticles } from "../hooks/useGoogleSheetsArticles";
@@ -109,7 +109,13 @@ export default function Home() {
 								</div>
 							</div>
 						</Link>
-					) : null}
+					) : (
+						<div className="flex min-h-[280px] flex-col items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 p-8 text-center dark:border-gray-800 dark:bg-[#0B1220]">
+							<h2 className="text-xl font-bold text-gray-900 dark:text-white">Latest stories</h2>
+							<p className="mt-2 text-sm text-gray-600 dark:text-gray-400">No featured story right now. Check back soon or browse News &amp; Insights.</p>
+							<Link to="/news-insights" className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">Browse News</Link>
+						</div>
+					)}
 				</div>
 				<div className="lg:col-span-4">
 					<div className="rounded-2xl border bg-white p-4 shadow-sm ring-1 ring-gray-200 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
@@ -131,9 +137,6 @@ export default function Home() {
 					</div>
 				</div>
 			</section>
-
-			<MarketsStrip />
-
 
 			{/* Trending Stories */}
 			<section className="space-y-4">
@@ -184,6 +187,9 @@ export default function Home() {
 					</ul>
 			</div>
 			</section>
+
+			{/* Latest opportunities — premium grid (distinct from news/trending) */}
+			<HomeOpportunitiesGrid />
 
 			{/* CTA Band (kept; not a content section) */}
 			<HomepageCTABar />

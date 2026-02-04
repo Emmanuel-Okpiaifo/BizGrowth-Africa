@@ -14,7 +14,7 @@ export default function Community() {
 			darkBg: "from-blue-950/20 to-blue-900/20",
 			borderColor: "border-blue-200 dark:border-blue-800/40",
 			url: "https://www.facebook.com/share/1ARErnneyb/?mibextid=wwXIfr",
-			followers: "50.2K",
+			followers: "0",
 			description: "Stay connected with real-time updates and community announcements",
 			benefits: ["Daily business insights", "Live event announcements", "Exclusive resource drops"]
 		},
@@ -26,7 +26,7 @@ export default function Community() {
 			darkBg: "from-gray-800/30 to-gray-900/30",
 			borderColor: "border-gray-300 dark:border-gray-700",
 			url: "https://x.com/BizGrowthAfrica",
-			followers: "12.8K",
+			followers: "0",
 			description: "Fast-paced conversations on business trends and market insights",
 			benefits: ["Real-time market updates", "Industry thought leadership", "Live Q&A sessions"]
 		},
@@ -38,7 +38,7 @@ export default function Community() {
 			darkBg: "from-pink-950/20 to-rose-900/20",
 			borderColor: "border-pink-200 dark:border-pink-800/40",
 			url: "https://www.instagram.com/bizgrowth_africa?igsh=d3d0OWJuMHU3dms5&utm_source=qr",
-			followers: "18.5K",
+			followers: "0",
 			description: "Inspiring success stories and behind-the-scenes community moments",
 			benefits: ["Member success features", "Growth stories & case studies", "Community spotlights"]
 		}
@@ -53,7 +53,7 @@ export default function Community() {
 			darkBg: "from-sky-950/20 to-blue-900/20",
 			borderColor: "border-sky-200 dark:border-sky-800/40",
 			url: "https://t.me/+ZkVsvN0zrks2Y2I0",
-			members: "8.3K+",
+			members: "0",
 			description: "Instant messaging for real-time collaboration and direct networking",
 			benefits: ["24/7 peer support channel", "Resource library access", "Direct member connections"]
 		},
@@ -65,7 +65,7 @@ export default function Community() {
 			darkBg: "from-green-950/20 to-emerald-900/20",
 			borderColor: "border-green-200 dark:border-green-800/40",
 			url: "https://chat.whatsapp.com/DjFkc7i6xZiBa3Hm47Bssn",
-			members: "5.1K+",
+			members: "0",
 			description: "Intimate group conversations with exclusive partnerships and deals",
 			benefits: ["Early opportunity alerts", "Group mentorship programs", "Exclusive partnerships"]
 		},
@@ -77,7 +77,7 @@ export default function Community() {
 			darkBg: "from-blue-950/20 to-blue-900/20",
 			borderColor: "border-blue-300 dark:border-blue-800/40",
 			url: "https://web.facebook.com/share/g/19bzMiHKr6/",
-			members: "3.2K+",
+			members: "0",
 			description: "Structured community hub for discussions, events, and group initiatives",
 			benefits: ["Organized group discussions", "Community-led initiatives", "Member spotlight events"]
 		}
@@ -103,7 +103,7 @@ export default function Community() {
 				<div className="mx-auto max-w-5xl text-center">
 					<div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2">
 						<Sparkles className="w-4 h-4 text-primary" />
-						<span className="text-sm font-semibold text-primary">Join 100K+ Entrepreneurs</span>
+						<span className="text-sm font-semibold text-primary">Join 0 Entrepreneurs</span>
 					</div>
 
 					<h1 className="pb-6 text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-0 leading-[1.18]">
@@ -119,15 +119,15 @@ export default function Community() {
 
 					<div className="flex flex-wrap justify-center gap-6 sm:gap-8 mb-12">
 						<div className="rounded-xl bg-white dark:bg-gray-800/50 backdrop-blur border border-gray-200 dark:border-gray-700/50 px-6 py-4 shadow-sm">
-							<div className="text-3xl sm:text-4xl font-bold text-primary mb-1">100K+</div>
+							<div className="text-3xl sm:text-4xl font-bold text-primary mb-1">0</div>
 							<div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Active Members</div>
 						</div>
 						<div className="rounded-xl bg-white dark:bg-gray-800/50 backdrop-blur border border-gray-200 dark:border-gray-700/50 px-6 py-4 shadow-sm">
-							<div className="text-3xl sm:text-4xl font-bold text-primary mb-1">7</div>
+							<div className="text-3xl sm:text-4xl font-bold text-primary mb-1">0</div>
 							<div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Connected Platforms</div>
 						</div>
 						<div className="rounded-xl bg-white dark:bg-gray-800/50 backdrop-blur border border-gray-200 dark:border-gray-700/50 px-6 py-4 shadow-sm">
-							<div className="text-3xl sm:text-4xl font-bold text-primary mb-1">Daily</div>
+							<div className="text-3xl sm:text-4xl font-bold text-primary mb-1">0</div>
 							<div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Active Discussions</div>
 						</div>
 					</div>
@@ -142,13 +142,13 @@ export default function Community() {
 				</div>
 			</section>
 
-			{/* Membership Form Section */}
-			<section className="mx-auto max-w-6xl px-4 py-8">
+			{/* Membership Form Section — direct link: /community#become-a-member */}
+			<section id="become-a-member" className="mx-auto max-w-6xl px-4 py-8 scroll-mt-20">
 				<MembershipForm />
 			</section>
 
-			{/* Community Groups Section */}
-			<section id="join-community" className="mx-auto max-w-6xl px-4 pt-8 pb-20">
+			{/* Community Groups Section — direct link: /community#join-community */}
+			<section id="join-community" className="mx-auto max-w-6xl px-4 pt-8 pb-20 scroll-mt-20">
 				<div className="text-center mb-16">
 					<h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">Join Community Groups</h2>
 					<div className="w-16 h-1 bg-gradient-to-r from-primary to-primary/60 mx-auto rounded-full mb-6"></div>

@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, FileText, Briefcase, FolderOpen, LogOut, Menu, X, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, FileText, Briefcase, FolderOpen, LogOut, Menu, X, Sun, Moon, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getCurrentUser, clearAuthSession } from "../../utils/adminAuth";
 
@@ -9,16 +9,21 @@ export default function AdminLayout() {
 	const [dark, setDark] = useState(false);
 	const [currentUser, setCurrentUser] = useState(null);
 
-	// Initialize dark mode from localStorage and get current user
+	// Initialize dark mode and current user (re-read on mount and when window gains focus so name is correct after login)
+	function refreshUser() {
+		const user = getCurrentUser();
+		setCurrentUser(user);
+	}
+
 	useEffect(() => {
 		const stored = localStorage.getItem("theme");
 		const enabled = stored ? stored === "dark" : false;
 		document.documentElement.classList.toggle("dark", enabled);
 		setDark(enabled);
-		
-		// Get current logged-in user
-		const user = getCurrentUser();
-		setCurrentUser(user);
+		refreshUser();
+		const onFocus = () => refreshUser();
+		window.addEventListener("focus", onFocus);
+		return () => window.removeEventListener("focus", onFocus);
 	}, []);
 
 	function toggleTheme() {
@@ -33,6 +38,7 @@ export default function AdminLayout() {
 		{ path: '/articles', label: 'Articles', icon: FileText },
 		{ path: '/opportunities', label: 'Opportunities', icon: Briefcase },
 		{ path: '/tenders', label: 'Tenders', icon: FolderOpen },
+		{ path: '/profile', label: 'Profile', icon: User },
 	];
 
 	return (
@@ -85,12 +91,15 @@ export default function AdminLayout() {
 
 						{/* Actions */}
 						<div className="flex items-center gap-2 sm:gap-3">
-							{/* Current User - Hidden on mobile */}
+							{/* Current User - Hidden on mobile, links to Profile */}
 							{currentUser && (
-								<div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-300">
+								<Link
+									to="/profile"
+									className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition font-medium"
+								>
 									<div className="w-2 h-2 rounded-full bg-green-500"></div>
-									<span className="font-medium">{currentUser}</span>
-								</div>
+									<span>{currentUser}</span>
+								</Link>
 							)}
 							
 							{/* Dark Mode Toggle - Hidden on mobile, visible on desktop */}

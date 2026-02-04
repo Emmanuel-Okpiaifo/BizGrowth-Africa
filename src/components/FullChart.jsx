@@ -18,25 +18,35 @@ export default function FullChart({
 	const innerW = width - padding.left - padding.right;
 	const innerH = height - padding.top - padding.bottom;
 
-	const { min, max, path, yTicks, xTicks, mapped, stepX } = useMemo(() => {
+	const { min, max, path, yTicks, xTickIndices, mapped, stepX } = useMemo(() => {
 		if (!points.length) {
-			return { min: 0, max: 0, path: "", yTicks: [], xTicks: [], mapped: [], stepX: 0 };
+			return { min: 0, max: 0, path: "", yTicks: [], xTickIndices: [], mapped: [], stepX: 0 };
 		}
-		const minVal = Math.min(...points);
-		const maxVal = Math.max(...points);
-		const spread = Math.max(1e-6, maxVal - minVal);
-		const mapX = (i) => (i / Math.max(1, points.length - 1)) * innerW + padding.left;
+		// Need at least 2 points to draw a line; duplicate single point so chart is never blank
+		const pts = points.length === 1 ? [points[0], points[0]] : points;
+		let minVal = Math.min(...pts);
+		let maxVal = Math.max(...pts);
+		// When all values equal (flat line), add padding so the line is visible and not at the edge
+		if (maxVal - minVal < 1e-9) {
+			const pad = Math.abs(minVal) * 0.01 || 1;
+			minVal = minVal - pad;
+			maxVal = maxVal + pad;
+		}
+		const spread = Math.max(1e-9, maxVal - minVal);
+		const mapX = (i) => (i / Math.max(1, pts.length - 1)) * innerW + padding.left;
 		const mapY = (v) => padding.top + innerH - ((v - minVal) / spread) * innerH;
 
-		const mappedPts = points.map((v, i) => [mapX(i), mapY(v)]);
+		const mappedPts = pts.map((v, i) => [mapX(i), mapY(v)]);
 		const d = mappedPts.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x} ${y}`).join(" ");
 
-		// Simple 4 horizontal grid lines
 		const yTicks = Array.from({ length: 5 }, (_, i) => minVal + (spread * i) / 4);
-		// 5 vertical ticks
-		const xTicks = Array.from({ length: Math.min(5, points.length) }, (_, i) => Math.round((i * (points.length - 1)) / Math.max(1, 4)));
-		const stepX = innerW / Math.max(1, points.length - 1);
-		return { min: minVal, max: maxVal, path: d, yTicks, xTicks, mapped: mappedPts, stepX };
+		// 5 x-axis tick indices spread across the chart (so labels show start, 1/4, 1/2, 3/4, end)
+		const n = pts.length;
+		const xTickIndices = n <= 5
+			? Array.from({ length: n }, (_, i) => i)
+			: [0, Math.floor(n * 0.25), Math.floor(n * 0.5), Math.floor(n * 0.75), n - 1];
+		const stepX = innerW / Math.max(1, pts.length - 1);
+		return { min: minVal, max: maxVal, path: d, yTicks, xTickIndices, mapped: mappedPts, stepX };
 	}, [points, height]);
 
 	const onMouseMove = (e) => {
@@ -87,6 +97,7 @@ export default function FullChart({
 		return bars;
 	}, [volumePoints, innerH, padding.top, padding.left, stepX]);
 
+	const effectivePointsLen = points.length === 1 ? 2 : points.length;
 	return (
 		<div className="relative w-full overflow-hidden rounded-2xl border bg-white shadow-sm ring-1 ring-gray-200 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
 			<svg
@@ -116,17 +127,17 @@ export default function FullChart({
 						</g>
 					);
 				})}
-				{/* Grid X */}
-				{xTicks.map((i, k) => {
-					const x = padding.left + (i / Math.max(1, points.length - 1)) * innerW;
+				{/* Grid X — use spread indices so labels show different times (start, 1/4, 1/2, 3/4, end) */}
+				{xTickIndices.map((idx, k) => {
+					const x = padding.left + (idx / Math.max(1, effectivePointsLen - 1)) * innerW;
+					const label = labels[idx];
+					const displayLabel = textLabel(label) ? label : (effectivePointsLen <= 2 && idx === effectivePointsLen - 1 ? "Now" : effectivePointsLen <= 2 && idx === 0 ? "Earlier" : `#${idx + 1}`);
 					return (
 						<g key={k}>
 							<line x1={x} x2={x} y1={padding.top} y2={padding.top + innerH} stroke="currentColor" className="text-gray-200 dark:text-gray-800" strokeWidth="1" />
-							{textLabel(labels[i]) ? (
-								<text x={x} y={padding.top + innerH + 14} textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" fontSize="10">
-									{labels[i]}
-								</text>
-							) : null}
+							<text x={x} y={padding.top + innerH + 14} textAnchor="middle" className="fill-gray-400 dark:fill-gray-500" fontSize="10">
+								{displayLabel}
+							</text>
 						</g>
 					);
 				})}

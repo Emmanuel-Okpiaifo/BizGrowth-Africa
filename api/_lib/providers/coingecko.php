@@ -42,3 +42,36 @@ function coingecko_quote_usd($symbol) {
   return [$quote, null];
 }
 
+/**
+ * Fetch coin market chart for sparkline (last 30 days).
+ * Returns array of ['t' => ms, 'v' => price] sorted by t ascending.
+ */
+function coingecko_market_chart($symbol) {
+  $map = ['BTCUSD' => 'bitcoin', 'ETHUSD' => 'ethereum'];
+  if (!isset($map[$symbol])) return [null, 'unsupported'];
+  $id = $map[$symbol];
+  $cacheKey = "cgchart:{$id}";
+  $cached = cache_get($cacheKey);
+  $now = time();
+  if ($cached && isset($cached['ts']) && ($now - $cached['ts'] < 1200)) {
+    return [$cached['points'], null];
+  }
+  $url = "https://api.coingecko.com/api/v3/coins/" . urlencode($id) . "/market_chart?vs_currency=usd&days=30";
+  $ctx = stream_context_create(['http' => ['timeout' => 8], 'ssl' => ['verify_peer' => true]]);
+  $resp = @file_get_contents($url, false, $ctx);
+  if ($resp === false) {
+    if ($cached) return [$cached['points'], null];
+    return [null, 'Provider error'];
+  }
+  $data = @json_decode($resp, true);
+  $prices = $data['prices'] ?? [];
+  $points = [];
+  foreach ($prices as $p) {
+    if (count($p) >= 2) $points[] = ['t' => (int) $p[0], 'v' => (float) $p[1]];
+  }
+  usort($points, function ($a, $b) { return $a['t'] - $b['t']; });
+  $points = array_slice($points, -150);
+  cache_set($cacheKey, ['ts' => $now, 'points' => $points]);
+  return [$points, null];
+}
+

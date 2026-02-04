@@ -13,6 +13,22 @@ const ADMIN_USERS = [
 	{
 		username: 'Adeola',
 		password: ';4WcxRwb5&VEjPFu'
+	},
+	{
+		username: 'Rachael',
+		password: 'BizGrowth!Rachael'
+	},
+	{
+		username: 'Mayowa',
+		password: 'BizGrowth!Mayowa'
+	},
+	{
+		username: 'Eniola',
+		password: 'BizGrowth!Eniola'
+	},
+	{
+		username: 'Ade',
+		password: 'BizGrowth!Ade'
 	}
 ];
 

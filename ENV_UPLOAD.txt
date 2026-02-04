@@ -1,0 +1,17 @@
+Upload .env to cPanel (File Manager)
+====================================
+
+1. In cPanel File Manager, go to your site root (e.g. public_html).
+
+2. Upload the .env file to EITHER place:
+   - Same folder that contains the api folder  →  public_html/.env
+   - Or inside the api folder                 →  public_html/api/.env
+
+3. The market API will read ALPHAVANTAGE_API_KEY from .env so that:
+   - Homepage "Latest Markets" strip shows African FX (USD/ZAR, USD/NGN, etc.) and crypto.
+   - /markets page shows all African FX + BTC/ETH with sparklines and change %.
+   - /markets/USDZAR (and other symbols) show detail and chart.
+
+4. Ensure api/_cache/ is writable (chmod 755 or 775) so the API can cache rates.
+
+5. Do NOT commit .env to git; it is in .gitignore. Upload it manually to cPanel.

@@ -39,9 +39,9 @@ export default function NewsInsights() {
 		});
 	}, [sheetsArticles]);
 	
-	// Show only first 3 articles
-	const articles = allArticles.slice(0, 3);
-	const categories = Array.from(new Set(articles.map((a) => a.category))).sort();
+	// Show up to 12 latest articles (full page of content)
+	const articles = allArticles.slice(0, 12);
+	const categories = Array.from(new Set(allArticles.map((a) => a.category)).filter(Boolean)).sort();
 
 	// Preload first article image for faster loading
 	useEffect(() => {

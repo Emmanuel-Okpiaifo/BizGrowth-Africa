@@ -3,6 +3,8 @@
  * For reading and writing content to Google Sheets
  */
 
+import { getApiBaseUrl } from './apiBaseUrl';
+
 // Google Sheets API configuration
 // You'll need to set these in your environment or config
 const GOOGLE_SHEETS_API_KEY = import.meta.env.VITE_GOOGLE_SHEETS_API_KEY || '';
@@ -16,8 +18,10 @@ const SPREADSHEET_ID = import.meta.env.VITE_GOOGLE_SHEETS_ID || '';
  */
 export async function getSheetData(sheetName, range = 'A1:Z1000') {
 	// Use PHP proxy to read from Google Sheets (server-side, avoids API restrictions)
-	const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.bizgrowthafrica.com';
-	const proxyUrl = `${apiBaseUrl}/api/google-sheets-read.php?sheet=${encodeURIComponent(sheetName)}&range=${encodeURIComponent(range)}`;
+	const apiBaseUrl = getApiBaseUrl();
+	const proxyUrl = apiBaseUrl
+		? `${apiBaseUrl}/api/google-sheets-read.php?sheet=${encodeURIComponent(sheetName)}&range=${encodeURIComponent(range)}`
+		: `/api/google-sheets-read.php?sheet=${encodeURIComponent(sheetName)}&range=${encodeURIComponent(range)}`;
 
 	try {
 		const response = await fetch(proxyUrl);
@@ -34,23 +38,18 @@ export async function getSheetData(sheetName, range = 'A1:Z1000') {
 		}
 
 		const data = await response.json();
-		
-		console.log('Google Sheets API Response:', data);
-		
+
 		if (!data.values || data.values.length === 0) {
-			console.warn('No data values found in Google Sheets response');
 			return [];
 		}
 
 		// First row is headers
 		const headers = data.values[0];
-		console.log('Headers:', headers);
 		const rows = data.values.slice(1);
-		console.log('Number of rows:', rows.length);
 
 		// Convert to array of objects with lowercase keys (so title/Title/status/Status all work)
 		const result = rows
-			.map((row, rowIndex) => {
+			.map((row) => {
 				const obj = {};
 				headers.forEach((header, index) => {
 					const cleanHeader = header ? header.trim() : '';
@@ -62,24 +61,13 @@ export async function getSheetData(sheetName, range = 'A1:Z1000') {
 				Object.keys(obj).forEach((k) => {
 					if (k) normalized[k.toLowerCase()] = obj[k];
 				});
-				if (import.meta.env.DEV && rowIndex < 2) {
-					console.log(`Sheet "${sheetName}" row ${rowIndex + 1}:`, normalized);
-				}
 				return normalized;
 			})
-			.filter((row, rowIndex) => {
+			.filter((row) => {
 				// Filter out completely empty rows
-				const hasData = Object.values(row).some(val => val && val.toString().trim() !== '');
-				if (!hasData) {
-					console.log(`Row ${rowIndex + 1} is empty, skipping`);
-				}
-				return hasData;
+				return Object.values(row).some(val => val != null && val.toString().trim() !== '');
 			});
-		
-		console.log('Total articles parsed:', result.length);
-		if (result.length > 0) {
-			console.log('Sample article:', result[0]);
-		}
+
 		return result;
 	} catch (error) {
 		console.error('Error fetching from Google Sheets:', error);
@@ -88,30 +76,52 @@ export async function getSheetData(sheetName, range = 'A1:Z1000') {
 	}
 }
 
+// Column order for each sheet (must match Row 1 headers exactly for Apps Script fallback)
+const ARTICLES_COLUMNS = ['title', 'slug', 'category', 'subheading', 'summary', 'content', 'image', 'heroImage', 'whyItMatters', 'publishedAt', 'author', 'status', 'scheduledAt', 'createdAt'];
+const OPPORTUNITIES_COLUMNS = ['title', 'org', 'country', 'region', 'category', 'amountMin', 'amountMax', 'currency', 'deadline', 'postedAt', 'link', 'tags', 'featured', 'description', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
+const TENDERS_COLUMNS = ['title', 'agency', 'category', 'country', 'region', 'deadline', 'postedAt', 'link', 'description', 'eligibility', 'value', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
+
+function buildValuesRow(sheetName, data) {
+	const columns = sheetName === 'Articles' ? ARTICLES_COLUMNS
+		: sheetName === 'Opportunities' ? OPPORTUNITIES_COLUMNS
+		: sheetName === 'Tenders' ? TENDERS_COLUMNS
+		: null;
+	if (!columns) return null;
+	return columns.map((key) => {
+		const v = data[key];
+		if (v == null) return '';
+		if (typeof v === 'object' && !Array.isArray(v)) return JSON.stringify(v);
+		return String(v);
+	});
+}
+
 /**
  * Append a row to a Google Sheet
  * Note: This requires Google Apps Script web app for write access
+ * Sends both "data" (object) and "values" (ordered row array) so the script can append the correct number of columns.
  * @param {string} sheetName - Name of the sheet tab
  * @param {Object} data - Data object to append
  * @returns {Promise<boolean>} Success status
  */
 export async function appendSheetRow(sheetName, data) {
-	// Use PHP proxy to avoid CORS issues with Google Apps Script
-	// Use production API URL (works from both local and production)
-	const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.bizgrowthafrica.com';
-	const proxyUrl = `${apiBaseUrl}/api/google-sheets-proxy.php`;
-	
+	const apiBaseUrl = getApiBaseUrl();
+	const proxyUrl = apiBaseUrl ? `${apiBaseUrl}/api/google-sheets-proxy.php` : '/api/google-sheets-proxy.php';
+	const valuesRow = buildValuesRow(sheetName, data);
+	const payload = {
+		action: 'append',
+		sheet: sheetName,
+		data: data
+	};
+	if (valuesRow && valuesRow.length) {
+		payload.values = [valuesRow];
+	}
 	try {
 		const response = await fetch(proxyUrl, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
 			},
-			body: JSON.stringify({
-				action: 'append',
-				sheet: sheetName,
-				data: data
-			})
+			body: JSON.stringify(payload)
 		});
 
 		// Get response text first
@@ -170,10 +180,8 @@ export async function appendSheetRow(sheetName, data) {
  * @returns {Promise<boolean>} Success status
  */
 export async function updateSheetRow(sheetName, rowIndex, data) {
-	// Use PHP proxy to avoid CORS issues with Google Apps Script
-	// Use production API URL (works from both local and production)
-	const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.bizgrowthafrica.com';
-	const proxyUrl = `${apiBaseUrl}/api/google-sheets-proxy.php`;
+	const apiBaseUrl = getApiBaseUrl();
+	const proxyUrl = apiBaseUrl ? `${apiBaseUrl}/api/google-sheets-proxy.php` : '/api/google-sheets-proxy.php';
 	
 	try {
 		const response = await fetch(proxyUrl, {
@@ -207,10 +215,8 @@ export async function updateSheetRow(sheetName, rowIndex, data) {
  * @returns {Promise<boolean>} Success status
  */
 export async function deleteSheetRow(sheetName, rowIndex) {
-	// Use PHP proxy to avoid CORS issues with Google Apps Script
-	// Use production API URL (works from both local and production)
-	const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.bizgrowthafrica.com';
-	const proxyUrl = `${apiBaseUrl}/api/google-sheets-proxy.php`;
+	const apiBaseUrl = getApiBaseUrl();
+	const proxyUrl = apiBaseUrl ? `${apiBaseUrl}/api/google-sheets-proxy.php` : '/api/google-sheets-proxy.php';
 	
 	try {
 		const response = await fetch(proxyUrl, {

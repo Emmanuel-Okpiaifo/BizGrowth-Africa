@@ -443,18 +443,18 @@ function doPost(e) {
     }
     
     if (data.action === 'append') {
-      // Get headers from row 1
-      const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-      
-      // Create row data matching headers
-      const row = headers.map(header => {
-        if (!header || header.trim() === '') {
-          return '';
-        }
-        return data.data[header] || '';
-      });
-      
-      // Append row
+      // Prefer explicit values array (fixes "data has 1 but range has 14" when headers/case don't match)
+      let row;
+      if (data.values && Array.isArray(data.values[0])) {
+        row = data.values[0];
+      } else {
+        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+        row = headers.map(header => {
+          if (!header || header.trim() === '') return '';
+          const key = header.trim();
+          return data.data[key] ?? data.data[key.toLowerCase()] ?? '';
+        });
+      }
       sheet.appendRow(row);
       
       return ContentService.createTextOutput(JSON.stringify({ 
@@ -465,18 +465,18 @@ function doPost(e) {
     }
     
     if (data.action === 'update') {
-      // Get headers from row 1
-      const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-      
-      // Create row data matching headers
-      const row = headers.map(header => {
-        if (!header || header.trim() === '') {
-          return '';
-        }
-        return data.data[header] || '';
-      });
-      
-      // Update row (row index is 1-based, +1 for header row)
+      let row;
+      if (data.values && Array.isArray(data.values[0])) {
+        row = data.values[0];
+      } else {
+        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+        row = headers.map(header => {
+          if (!header || header.trim() === '') return '';
+          const key = header.trim();
+          return data.data[key] ?? data.data[key.toLowerCase()] ?? '';
+        });
+      }
+      // Update row (row index is 1-based, +1 for header row). getRange(row, col, numRows, numCols)
       sheet.getRange(data.row + 1, 1, 1, row.length).setValues([row]);
       
       return ContentService.createTextOutput(JSON.stringify({ 

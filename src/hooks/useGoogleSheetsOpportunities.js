@@ -18,58 +18,17 @@ export function useGoogleSheetsOpportunities() {
 			// Transform Google Sheets data
 			const transformed = data
 				.filter(opp => {
-					const hasTitle = opp.title && opp.title.trim() !== '';
+					const hasTitle = opp.title && String(opp.title).trim() !== '';
 					if (!hasTitle) return false;
-					
-					// Filter by status and scheduled time
-					const rawStatus = opp.status ? String(opp.status).trim() : '';
-					const oppStatus = rawStatus ? rawStatus.toLowerCase() : '';
-					const scheduledAt = opp.scheduledAt ? String(opp.scheduledAt).trim() : '';
-					
-					// If status is empty, treat as published (show alongside placeholders)
-					if (!oppStatus || oppStatus === '') {
-						return true;
-					}
-					
-					// Don't show drafts
-					if (oppStatus === 'draft') {
-						return false;
-					}
-					
-					// Handle scheduled posts
-					if (oppStatus === 'scheduled') {
-						if (!scheduledAt) {
-							return false; // Scheduled but no time set
-						}
-						
-						// Parse scheduledAt - handle timezone
-						const now = new Date();
-						let scheduled;
-						
-						if (scheduledAt.includes('+') || scheduledAt.includes('Z')) {
-							scheduled = new Date(scheduledAt);
-						} else if (scheduledAt.includes('T')) {
-							scheduled = new Date(scheduledAt + 'Z');
-						} else {
-							scheduled = new Date(scheduledAt + 'T00:00:00Z');
-						}
-						
-						if (isNaN(scheduled.getTime())) {
-							return false;
-						}
-						
-						// Compare UTC times
-						const nowUTC = now.getTime();
-						const scheduledUTC = scheduled.getTime();
-						
-						// If scheduled time hasn't passed yet, don't show
-						if (nowUTC < scheduledUTC) {
-							return false;
-						}
-					}
-					
-					// Only show if status is 'published' or scheduled time has passed
-					return oppStatus === 'published' || (oppStatus === 'scheduled' && scheduledAt);
+
+					// Only show when status is 'published'. Scheduled and draft never show until status changes to published.
+					const rawStatus = (opp.status != null && opp.status !== '') ? String(opp.status).trim() : '';
+					const oppStatus = rawStatus.toLowerCase();
+
+					if (!oppStatus) return true; // No status: treat as published (legacy rows)
+					if (oppStatus === 'draft') return false;
+					if (oppStatus === 'scheduled') return false; // Do not show until status is published
+					return oppStatus === 'published';
 				})
 				.map(opp => {
 					// Parse tags (may be JSON string, comma-separated string, or already array from sheet)
@@ -102,7 +61,7 @@ export function useGoogleSheetsOpportunities() {
 						postedAt: opp.postedAt || opp.createdAt || new Date().toISOString().split('T')[0],
 						link: (opp.link || '').trim(),
 						tags: tags,
-						heroImage: (opp.heroImage || '').trim(), // Hero/banner image for hero section
+						heroImage: (opp.heroimage ?? opp['hero image'] ?? opp.heroImage ?? '').toString().trim(), // Uploaded image from admin (sheet keys are lowercase)
 						featured: opp.featured === 'true' || opp.featured === true,
 						description: (opp.description || '').trim(),
 						createdAt: opp.createdAt || new Date().toISOString()

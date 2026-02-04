@@ -9,9 +9,9 @@ import { Star } from "lucide-react";
 
 export default function Markets() {
 	const [q, setQ] = useState("");
-	const [tab, setTab] = useState("FX"); // FX | Crypto | Macro | Watchlist
+	const [tab, setTab] = useState("All");
 	const [results, setResults] = useState([]);
-	const { quotes, lastUpdated, loading, error, search } = useMarketData({});
+	const { quotes, lastUpdated, loading, error, search, apiAvailable } = useMarketData({});
 	const { ids: watchlist, toggle: toggleWatch, has: inWatch } = useWatchlist();
 
 	useEffect(() => {
@@ -28,12 +28,14 @@ export default function Markets() {
 		return () => { active = false; };
 	}, [q, search]);
 
-	const categories = ["FX", "Crypto", "Macro", "Watchlist"];
+	const categories = ["All", "Stocks", "Crypto", "Watchlist"];
+	const STOCK_IDS = ["AAPL", "MSFT", "IBM"];
+	const CRYPTO_IDS = ["BTCUSD", "ETHUSD"];
 
 	const filteredQuotes = useMemo(() => {
-		if (tab === "FX") return quotes.filter((q) => q.source === "alphavantage");
-		if (tab === "Crypto") return quotes.filter((q) => q.source === "coingecko");
-		if (tab === "Macro") return quotes.filter((q) => q.source === "fred");
+		if (tab === "All") return quotes;
+		if (tab === "Stocks") return quotes.filter((q) => STOCK_IDS.includes(q.id));
+		if (tab === "Crypto") return quotes.filter((q) => CRYPTO_IDS.includes(q.id));
 		if (tab === "Watchlist") return quotes.filter((q) => watchlist.includes(q.id));
 		return quotes;
 	}, [quotes, tab, watchlist]);
@@ -42,13 +44,17 @@ export default function Markets() {
 		<div className="space-y-6">
 			<SEO
 				title="Latest Markets — BizGrowth Africa"
-				description="Key African markets with mini charts and quick stats. Explore detailed pages for indices, FX, and commodities."
+				description="Stocks and crypto: Apple, Microsoft, IBM, BTC, ETH. Live prices and mini charts."
 				type="website"
 				canonicalPath="/markets"
 			/>
 			<header className="rounded-2xl bg-gradient-to-br from-primary/10 via-white to-primary/5 p-6 dark:via-[#0B1220]">
 				<h1 className="text-2xl font-bold text-gray-900 dark:text-white">Latest Markets</h1>
-				<p className="mt-1 text-gray-600 dark:text-gray-300">Live context for FX, crypto, and macro series. Last updated: {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : "—"}</p>
+				<p className="mt-1 text-gray-600 dark:text-gray-300">
+					{apiAvailable ? "Live data from Finnhub. Data refreshes every 2 min." : "Crypto fallback from CoinGecko. Set FINNHUB_API_KEY in .env for full markets."}
+					{" "}
+					Last updated: {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : "—"}
+				</p>
 			</header>
 
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -65,7 +71,7 @@ export default function Markets() {
 				</div>
 				<input
 					type="search"
-					placeholder="Search symbols (e.g., USDZAR, BTCUSD)..."
+					placeholder="Search (e.g. AAPL, BTCUSD)..."
 					value={q}
 					onChange={(e) => setQ(e.target.value)}
 					className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none dark:border-gray-700 dark:bg-transparent dark:text-white sm:max-w-xs"
@@ -114,7 +120,10 @@ export default function Markets() {
 								<span>Updated {q.ts ? new Date(q.ts).toLocaleTimeString() : "—"}</span>
 							</div>
 							<div className="mt-2">
-								<Sparkline points={[]} color={color} />
+								<Sparkline
+									points={Array.isArray(q.points) ? q.points.map((p) => p.v) : []}
+									color={color}
+								/>
 							</div>
 						</Link>
 					);

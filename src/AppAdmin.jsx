@@ -10,6 +10,7 @@ import AdminOpportunities from "./pages/admin/AdminOpportunities";
 import AdminOpportunitiesList from "./pages/admin/AdminOpportunitiesList";
 import AdminTenders from "./pages/admin/AdminTenders";
 import AdminTendersList from "./pages/admin/AdminTendersList";
+import AdminProfile from "./pages/admin/AdminProfile";
 
 /**
  * Admin-only App - for subdomain deployment
@@ -34,6 +35,7 @@ export default function AppAdmin() {
 					<Route path="tenders" element={<AdminTendersList />} />
 					<Route path="tenders/new" element={<AdminTenders />} />
 					<Route path="tenders/new/:draftId" element={<AdminTenders />} />
+					<Route path="profile" element={<AdminProfile />} />
 				</Route>
 				
 				{/* Catch all - redirect to root */}
