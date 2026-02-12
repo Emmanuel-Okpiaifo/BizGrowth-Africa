@@ -15,8 +15,11 @@ function getRowFromData(sheet, data) {
   return headers.map(function(header) {
     if (!header || (header.trim && header.trim() === '')) return '';
     var key = (header.trim ? header.trim() : String(header));
+    var keyLower = (key.toLowerCase ? key.toLowerCase() : String(key).toLowerCase());
     var val = obj[key];
-    if (val === undefined || val === null) val = obj[key.toLowerCase()];
+    if (val === undefined || val === null) val = obj[keyLower];
+    // Never clear status on update: if this column is "status" and value missing or empty, use "published"
+    if (keyLower === 'status' && (val === undefined || val === null || val === '' || (String(val).trim && String(val).trim() === ''))) return 'published';
     if (val === undefined || val === null) return '';
     if (typeof val === 'object' && !(val instanceof Date)) return JSON.stringify(val);
     return String(val);
@@ -47,6 +50,15 @@ function doPost(e) {
 
     if (data.action === 'update') {
       var row = getRowFromData(sheet, data);
+      var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      var existingRange = sheet.getRange(data.row + 1, 1, data.row + 1, Math.max(row.length, headers.length));
+      var existingRow = existingRange.getValues()[0];
+      for (var i = 0; i < headers.length; i++) {
+        var h = (headers[i] != null && headers[i].toString) ? headers[i].toString().trim().toLowerCase() : '';
+        if ((h === 'heroimage' || h === 'hero image' || h === 'image') && (!row[i] || (String(row[i]).trim && String(row[i]).trim() === '')) && existingRow[i]) {
+          row[i] = existingRow[i];
+        }
+      }
       sheet.getRange(data.row + 1, 1, 1, row.length).setValues([row]);
       return ContentService.createTextOutput(JSON.stringify({
         success: true,

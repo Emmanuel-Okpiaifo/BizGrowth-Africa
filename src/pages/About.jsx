@@ -1,5 +1,6 @@
 import { FileText, DollarSign, Newspaper, Briefcase, Users, GraduationCap, Sparkles } from "lucide-react";
 import SEO from "../components/SEO";
+import aboutServicesVideo from "../assets/img/BizGrowthAfrica (1).mp4";
 
 export default function About() {
 	const services = [
@@ -176,6 +177,30 @@ export default function About() {
 					<p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
 						Comprehensive support for African entrepreneurs at every stage of their growth journey
 					</p>
+				</div>
+
+				{/* Premium video – Our Services */}
+				<div className="mb-16 flex justify-center">
+					<div className="relative w-full max-w-4xl group">
+						<div className="absolute -inset-1 bg-gradient-to-r from-primary via-primary/80 to-primary rounded-2xl blur-sm opacity-40 group-hover:opacity-60 transition-opacity duration-300" />
+						<div className="relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-white/10 dark:ring-gray-800 bg-gray-900">
+							<div className="aspect-video">
+								<video
+									src={aboutServicesVideo}
+									className="w-full h-full object-cover"
+									controls
+									playsInline
+									preload="metadata"
+									poster=""
+									aria-label="BizGrowth Africa – Our Services"
+								/>
+							</div>
+							<div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
+							<div className="absolute bottom-3 left-4 right-4 flex items-end justify-between pointer-events-none">
+								<span className="text-sm font-medium text-white/90 drop-shadow">How we support African MSMEs</span>
+							</div>
+						</div>
+					</div>
 				</div>
 
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

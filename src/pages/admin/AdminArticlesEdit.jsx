@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { Save, FileText, ArrowLeft, Loader2 } from 'lucide-react';
+import { Save, FileText, ArrowLeft, Loader2, Upload, X } from 'lucide-react';
 import RichTextEditor from '../../components/admin/RichTextEditor';
 import { updateSheetRow, getSheetData } from '../../utils/googleSheets';
 import { ErrorBoundary } from '../../components/admin/ErrorBoundary';
+import { uploadImage } from '../../utils/imageUpload';
+import { getCurrentUser } from '../../utils/adminAuth';
 
 const CATEGORIES = ['Fintech', 'Policy', 'Funding', 'Markets', 'SMEs', 'Reports'];
 
@@ -22,11 +24,14 @@ export default function AdminArticlesEdit() {
 		heroImage: '',
 		whyItMatters: '',
 		publishedAt: new Date().toISOString().split('T')[0],
-		author: 'BizGrowth Africa Editorial'
+		author: 'BizGrowth Africa Editorial',
+		status: 'published',
+		scheduledAt: ''
 	});
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [status, setStatus] = useState({ type: null, message: '' });
 	const [rowIndex, setRowIndex] = useState(null);
+	const [uploadingHeroImage, setUploadingHeroImage] = useState(false);
 
 	// Load article data
 	useEffect(() => {
@@ -34,7 +39,7 @@ export default function AdminArticlesEdit() {
 			try {
 				setLoading(true);
 				const data = await getSheetData('Articles');
-				console.log('Loaded articles for editing:', data);
+				if (import.meta.env.DEV) console.log('Loaded articles for editing:', data);
 				
 				// Find the article by slug
 				const articleIndex = data.findIndex((a) => {
@@ -49,7 +54,7 @@ export default function AdminArticlesEdit() {
 				}
 				
 				const article = data[articleIndex];
-				console.log('Found article to edit:', article);
+				if (import.meta.env.DEV) console.log('Found article to edit:', article);
 				
 				// Calculate row index for Google Sheets
 				// Apps Script expects: data.row where row 1 = first data row (row 2 in sheet)
@@ -57,9 +62,11 @@ export default function AdminArticlesEdit() {
 				// Formula: data.row = arrayIndex + 1
 				const sheetRowIndex = articleIndex + 1;
 				setRowIndex(sheetRowIndex);
-				console.log('Article row index for Apps Script (data.row):', sheetRowIndex);
+				if (import.meta.env.DEV) console.log('Article row index for Apps Script (data.row):', sheetRowIndex);
 				
-				// Populate form with article data
+				// Populate form with article data (include status/scheduledAt so we preserve them on save)
+				const rawStatus = (article.status ?? '').toString().trim().toLowerCase();
+				const status = rawStatus === 'published' || rawStatus === 'draft' || rawStatus === 'scheduled' ? rawStatus : 'published';
 				setFormData({
 					title: (article.title || '').trim(),
 					slug: (article.slug || '').trim(),
@@ -68,11 +75,13 @@ export default function AdminArticlesEdit() {
 					summary: (article.summary || '').trim(),
 					content: (article.content || '').trim(),
 					image: (article.image || '').trim(),
-					heroImage: (article.heroImage || '').trim(),
+					heroImage: (article.heroimage ?? article.heroImage ?? '').toString().trim(),
 					whyItMatters: (article.whyitmatters ?? article['why it matters'] ?? article.whyItMatters ?? '').toString().trim(),
 					publishedAt: article.publishedAt ? article.publishedAt.split('T')[0] : (article.createdAt ? article.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]),
 					author: (article.author || 'BizGrowth Africa Editorial').trim(),
-					createdAt: article.createdAt || new Date().toISOString()
+					createdAt: article.createdAt || new Date().toISOString(),
+					status,
+					scheduledAt: (article.scheduledat ?? article.scheduledAt ?? '').toString().trim()
 				});
 			} catch (error) {
 				console.error('Failed to load article:', error);
@@ -132,11 +141,13 @@ export default function AdminArticlesEdit() {
 				heroImage: formData.heroImage || '',
 				whyItMatters: formData.whyItMatters || '',
 				publishedAt: formData.publishedAt,
-				author: formData.author,
-				createdAt: formData.createdAt || new Date().toISOString()
+				author: getCurrentUser() || formData.author,
+				createdAt: formData.createdAt || new Date().toISOString(),
+				status: formData.status || 'published',
+				scheduledAt: formData.scheduledAt || ''
 			};
 
-			console.log('Updating article at row:', rowIndex);
+			if (import.meta.env.DEV) console.log('Updating article at row:', rowIndex);
 			const success = await updateSheetRow('Articles', rowIndex, articleData);
 
 			if (success) {
@@ -276,15 +287,19 @@ export default function AdminArticlesEdit() {
 						</div>
 						<div>
 							<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-								Hero image URL (featured)
+								Hero Image
 							</label>
-							<input
-								type="url"
-								value={formData.heroImage}
-								onChange={(e) => setFormData(prev => ({ ...prev, heroImage: e.target.value }))}
-								className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-								placeholder="https://example.com/hero.jpg"
-							/>
+							{formData.heroImage ? (
+								<div className="relative rounded-lg border border-gray-300 dark:border-gray-700 overflow-hidden">
+									<img src={formData.heroImage} alt="Hero" className="w-full h-48 object-cover" />
+									<button type="button" onClick={() => setFormData((p) => ({ ...p, heroImage: '' }))} className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600"><X size={16} /></button>
+								</div>
+							) : (
+								<div className="flex gap-3">
+									<button type="button" onClick={async () => { const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/jpeg,image/jpg,image/png,image/webp'; input.onchange = async (ev) => { const file = ev.target.files?.[0]; if (!file) return; setUploadingHeroImage(true); try { const url = await uploadImage(file, 'articles'); setFormData((p) => ({ ...p, heroImage: url })); } catch (err) { alert(err.message); } finally { setUploadingHeroImage(false); }; }; input.click(); }} disabled={uploadingHeroImage} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50">{uploadingHeroImage ? 'Uploading...' : <><Upload size={16} /> Upload</>}</button>
+									<input type="url" value={formData.heroImage} onChange={(e) => setFormData((p) => ({ ...p, heroImage: e.target.value }))} placeholder="Or paste image URL" className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" />
+								</div>
+							)}
 						</div>
 					</div>
 
@@ -324,7 +339,6 @@ export default function AdminArticlesEdit() {
 							onChange={(e) => setFormData(prev => ({ ...prev, whyItMatters: e.target.value }))}
 							rows={3}
 							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none resize-none"
-							placeholder="1–2 sentences on why this story matters for African small businesses"
 						/>
 					</div>
 

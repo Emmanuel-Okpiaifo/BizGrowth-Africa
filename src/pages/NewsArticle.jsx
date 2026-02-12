@@ -2,7 +2,6 @@ import { useMemo, useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Facebook, Twitter, Linkedin, Link as LinkIcon, Briefcase, ArrowRight } from "lucide-react";
 import NewsCard from "../components/NewsCard";
-import { allOriginalArticles } from "../data/originals.index";
 import { getOpportunityImage } from "../data/opportunities.images";
 import { useGoogleSheetsArticles } from "../hooks/useGoogleSheetsArticles";
 import { useGoogleSheetsOpportunities } from "../hooks/useGoogleSheetsOpportunities";
@@ -21,49 +20,28 @@ function formatDate(iso) {
 	}
 }
 
+/** Generate key takeaways from article description/summary (plain text from Google Sheets). */
+function keyTakeawaysFromDescription(description) {
+	if (!description || typeof description !== "string") return [];
+	const text = description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+	if (!text) return [];
+	const sentences = text.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
+	return sentences.slice(0, 6);
+}
+
 export default function NewsArticle() {
 	const { slug } = useParams();
 	const { articles: sheetsArticles, loading: sheetsLoading } = useGoogleSheetsArticles();
 	const { opportunities: sheetOpportunities } = useGoogleSheetsOpportunities();
+	const sheetsList = Array.isArray(sheetsArticles) ? sheetsArticles : [];
 
 	// Always scroll to top when opening or switching articles
 	useEffect(() => {
 		window.scrollTo({ top: 0, behavior: "smooth" });
 	}, [slug]);
 
-	// Combine static and Google Sheets articles
-	const allArticles = useMemo(() => {
-		const staticArticles = allOriginalArticles.map(a => {
-			const img = a.canonicalImage || a.image;
-			const candidates = Array.isArray(a.imageCandidates) && a.imageCandidates.length ? a.imageCandidates : (img ? [img] : []);
-			return {
-				slug: a.slug,
-				title: a.title,
-				source: "BizGrowth Africa",
-				image: img,
-				heroImage: img,
-				imageCandidates: candidates,
-				url: `/news/${a.slug}`,
-				publishedAt: a.publishedAt,
-				summary: a.summary || a.subheading,
-				category: a.category,
-				subheading: a.subheading,
-				richBody: a.richBody,
-				body: a.body,
-				content: null,
-			};
-		});
-		
-		// Combine, prioritizing Google Sheets articles
-		const combined = [...sheetsArticles, ...staticArticles];
-		// Remove duplicates by slug, keeping Google Sheets first
-		const seen = new Set();
-		return combined.filter(article => {
-			if (seen.has(article.slug)) return false;
-			seen.add(article.slug);
-			return true;
-		});
-	}, [sheetsArticles]);
+	// Only articles from Google Sheets / admin dashboard
+	const allArticles = useMemo(() => [...sheetsList], [sheetsList]);
 
 	const article = useMemo(
 		() => allArticles.find((a) => a.slug === slug),
@@ -235,16 +213,6 @@ export default function NewsArticle() {
 								) : null}
 							</article>
 
-							{/* Tags */}
-							<div className="mt-8 flex flex-wrap gap-2">
-								<span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Tags:</span>
-								{(article.keyTakeaways || []).slice(0, 5).map((tag, idx) => (
-									<span key={idx} className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full">
-										#{tag.split(" ")[0]}
-									</span>
-								))}
-							</div>
-
 							{/* Share & Post Navigation */}
 							<div className="mt-10 pt-8 border-t border-gray-200 dark:border-gray-800">
 								{/* Share Section */}
@@ -315,7 +283,7 @@ export default function NewsArticle() {
 									</div>
 									<div>
 										<h3 className="font-bold text-gray-900 dark:text-white">BizGrowth Africa Editorial</h3>
-										<p className="text-xs text-gray-600 dark:text-gray-400 mt-1">By Admin</p>
+										<p className="text-xs text-gray-600 dark:text-gray-400 mt-1">By {article.author?.trim() || "Admin"}</p>
 										<p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
 											Independent analysis and reporting focused on African MSMEs, markets, and business growth opportunities.
 										</p>
@@ -323,19 +291,21 @@ export default function NewsArticle() {
 								</div>
 							</div>
 
-							{/* Why it Matters Section */}
+							{/* Why it Matters Section - content from admin "Why it matters" input */}
 							<div className="mt-10 rounded-lg border-l-4 border-primary bg-white dark:bg-gray-800 dark:border-gray-700 p-6">
 								<h3 className="text-lg font-bold text-primary uppercase tracking-wide">Why it matters for African MSMEs</h3>
+								{article.whyItMatters && article.whyItMatters.trim() && (
 								<p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed">
-									{(article.whyItMatters && article.whyItMatters.trim()) ? article.whyItMatters : "Understanding these market dynamics helps African businesses make informed decisions about growth, expansion, and adaptation to changing economic conditions."}
+									{article.whyItMatters}
 								</p>
+								)}
 							</div>
 
-							{/* Key Takeaways */}
+							{/* Key Takeaways - generated from description (summary) from Google Sheets */}
 							<div className="mt-10">
 								<h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wide mb-6">Key Takeaways</h3>
 								<div className="grid gap-4 sm:grid-cols-2">
-									{(article.keyTakeaways || []).map((point, idx) => (
+									{keyTakeawaysFromDescription(article.summary || article.subheading || "").map((point, idx) => (
 										<div key={idx} className="rounded-lg border bg-white dark:bg-gray-800 dark:border-gray-700 p-4">
 											<div className="flex gap-3">
 												<div className="flex-none text-primary font-bold text-lg">✓</div>
@@ -381,20 +351,17 @@ export default function NewsArticle() {
 						<h3 className="font-bold text-gray-900 dark:text-white mb-4 text-lg">Recent News</h3>
 							<div className="space-y-4">
 								{related.slice(0, 4).map((article, idx) => {
-									// Get the best available image with fallbacks from other articles/opportunities
+									// Preview image: hero image from article, then fallbacks
 									const getImageWithFallback = () => {
-										if (article.heroImage) return article.heroImage;
-										if (article.image) return article.image;
-										if (Array.isArray(article.imageCandidates) && article.imageCandidates[0]) {
-											return article.imageCandidates[0];
-										}
+										if (article.heroImage && article.heroImage.trim()) return article.heroImage;
+										if (article.image && article.image.trim()) return article.image;
+										if (Array.isArray(article.imageCandidates) && article.imageCandidates[0]) return article.imageCandidates[0];
 										if (availableImages.length > 0) {
-											const hash = article.title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+											const hash = article.title ? Math.abs([...article.title].reduce((acc, c) => acc + c.charCodeAt(0), 0)) : 0;
 											return availableImages[hash % availableImages.length];
 										}
 										return `https://picsum.photos/seed/${encodeURIComponent(article.title || 'news')}/800/450`;
 									};
-									
 									const imageUrl = getImageWithFallback();
 									const imageCandidates = [
 										article.heroImage,
@@ -464,17 +431,7 @@ export default function NewsArticle() {
 
 function Detail3Hero({ article }) {
 	const heroImage = (article.heroImage || '').trim();
-	const fallbackCandidates = Array.isArray(article.imageCandidates) && article.imageCandidates.length
-		? article.imageCandidates
-		: [(article.image || '').trim()].filter(Boolean);
-	
-	const candidates = useMemo(() => {
-		const seed = encodeURIComponent(article.slug || article.title || 'article');
-		const picsum = `https://picsum.photos/seed/${seed}/1600/900`;
-		const list = heroImage ? [heroImage, ...fallbackCandidates] : fallbackCandidates;
-		return list.length > 0 ? [...list, picsum] : [picsum];
-	}, [heroImage, JSON.stringify(fallbackCandidates), article.slug, article.title]);
-	
+	const candidates = useMemo(() => (heroImage ? [heroImage] : []), [heroImage]);
 	const [src, setSrc] = useState(() => candidates[0] || '');
 	
 	useEffect(() => {
@@ -502,6 +459,7 @@ function Detail3Hero({ article }) {
 	return (
 			<section className="relative overflow-hidden bg-black w-screen -ml-[calc((100vw-100%)/2)] -mt-[39px]">
 				<div className="relative aspect-[4/5] sm:aspect-[3/2] lg:aspect-[2.5/1] w-full">
+				{src ? (
 				<img
 					src={src}
 					alt={article.title}
@@ -518,6 +476,9 @@ function Detail3Hero({ article }) {
 						}
 					}}
 				/>
+				) : (
+				<div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900" aria-hidden="true" />
+				)}
 				<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 				
 				{/* Content */}

@@ -1,7 +1,8 @@
 export default function CategoryPills({ categories, active, onChange }) {
+	const list = Array.isArray(categories) ? categories : [];
 	return (
 		<div className="flex flex-wrap gap-2">
-			{["All", ...categories].map((cat) => {
+			{["All", ...list].map((cat) => {
 				const isActive = (active || "All") === cat;
 				return (
 					<button

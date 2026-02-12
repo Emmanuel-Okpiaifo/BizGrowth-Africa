@@ -5,11 +5,6 @@
 
 import { getApiBaseUrl } from './apiBaseUrl';
 
-// Google Sheets API configuration
-// You'll need to set these in your environment or config
-const GOOGLE_SHEETS_API_KEY = import.meta.env.VITE_GOOGLE_SHEETS_API_KEY || '';
-const SPREADSHEET_ID = import.meta.env.VITE_GOOGLE_SHEETS_ID || '';
-
 /**
  * Get data from a Google Sheet
  * @param {string} sheetName - Name of the sheet tab
@@ -30,7 +25,7 @@ export async function getSheetData(sheetName, range = 'A1:Z1000') {
 			const errorData = await response.json().catch(() => ({}));
 			const errorMsg = errorData.error || `HTTP error: ${response.status}`;
 			
-			if (response.status === 403) {
+			if (response.status === 403 && import.meta.env.DEV) {
 				console.warn('Google Sheets API 403: Check that Google Sheets API is enabled in your Google Cloud project.');
 				console.warn('Go to: https://console.cloud.google.com/apis/library/sheets.googleapis.com');
 			}
@@ -39,13 +34,15 @@ export async function getSheetData(sheetName, range = 'A1:Z1000') {
 
 		const data = await response.json();
 
-		if (!data.values || data.values.length === 0) {
+		// Ensure values is always an array to avoid .filter/.map on non-array
+		const values = Array.isArray(data?.values) ? data.values : [];
+		if (values.length === 0) {
 			return [];
 		}
 
 		// First row is headers
-		const headers = data.values[0];
-		const rows = data.values.slice(1);
+		const headers = values[0];
+		const rows = values.slice(1);
 
 		// Convert to array of objects with lowercase keys (so title/Title/status/Status all work)
 		const result = rows
@@ -78,7 +75,7 @@ export async function getSheetData(sheetName, range = 'A1:Z1000') {
 
 // Column order for each sheet (must match Row 1 headers exactly for Apps Script fallback)
 const ARTICLES_COLUMNS = ['title', 'slug', 'category', 'subheading', 'summary', 'content', 'image', 'heroImage', 'whyItMatters', 'publishedAt', 'author', 'status', 'scheduledAt', 'createdAt'];
-const OPPORTUNITIES_COLUMNS = ['title', 'org', 'country', 'region', 'category', 'amountMin', 'amountMax', 'currency', 'deadline', 'postedAt', 'link', 'tags', 'featured', 'description', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
+const OPPORTUNITIES_COLUMNS = ['title', 'org', 'country', 'region', 'category', 'amountMin', 'amountMax', 'currency', 'deadline', 'postedAt', 'link', 'tags', 'featured', 'description', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
 const TENDERS_COLUMNS = ['title', 'agency', 'category', 'country', 'region', 'deadline', 'postedAt', 'link', 'description', 'eligibility', 'value', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
 
 function buildValuesRow(sheetName, data) {
@@ -126,8 +123,10 @@ export async function appendSheetRow(sheetName, data) {
 
 		// Get response text first
 		const responseText = await response.text();
-		console.log('Response from proxy:', responseText);
-		console.log('Response status:', response.status);
+		if (import.meta.env.DEV) {
+			console.log('Response from proxy:', responseText);
+			console.log('Response status:', response.status);
+		}
 		
 		// Check if response is OK
 		if (!response.ok) {
@@ -145,7 +144,7 @@ export async function appendSheetRow(sheetName, data) {
 
 		// Check if the result indicates success
 		if (result.success === true) {
-			console.log('✅ Successfully appended row to Google Sheets');
+			if (import.meta.env.DEV) console.log('✅ Successfully appended row to Google Sheets');
 			return true;
 		}
 
@@ -162,7 +161,7 @@ export async function appendSheetRow(sheetName, data) {
 		}
 
 		// If we get here, the response format is unexpected
-		console.warn('⚠️ Unexpected response format:', result);
+		if (import.meta.env.DEV) console.warn('⚠️ Unexpected response format:', result);
 		throw new Error(`Unexpected response format: ${responseText}`);
 	} catch (error) {
 		console.error('Error appending to Google Sheets:', error);
@@ -197,11 +196,24 @@ export async function updateSheetRow(sheetName, rowIndex, data) {
 			})
 		});
 
+		const responseText = await response.text();
+
 		if (!response.ok) {
-			throw new Error(`Failed to update row: ${response.status}`);
+			throw new Error(`Failed to update row: ${response.status}${responseText ? ` - ${responseText}` : ''}`);
 		}
 
-		return true;
+		let result;
+		try {
+			result = JSON.parse(responseText);
+		} catch (e) {
+			throw new Error(`Invalid JSON response from update`);
+		}
+
+		if (result && result.success === true) {
+			return true;
+		}
+		const errMsg = (result && result.error) ? result.error : 'Update failed';
+		throw new Error(errMsg);
 	} catch (error) {
 		console.error('Error updating Google Sheets:', error);
 		return false;
@@ -232,7 +244,7 @@ export async function deleteSheetRow(sheetName, rowIndex) {
 		});
 
 		const responseText = await response.text();
-		console.log('Delete response:', responseText);
+		if (import.meta.env.DEV) console.log('Delete response:', responseText);
 
 		if (!response.ok) {
 			throw new Error(`Failed to delete row: ${response.status} - ${responseText}`);
@@ -247,7 +259,7 @@ export async function deleteSheetRow(sheetName, rowIndex) {
 		}
 
 		if (result.success === true) {
-			console.log('✅ Successfully deleted row from Google Sheets');
+			if (import.meta.env.DEV) console.log('✅ Successfully deleted row from Google Sheets');
 			return true;
 		}
 

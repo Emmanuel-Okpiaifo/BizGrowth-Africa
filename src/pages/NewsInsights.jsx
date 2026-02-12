@@ -4,44 +4,18 @@ import SectionHeader from "../components/SectionHeader";
 import NewsCard from "../components/NewsCard";
 import CategoryPills from "../components/CategoryPills";
 import SEO from "../components/SEO";
-import { allOriginalArticles } from "../data/originals.index";
 import { useGoogleSheetsArticles } from "../hooks/useGoogleSheetsArticles";
 
 export default function NewsInsights() {
 	const { articles: sheetsArticles, loading: sheetsLoading } = useGoogleSheetsArticles();
+	const sheetsList = Array.isArray(sheetsArticles) ? sheetsArticles : [];
 	
-	// Combine static and Google Sheets articles
-	const allArticles = useMemo(() => {
-		const staticArticles = allOriginalArticles.map((a) => {
-			const img = a.canonicalImage || a.image;
-			return {
-				title: a.title,
-				source: "BizGrowth Africa",
-				image: img,
-				heroImage: img,
-				imageCandidates: a.imageCandidates || (img ? [img] : []),
-				url: `/news/${a.slug}`,
-				publishedAt: a.publishedAt,
-				summary: a.summary || a.subheading,
-				category: a.category,
-				slug: a.slug,
-			};
-		});
-		
-		// Combine, prioritizing Google Sheets articles
-		const combined = [...sheetsArticles, ...staticArticles];
-		// Remove duplicates by slug
-		const seen = new Set();
-		return combined.filter(article => {
-			if (seen.has(article.slug)) return false;
-			seen.add(article.slug);
-			return true;
-		});
-	}, [sheetsArticles]);
+	// Only articles from Google Sheets / admin dashboard
+	const allArticles = useMemo(() => [...sheetsList], [sheetsList]);
 	
 	// Show up to 12 latest articles (full page of content)
 	const articles = allArticles.slice(0, 12);
-	const categories = Array.from(new Set(allArticles.map((a) => a.category)).filter(Boolean)).sort();
+	const categories = Array.from(new Set(allArticles.map((a) => a.category))).filter(Boolean).sort();
 
 	// Preload first article image for faster loading
 	useEffect(() => {

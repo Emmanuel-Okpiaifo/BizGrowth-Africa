@@ -169,9 +169,9 @@ const MembershipForm = ({
 
     // Fire-and-forget relay
     if (webhookUrl && !webhookUrl.includes('YOUR_DEPLOYMENT_ID')) {
-      postJSON(webhookUrl, payload).catch((err) =>
-        console.warn('Waitlist submission failed:', err)
-      );
+      postJSON(webhookUrl, payload).catch((err) => {
+        if (import.meta.env.DEV) console.warn('Waitlist submission failed:', err);
+      });
     }
 
     setIsSubmitting(false);

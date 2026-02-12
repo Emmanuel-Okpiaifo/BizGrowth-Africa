@@ -4,6 +4,8 @@ import { FolderOpen, Plus, Search, Edit, Trash2, Eye, RefreshCw, Loader2, Calend
 import { useGoogleSheetsTendersAdmin } from '../../hooks/useGoogleSheetsTendersAdmin';
 import { deleteSheetRow, getSheetData } from '../../utils/googleSheets';
 import { getDrafts, deleteDraft } from '../../utils/draftStorage';
+import { isSuperAdmin, getCurrentUserIdentifiers } from '../../utils/adminAuth';
+import { formatCreatedAt } from '../../utils/timeUtils';
 
 export default function AdminTendersList() {
 	const [searchQuery, setSearchQuery] = useState('');
@@ -44,7 +46,16 @@ export default function AdminTendersList() {
 		...localDrafts
 	];
 
-	const filteredTenders = allTendersCombined.filter(tender => {
+	// Restrict to current user's items (Admin sees all; items without author visible only to Admin)
+	const authorIds = getCurrentUserIdentifiers();
+	const tendersForUser = isSuperAdmin()
+		? allTendersCombined
+		: allTendersCombined.filter(tender => {
+				const author = (tender.author || '').trim().toLowerCase();
+				return author && authorIds.includes(author);
+			});
+
+	const filteredTenders = tendersForUser.filter(tender => {
 		const matchesSearch = tender.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			tender.agency?.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			tender.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -212,7 +223,7 @@ export default function AdminTendersList() {
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 					{filteredTenders.map((tender, idx) => (
 						<div
-							key={idx}
+							key={tender.id || idx}
 							className="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0B1220] shadow-sm hover:shadow-xl transition-all"
 						>
 							{/* Content */}
@@ -264,6 +275,11 @@ export default function AdminTendersList() {
 										Scheduled: {new Date(tender.scheduledAt).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', dateStyle: 'short', timeStyle: 'short' })} (GMT+1)
 									</p>
 								)}
+
+								<p className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
+									<Clock size={12} />
+									Created: {formatCreatedAt(tender.createdAt)}
+								</p>
 								
 								<div className="space-y-2 mb-4 text-sm text-gray-600 dark:text-gray-400">
 									{tender.country && (
@@ -343,9 +359,9 @@ export default function AdminTendersList() {
 							</button>
 							<button
 								onClick={() => {
-									const tender = allTenders.find(t => (t.id || '') === deleteConfirm || t === deleteConfirm);
+									const tender = filteredTenders.find(t => (t.id || '') === deleteConfirm || t === deleteConfirm);
 									if (tender) {
-										const index = allTenders.indexOf(tender);
+										const index = filteredTenders.indexOf(tender);
 										handleDelete(tender, index);
 									}
 								}}

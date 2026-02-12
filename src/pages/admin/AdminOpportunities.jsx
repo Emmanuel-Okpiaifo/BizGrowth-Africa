@@ -7,9 +7,11 @@ import { ErrorBoundary } from '../../components/admin/ErrorBoundary';
 import { toGMTPlus1ISO, getMinScheduleDateTime } from '../../utils/scheduling';
 import { uploadImage } from '../../utils/imageUpload';
 import { saveDraft, getDraft, deleteDraft } from '../../utils/draftStorage';
+import { getCurrentUser } from '../../utils/adminAuth';
+import CurrencySelect from '../../components/admin/CurrencySelect';
 
 const CATEGORIES = ['Grant', 'Accelerator', 'Competition', 'Fellowship', 'Training', 'Impact Loan', 'Scholarship'];
-const REGIONS = ['West Africa', 'East Africa', 'Southern Africa', 'Central Africa', 'North Africa', 'Pan-African'];
+const REGIONS = ['West Africa', 'East Africa', 'Southern Africa', 'Central Africa', 'North Africa', 'Sub-Saharan Africa', 'Pan-African'];
 
 export default function AdminOpportunities() {
 	const { draftId } = useParams();
@@ -107,6 +109,7 @@ export default function AdminOpportunities() {
 				featured: formData.featured ? 'true' : 'false',
 				description: formData.description,
 				heroImage: formData.heroImage || '',
+				author: getCurrentUser() || '',
 				status: postStatus,
 				scheduledAt: scheduledAt,
 				createdAt: new Date().toISOString()
@@ -166,7 +169,6 @@ export default function AdminOpportunities() {
 							onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
 							required
 							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-							placeholder="Opportunity title"
 						/>
 					</div>
 
@@ -179,7 +181,6 @@ export default function AdminOpportunities() {
 							value={formData.org}
 							onChange={(e) => setFormData(prev => ({ ...prev, org: e.target.value }))}
 							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-							placeholder="Organization name"
 						/>
 					</div>
 				</div>
@@ -228,7 +229,6 @@ export default function AdminOpportunities() {
 							value={formData.country}
 							onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
 							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-							placeholder="Country"
 						/>
 					</div>
 				</div>
@@ -245,7 +245,6 @@ export default function AdminOpportunities() {
 							onChange={(e) => setFormData(prev => ({ ...prev, amountMin: e.target.value }))}
 							min="0"
 							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-							placeholder="0"
 						/>
 					</div>
 
@@ -259,27 +258,14 @@ export default function AdminOpportunities() {
 							onChange={(e) => setFormData(prev => ({ ...prev, amountMax: e.target.value }))}
 							min="0"
 							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-							placeholder="0"
 						/>
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-							Currency
-						</label>
-						<select
+						<CurrencySelect
 							value={formData.currency}
-							onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
-							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-						>
-							<option value="USD">USD</option>
-							<option value="EUR">EUR</option>
-							<option value="GBP">GBP</option>
-							<option value="NGN">NGN</option>
-							<option value="ZAR">ZAR</option>
-							<option value="KES">KES</option>
-							<option value="GHS">GHS</option>
-						</select>
+							onChange={(code) => setFormData(prev => ({ ...prev, currency: code }))}
+						/>
 					</div>
 				</div>
 
@@ -318,7 +304,6 @@ export default function AdminOpportunities() {
 							value={formData.link}
 							onChange={(e) => setFormData(prev => ({ ...prev, link: e.target.value }))}
 							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-							placeholder="https://..."
 						/>
 					</div>
 				</div>
@@ -334,7 +319,6 @@ export default function AdminOpportunities() {
 							value={formData.tags}
 							onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
 							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-							placeholder="Early-stage, Fintech, Climate"
 						/>
 					</div>
 
@@ -419,7 +403,6 @@ export default function AdminOpportunities() {
 									value={formData.heroImage}
 									onChange={(e) => setFormData(prev => ({ ...prev, heroImage: e.target.value }))}
 									className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-									placeholder="Or enter image URL"
 								/>
 							</div>
 						)}

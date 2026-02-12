@@ -9,10 +9,10 @@ import ToolsTemplates from "./pages/ToolsTemplates";
 import Community from "./pages/Community";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
-import MarketsPlaceholder from "./pages/MarketsPlaceholder";
 import NewsArticle from "./pages/NewsArticle";
 import OpportunityDetail from "./pages/OpportunityDetail";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import NotFound from "./pages/NotFound";
 
 export default function App() {
 	return (
@@ -20,8 +20,6 @@ export default function App() {
 		<Routes>
 			<Route element={<Layout />}>
 				<Route index element={<Home />} />
-				<Route path="markets" element={<MarketsPlaceholder />} />
-				<Route path="markets/:symbol" element={<MarketsPlaceholder />} />
 				<Route path="opportunities" element={<Opportunities />} />
 				<Route path="opportunities/:id" element={<OpportunityDetail />} />
 				<Route path="procurement-tenders" element={<ProcurementTenders />} />
@@ -32,6 +30,7 @@ export default function App() {
 				<Route path="about" element={<About />} />
 				<Route path="contact" element={<Contact />} />
 				<Route path="privacy-policy" element={<PrivacyPolicy />} />
+				<Route path="*" element={<NotFound />} />
 			</Route>
 		</Routes>
 		</ErrorBoundary>

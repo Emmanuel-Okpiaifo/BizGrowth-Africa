@@ -14,7 +14,8 @@ export function useGoogleSheetsTendersAdmin() {
 		try {
 			setLoading(true);
 			setError(null);
-			const data = await getSheetData('Tenders');
+			const raw = await getSheetData('Tenders');
+			const data = Array.isArray(raw) ? raw : [];
 			
 			const transformed = data
 				.filter(tender => {
@@ -38,9 +39,10 @@ export function useGoogleSheetsTendersAdmin() {
 						eligibility: (tender.eligibility || '').trim(),
 						value: (tender.value || '').trim(),
 						heroImage: (tender.heroImage || '').trim(), // Hero/banner image
+						author: (tender.author || '').trim(), // From sheet (for per-user filtering in admin)
 						status: tenderStatus, // Include status
 						scheduledAt: tender.scheduledAt || '', // Include scheduledAt
-						createdAt: tender.createdAt || new Date().toISOString()
+						createdAt: (tender.createdat ?? tender.createdAt ?? '').toString().trim() || ''
 					};
 				})
 				.sort((a, b) => {

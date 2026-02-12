@@ -5,6 +5,124 @@ import Image from '@tiptap/extension-image';
 import { uploadImage, validateImageUrl } from '../../utils/imageUpload';
 import { Link2, Image as ImageIcon } from 'lucide-react';
 
+/** Normalize pasted HTML so bullet/numbered lines become proper ul/ol/li for copy-paste. */
+function normalizePastedLists(html) {
+	if (typeof html !== 'string' || !html.trim()) return html;
+	try {
+		const parser = new DOMParser();
+		const doc = parser.parseFromString(html, 'text/html');
+		const body = doc.body;
+		if (!body) return html;
+
+		const bulletLineRegex = /^[\s]*[•\-*▪▸◦]\s+(.*)$/;
+		const orderedLineRegex = /^[\s]*\d+[.)]\s+(.*)$/;
+		const bulletRegex = /^[\s]*[•\-*▪▸◦]\s+(.*)$/s;
+		const orderedRegex = /^[\s]*\d+[.)]\s+(.*)$/s;
+
+		// Pre-pass: split single paragraphs that contain newline-separated bullet/number lines into separate p elements
+		function splitBlockLists(parent) {
+			const blockTags = ['P', 'DIV'];
+			const children = Array.from(parent.childNodes);
+			children.forEach((node) => {
+				if (node.nodeType !== Node.ELEMENT_NODE) return;
+				const el = node;
+				if (blockTags.includes(el.tagName)) {
+					const raw = (el.textContent || '');
+					const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+					const allBullet = lines.length > 1 && lines.every((l) => bulletLineRegex.test(l));
+					const allOrdered = lines.length > 1 && lines.every((l) => orderedLineRegex.test(l));
+					if (allBullet || allOrdered) {
+						const fragment = doc.createDocumentFragment();
+						lines.forEach((line) => {
+							const p = doc.createElement('p');
+							p.textContent = line;
+							fragment.appendChild(p);
+						});
+						parent.replaceChild(fragment, el);
+					} else if (el.hasChildNodes()) {
+						splitBlockLists(el);
+					}
+				}
+			});
+		}
+		splitBlockLists(body);
+
+		const blockTags = ['P', 'DIV'];
+		const walk = (parent) => {
+			const children = Array.from(parent.childNodes);
+			let i = 0;
+			while (i < children.length) {
+				const node = children[i];
+				if (node.nodeType !== Node.ELEMENT_NODE) {
+					i++;
+					continue;
+				}
+				const el = node;
+				if (blockTags.includes(el.tagName)) {
+					const text = (el.textContent || '').trim();
+					const bulletMatch = bulletRegex.exec(text);
+					const orderedMatch = orderedRegex.exec(text);
+
+					if (bulletMatch) {
+						const items = [];
+						items.push({ text: bulletMatch[1] });
+						let j = i + 1;
+						while (j < children.length) {
+							const next = children[j];
+							if (next.nodeType !== Node.ELEMENT_NODE || !blockTags.includes(next.tagName)) break;
+							const nextText = (next.textContent || '').trim();
+							const nextBullet = bulletRegex.exec(nextText);
+							if (!nextBullet) break;
+							items.push({ text: nextBullet[1] });
+							j++;
+						}
+						const ul = doc.createElement('ul');
+						items.forEach((item) => {
+							const li = doc.createElement('li');
+							li.textContent = item.text;
+							ul.appendChild(li);
+						});
+						parent.replaceChild(ul, el);
+						for (let k = 1; k < items.length; k++) parent.removeChild(children[i + 1]);
+						i++;
+						continue;
+					}
+					if (orderedMatch) {
+						const items = [];
+						items.push({ text: orderedMatch[1] });
+						let j = i + 1;
+						while (j < children.length) {
+							const next = children[j];
+							if (next.nodeType !== Node.ELEMENT_NODE || !blockTags.includes(next.tagName)) break;
+							const nextText = (next.textContent || '').trim();
+							const nextOrdered = orderedRegex.exec(nextText);
+							if (!nextOrdered) break;
+							items.push({ text: nextOrdered[1] });
+							j++;
+						}
+						const ol = doc.createElement('ol');
+						items.forEach((item) => {
+							const li = doc.createElement('li');
+							li.textContent = item.text;
+							ol.appendChild(li);
+						});
+						parent.replaceChild(ol, el);
+						for (let k = 1; k < items.length; k++) parent.removeChild(children[i + 1]);
+						i++;
+						continue;
+					}
+				}
+				if (el.hasChildNodes()) walk(el);
+				i++;
+			}
+		};
+		walk(body);
+		return body.innerHTML;
+	} catch {
+		return html;
+	}
+}
+
 /**
  * Rich Text Editor with Image Upload Support
  * Uses Tiptap (React 19 compatible)
@@ -25,6 +143,9 @@ export default function RichTextEditor({ value = '', onChange, placeholder = "En
 		editorProps: {
 			attributes: {
 				class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[300px] px-4 py-3 text-gray-900 dark:text-gray-100',
+			},
+			transformPastedHTML(html) {
+				return normalizePastedLists(html);
 			},
 		},
 	});
@@ -192,6 +313,9 @@ export default function RichTextEditor({ value = '', onChange, placeholder = "En
 					padding-left: 1.5rem;
 					margin: 0.5rem 0;
 				}
+				.rich-text-editor .ProseMirror ul { list-style-type: disc; }
+				.rich-text-editor .ProseMirror ol { list-style-type: decimal; }
+				.rich-text-editor .ProseMirror li { display: list-item; margin: 0.25rem 0; }
 				.rich-text-editor .ProseMirror h2 {
 					font-size: 1.5rem;
 					font-weight: bold;

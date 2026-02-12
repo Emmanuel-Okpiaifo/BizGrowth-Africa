@@ -3,7 +3,7 @@
 Premium, original African business news built with React, Tailwind CSS, and React Router. This project powers BizGrowth Africa’s website, delivering founder-first coverage across markets, policy, funding, fintech, SMEs, and data-driven deep dives.
 
 ### Live domain
-- https://bizgrowthafrica.com
+- https://www.bizgrowthafrica.com
 
 ### Key features
 - Original article pages with strong typography, inline citations, “Why it matters” insights, key takeaways, and optional “By the numbers” stats.
@@ -85,7 +85,7 @@ npm run preview
 ## SEO
 - Default head tags in `index.html` (description, theme-color, OG/Twitter defaults).
 - Per-page SEO via `src/components/SEO.jsx`: dynamic title, description, canonical URL, OG/Twitter, and JSON-LD.
-- Canonical base configured via `src/config/site.js` → `SITE_URL = "https://bizgrowthafrica.com"`.
+- Canonical base configured via `src/config/site.js` → `SITE_URL = "https://www.bizgrowthafrica.com"`.
 - `public/sitemap.xml` and `public/robots.txt` included. For full coverage, generate a sitemap including every article slug in production.
 
 ## Performance & UX
@@ -111,29 +111,16 @@ npm run preview
 4) Upload `.htaccess` to both main site and admin subdomain
 5) Set up environment variables in cPanel
 
-**Market data (Alpha Vantage)**  
-African FX rates (USD/ZAR, USD/NGN, etc.) on `/markets` use the [Alpha Vantage API](https://www.alphavantage.co/support/#api-key). You can set your key in either place:
-- **.env** (project root): add `ALPHAVANTAGE_API_KEY=your_key` and ensure the PHP API can read it (e.g. same server as the app).
-- **server-config/bizgrowth_keys.php**: return `['ALPHAVANTAGE_API_KEY' => 'your_key']`.  
-Use a free key from https://www.alphavantage.co/support/#api-key. See `.env.example` for a template.
-
 **For complete setup instructions, see `BizGrowth_Africa_Complete_Documentation.md`**
-   return [
-     'ALPHAVANTAGE_API_KEY' => 'YOUR_KEY',
-     'FRED_API_KEY' => 'YOUR_KEY',
-   ];
-   ```
-4) In cPanel, set environment variable `BIZGROWTH_KEYS_PATH` to that absolute path (or upload `server-config/bizgrowth_keys.php` on server and do NOT commit). Alternatively, set `ALPHAVANTAGE_API_KEY` in your server environment or in a project `.env` file so the API can load it.
-5) Ensure cache directory is writable: `/public_html/api/_cache/` (chmod 755/775).
-6) Frontend calls:
-   - `/api/market/snapshot.php?ids=USDZAR,USDNGN,BTCUSD,ETHUSD`
-   - `/api/market/history.php?id=USDZAR&range=1D`
-   - `/api/market/search.php?q=zar`
-7) Do NOT put provider keys in React/browser code. All provider calls are proxied by PHP.
+
+## Documentation
+- **BizGrowth_Africa_Complete_Documentation.md** – Full setup, deployment, admin, and features.
+- **SCAN_REPORT.md** – Latest codebase scan (issues and optional fixes).
+- **SECURITY_AND_BUGS_CHECKLIST.md** – Security and bug-fix checklist (completed items).
 
 ## Contact
-- Website: https://bizgrowthafrica.com
-- Contact: https://bizgrowthafrica.com/contact
+- Website: https://www.bizgrowthafrica.com
+- Contact: https://www.bizgrowthafrica.com/contact
 
 ## License
 - All original content © BizGrowth Africa. Code licensed to the project owners. Images pulled from Ninth Grid or other sources should follow their respective usage policies.

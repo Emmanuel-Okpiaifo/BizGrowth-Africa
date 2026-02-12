@@ -1,8 +1,10 @@
 # BizGrowth Africa - Complete Documentation & Setup Guide
 
-**Version:** 2.0  
-**Last Updated:** January 2026  
-**Website:** https://bizgrowthafrica.com
+**Version:** 2.1  
+**Last Updated:** February 2026  
+**Website:** https://www.bizgrowthafrica.com
+
+**Related docs:** `README.md` (quick start), `PRIVACY_POLICY.md` (privacy policy). Codebase scan summary and completed security/bugs checklist are in the appendices below.
 
 ---
 
@@ -22,6 +24,8 @@
 12. [Troubleshooting](#troubleshooting)
 13. [Maintenance & Updates](#maintenance--updates)
 14. [Additional Features & Functionalities](#additional-features--functionalities)
+15. [Appendix A: Codebase Scan Summary](#appendix-a-codebase-scan-summary)
+16. [Appendix B: Security & Bugs Checklist (Completed)](#appendix-b-security--bugs-checklist-completed)
 
 ---
 
@@ -32,7 +36,6 @@ BizGrowth Africa is a comprehensive business intelligence platform designed spec
 ### Key Objectives
 - Deliver original, actionable business news for African entrepreneurs
 - Provide a centralized platform for funding opportunities and tenders
-- Offer market intelligence and data-driven insights
 - Create a community space for African businesses
 - Enable non-technical users to manage content through an intuitive admin panel
 
@@ -82,17 +85,16 @@ The platform uses **Google Sheets as a CMS**, eliminating the need for a traditi
 
 ### Backend/API
 - **PHP** - Server-side API endpoints
-  - Google Sheets proxy
+  - Google Sheets proxy (read/write)
   - Image upload handler
   - Contact form handler
-  - Market data API
+  - Admin auth check (server-side password verification)
 
 ### External Services
 - **Google Sheets API** - Content storage
 - **Google Apps Script** - Write operations to Sheets
 - **Google Analytics 4** - Website analytics
-- **Ninth Grid** - Afro-centric image source
-- **Unsplash** - Image fallbacks
+- **Picsum** - Placeholder/fallback images (e.g. for opportunities and article candidates)
 
 ### Development Tools
 - **ESLint** - Code linting
@@ -108,12 +110,14 @@ BizGrowth Africa/
 ├── api/                          # PHP API endpoints
 │   ├── _lib/                     # PHP utilities
 │   │   ├── response.php          # JSON response helpers
-│   │   └── providers/            # Market data providers
+│   │   ├── admin_users.php       # Admin user credentials (bcrypt)
+│   │   └── publish_scheduled_core.php
+│   ├── admin-auth-check.php      # Server-side admin login check
 │   ├── contact.php               # Contact form handler
 │   ├── google-sheets-proxy.php   # Write operations proxy
 │   ├── google-sheets-read.php    # Read operations proxy
 │   ├── upload-image.php          # Image upload handler
-│   └── market/                   # Market data endpoints
+│   └── publish-scheduled.php     # Cron endpoint for scheduled posts
 ├── public/                        # Static assets
 │   ├── favicon.png
 │   ├── robots.txt
@@ -293,11 +297,9 @@ npm run preview:admin
 ```
 
 **Access Admin Panel:**
-- URL: `http://localhost:5173` (or port shown)
-- Username: `Admin` | Password: `]ofcwrD-!13+{v_P`
-- Username: `Adeola` | Password: `;4WcxRwb5&VEjPFu`
+- URL: `http://localhost:5173` (or port shown). Use the same admin usernames and passwords configured in `api/_lib/admin_users.php` (for local dev, ensure your PHP server is running and the admin panel can reach the API).
 
-**Note:** If `npm run dev:admin` shows blank page, use the build + preview approach.
+**Note:** If `npm run dev:admin` shows a blank page, use the build + preview approach.
 
 ### Step 6: Build for Production
 
@@ -335,7 +337,7 @@ The platform uses Google Sheets as a Content Management System. This eliminates 
 #### Articles Sheet
 Add these column headers in **Row 1** (exact spelling matters):
 ```
-title | slug | category | subheading | summary | content | image | publishedAt | author | createdAt
+title | slug | category | subheading | summary | content | image | heroImage | whyItMatters | publishedAt | author | status | scheduledAt | createdAt
 ```
 
 **Field Descriptions:**
@@ -346,8 +348,12 @@ title | slug | category | subheading | summary | content | image | publishedAt |
 - `summary` - Article summary/description
 - `content` - Full article content (HTML from rich text editor)
 - `image` - Image URL
+- `heroImage` - Hero/banner image URL (uploaded from admin)
+- `whyItMatters` - **Why it matters for African MSMEs**: 1–2 sentences shown in the article page box. Filled from the admin dashboard "Why it matters for African MSMEs" field; the main news website reads this column and displays it in the article page.
 - `publishedAt` - Publication date (YYYY-MM-DD format)
 - `author` - Author name (default: "BizGrowth Africa Editorial")
+- `status` - One of: draft, scheduled, published
+- `scheduledAt` - When to publish (for status "scheduled")
 - `createdAt` - Creation timestamp (ISO format)
 
 #### Opportunities Sheet
@@ -457,18 +463,22 @@ The script builds each row from your sheet’s Row 1 headers and the payload `da
 
 ### Step 7: Update Environment Variables
 
-Update your `.env` file with the actual values:
+**Local development:** Create a `.env` file in the project root with:
 
 ```env
-VITE_GOOGLE_SHEETS_API_KEY=AIzaSyBZfPhyU2ktSlkkqr2KQsvyO20_Af5Wg40
-VITE_GOOGLE_SHEETS_ID=1UvV9_w8UDXcDC1G8_p6Z0TWj5O7W9_DXPBcCNHMwr7w
+VITE_GOOGLE_SHEETS_API_KEY=your_api_key_here
+VITE_GOOGLE_SHEETS_ID=your_spreadsheet_id_here
 VITE_GOOGLE_APPS_SCRIPT_URL=https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec
 VITE_API_BASE_URL=https://www.bizgrowthafrica.com
 ```
 
-**Replace:**
-- `YOUR_SCRIPT_ID` with the actual script ID from your Apps Script deployment
-- Use your actual API key and Spreadsheet ID
+**Production (cPanel):** Set variables on the server so the PHP API can read them. In the project root `.htaccess` there is a block with `SetEnv` placeholders. After uploading, edit `.htaccess` and set:
+
+- `GOOGLE_APPS_SCRIPT_URL` – Web app URL from Apps Script deployment
+- `GOOGLE_SHEETS_API_KEY` – Google Cloud API key (Sheets API enabled)
+- `GOOGLE_SHEETS_ID` – Spreadsheet ID from the sheet URL
+
+Admin passwords are stored server-side in `api/_lib/admin_users.php` (bcrypt); they are not in the frontend.
 
 ### Step 8: Test the Setup
 
@@ -501,64 +511,20 @@ See **Step 5** in Initial Setup section for localhost access instructions.
 
 ### Admin Authentication
 
-The admin panel uses **client-side authentication** with multiple users.
-
-#### Current Admin Users
-
-Configured in `src/utils/adminAuth.js`:
-
-1. **Username:** `Admin`  
-   **Password:** `]ofcwrD-!13+{v_P`
-
-2. **Username:** `Adeola`  
-   **Password:** `;4WcxRwb5&VEjPFu`
+The admin panel uses **server-side authentication**. The frontend sends username and password to `api/admin-auth-check.php` (POST); the server checks credentials against bcrypt hashes in `api/_lib/admin_users.php`.
 
 #### How It Works
 
-- ✅ Prompts for username and password on **every new tab**
-- ✅ Clears authentication when **tab is closed** (uses `sessionStorage`)
-- ✅ Supports multiple admin users
-- ✅ Clean, custom login interface
+- Prompts for username and password on every new tab
+- Clears authentication when the tab is closed (uses `sessionStorage`)
+- Supports multiple admin users; passwords are not stored in the frontend
 
 #### Adding or Changing Users
 
-1. Edit `src/utils/adminAuth.js`:
-   ```javascript
-   const ADMIN_USERS = [
-     {
-       username: 'Admin',
-       password: 'your_password_here'
-     },
-     {
-       username: 'Adeola',
-       password: 'another_password_here'
-     },
-     // Add more users here
-   ];
-   ```
+1. Edit `api/_lib/admin_users.php`: add or update entries in the `ADMIN_USERS` array. Store passwords as bcrypt hashes (e.g. use `password_hash('your_password', PASSWORD_BCRYPT)` in PHP).
+2. No frontend rebuild is required for password changes; only the PHP file on the server is updated.
 
-2. Rebuild admin panel:
-   ```bash
-   npm run build:admin
-   ```
-
-3. Upload new build to subdomain
-
-**Security Note:** User credentials are compiled into the JavaScript bundle. For production, consider moving to environment variables or a secure API.
-
-#### Authentication Options
-
-**Option A: Client-Side Only (Recommended)**
-- Single password prompt
-- Password clears when tab closes
-- Better user experience
-- Remove HTTP Basic Auth from cPanel
-
-**Option B: Both Layers (Maximum Security)**
-- HTTP Basic Auth (cPanel password protection) + Client-side login
-- Two password prompts
-- More secure but less user-friendly
-- Keep HTTP Basic Auth enabled in cPanel
+**Optional:** You can keep HTTP Basic Auth on the admin subdomain in cPanel for an extra layer; the in-app login remains required for API access.
 
 ### Admin Dashboard
 
@@ -792,7 +758,6 @@ The editor supports:
 - Hero section with featured article
 - Side headlines (4 articles)
 - Trending Stories section
-- Markets Strip (live market data)
 - Opportunities & Tenders preview
 - Homepage CTA bar
 
@@ -861,44 +826,21 @@ The editor supports:
 - Pagination
 - Tender cards
 
-#### 7. Markets (`/markets`)
-**Features:**
-- Live market data
-- FX rates
-- Crypto prices
-- Macro indicators
-- Watchlist functionality
-- Sparkline charts
-- Search markets
-
-**Data Sources:**
-- Alpha Vantage (FX)
-- CoinGecko (Crypto)
-- FRED (Macro indicators)
-
-#### 8. Market Detail (`/markets/:symbol`)
-**Features:**
-- Detailed market view
-- Full chart
-- Historical data
-- Add to watchlist
-- Market information
-
-#### 9. Community (`/community`)
+#### 7. Community (`/community`)
 **Features:**
 - Membership form
 - Newsletter signup
 - Community groups
 - Social links
 
-#### 10. About (`/about`)
+#### 8. About (`/about`)
 **Features:**
 - Company information
 - Services cards
 - Mission and values
 - Team information
 
-#### 11. Contact (`/contact`)
+#### 9. Contact (`/contact`)
 **Features:**
 - Contact form (sends to info@bizgrowthafrica.com)
 - FAQ section
@@ -1293,31 +1235,7 @@ This creates an optimized production build in the `dist/` folder.
 #### Step 3: Upload API Files
 1. In File Manager, navigate to `public_html/`
 2. Create `api` folder if it doesn't exist
-3. Upload these files:
-   - `api/google-sheets-proxy.php`
-   - `api/google-sheets-read.php`
-   - `api/contact.php`
-   - `api/upload-image.php`
-   - `api/_lib/response.php` (maintain folder structure)
-   - `api/market/` folder with all PHP files
-
-**File Structure Should Be:**
-```
-public_html/
-├── index.html
-├── assets/ (Vite build output)
-├── api/
-│   ├── google-sheets-proxy.php
-│   ├── google-sheets-read.php
-│   ├── contact.php
-│   ├── upload-image.php
-│   ├── _lib/
-│   │   └── response.php
-│   └── market/
-│       ├── snapshot.php
-│       ├── history.php
-│       └── search.php
-└── ...
+3. Upload API files (see "Step 6: Upload API Files" in the cPanel Deployment section for the full list and folder structure).
 ```
 
 #### Step 4: Set Permissions
@@ -1353,14 +1271,16 @@ See "Admin Authentication" section in Admin Panel Guide above.
 #### Step 6: Upload API Files
 1. In File Manager, navigate to `public_html/`
 2. Create `api` folder if it doesn't exist
-3. Upload these files:
+3. Upload these files (maintain folder structure):
+   - `api/admin-auth-check.php`
    - `api/google-sheets-proxy.php`
    - `api/google-sheets-read.php`
    - `api/contact.php`
    - `api/upload-image.php`
    - `api/publish-scheduled.php`
-   - `api/_lib/response.php` (maintain folder structure)
-   - `api/market/` folder with all PHP files
+   - `api/_lib/response.php`
+   - `api/_lib/admin_users.php`
+   - `api/_lib/publish_scheduled_core.php`
 
 **File Structure Should Be:**
 ```
@@ -1368,17 +1288,16 @@ public_html/
 ├── index.html
 ├── assets/ (Vite build output)
 ├── api/
+│   ├── admin-auth-check.php
 │   ├── google-sheets-proxy.php
 │   ├── google-sheets-read.php
 │   ├── contact.php
 │   ├── upload-image.php
 │   ├── publish-scheduled.php
 │   ├── _lib/
-│   │   └── response.php
-│   └── market/
-│       ├── snapshot.php
-│       ├── history.php
-│       └── search.php
+│   │   ├── response.php
+│   │   ├── admin_users.php
+│   │   └── publish_scheduled_core.php
 └── uploads/ (created automatically)
     ├── articles/
     ├── opportunities/
@@ -1390,19 +1309,17 @@ public_html/
 2. Set `uploads/` folder permissions to **755** (writable)
 3. Ensure PHP files have **644** permissions
 
-#### Step 8: Configure Environment Variables and Upload .env to cPanel
+#### Step 8: Configure Environment Variables on Server
 
-**Upload .env to cPanel (File Manager):**
+**Recommended (cPanel):** Use `.htaccess` in the project root. The project includes a block with `SetEnv` placeholders. After uploading, edit `.htaccess` and set:
 
-1. In cPanel File Manager, go to your site root (e.g. `public_html`).
-2. Upload the `.env` file to **either**:
-   - The folder that contains the `api` folder → `public_html/.env`
-   - Or inside the API folder → `public_html/api/.env`
-3. The market API reads `ALPHAVANTAGE_API_KEY` from `.env` so the homepage "Latest Markets" strip and `/markets` work.
-4. Ensure `api/_cache/` is writable (chmod 755 or 775).
-5. Do **not** commit `.env` to git; upload it manually to cPanel.
+- `GOOGLE_APPS_SCRIPT_URL` – Web app URL from Apps Script deployment
+- `GOOGLE_SHEETS_API_KEY` – Google Cloud API key (Sheets API enabled)
+- `GOOGLE_SHEETS_ID` – Spreadsheet ID from the sheet URL
 
-**Other env configuration:** Update hardcoded values in PHP if needed, or use cPanel environment variables (e.g. for `GOOGLE_APPS_SCRIPT_URL`, `GOOGLE_SHEETS_ID`, `GOOGLE_SHEETS_API_KEY`).
+Alternatively, set these in cPanel → Environment Variables (or in PHP if your host supports it). The PHP API scripts read these for Sheets and Apps Script; they do not use `.env` files on the server.
+
+Ensure `api/_cache/` is writable (chmod 755 or 775) if used. Do **not** commit real credentials to git.
 
 #### Step 9: Test Deployment
 1. Visit your website: `https://www.bizgrowthafrica.com`
@@ -1745,13 +1662,11 @@ title, agency, category, country, region, deadline, postedAt, link, description,
 ### API Endpoints
 
 **Frontend Calls:**
-- `/api/google-sheets-read.php?sheet=Articles&range=A1:Z1000`
-- `/api/google-sheets-proxy.php` (POST)
+- `/api/google-sheets-read.php` (GET, e.g. `?sheet=Articles&range=A1:Z1000`)
+- `/api/google-sheets-proxy.php` (POST, admin write operations)
 - `/api/contact.php` (POST)
 - `/api/upload-image.php` (POST)
-- `/api/market/snapshot.php?ids=USDZAR,USDNGN`
-- `/api/market/history.php?id=USDZAR&range=1D`
-- `/api/market/search.php?q=zar`
+- `/api/admin-auth-check.php` (POST, admin login)
 
 ---
 
@@ -1826,10 +1741,9 @@ title, agency, category, country, region, deadline, postedAt, link, description,
 ### Status Filtering
 
 **Public Website:**
-- Only shows posts with `status: 'published'`
+- Only shows posts with `status: 'published'` (or empty/missing status treated as published)
 - Filters out `status: 'draft'`
 - Filters out `status: 'scheduled'` where time hasn't passed
-- If `status` is empty, post is hidden
 
 **Admin Panel:**
 - Shows all posts (published, scheduled, draft)
@@ -1942,3 +1856,32 @@ The following setup and guide files have been consolidated into this documentati
 **All public assets in use:**
 - ✅ `public/favicon.png`, `favicon-16x16.png`, `favicon-32x32.png`, `apple-touch-icon.png` - Referenced in `index.html`
 - ✅ `public/robots.txt`, `public/sitemap.xml` - SEO files (referenced in README and documentation)
+
+---
+
+## Appendix A: Codebase Scan Summary
+
+*(Merged from SCAN_REPORT.md.)*
+
+- **Imports & routes:** All import paths resolve; no broken imports; routes reference existing components.
+- **Critical bugs:** None.
+- **Optional cleanup:** Contact form uses hardcoded `/api/contact.php` (works on same origin; for cross-origin use `getApiBaseUrl()`). Image URL validation treats only URLs with `.jpg`/`.png` etc. as images (Picsum URLs without extension may be rejected in rich text; optional: allow `picsum.photos`). Vite main build includes an `admin-vendor` chunk (TipTap) unused by main site; build still works.
+- **Security & config:** Admin auth server-side; Google Sheets/Apps Script env-only; SSL on; no server paths in upload errors; sitemap/robots use `https://www.bizgrowthafrica.com`.
+
+---
+
+## Appendix B: Security & Bugs Checklist (Completed)
+
+*(Merged from SECURITY_AND_BUGS_CHECKLIST.md.)*
+
+**Security & Sensitive Data (all done):**
+1. Admin passwords – verification server-side; no plaintext in frontend.
+2. Google API key and spreadsheet ID – env-only in `api/google-sheets-read.php`; clear error if missing.
+3. Apps Script URL – env-only in `api/google-sheets-proxy.php`; SSL verification on.
+4. Publish scheduled – env-only in `api/_lib/publish_scheduled_core.php`; SSL on.
+5. Upload response – no server paths in `api/upload-image.php` response; paths only in server logs.
+
+**Bugs & Logic (all done):**
+6. `api/upload-image.php` – non-POST receives only 405 (no 200 first).
+7. Admin list keys – Articles/Opportunities/Tenders use stable keys (`article.slug`, `opp.id`, `tender.id`).
+8. Empty status – articles and opportunities treat empty status consistently (e.g. empty = published).

@@ -22,13 +22,11 @@ export default function HomeOpportunitiesGrid() {
 	if (loading) {
 		return (
 			<section className="relative overflow-hidden py-16 sm:py-20">
-				<div className="absolute inset-0 bg-[#0B1220]" />
-				<div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(220,38,38,0.12),transparent)]" />
 				<div className="relative mx-auto max-w-6xl px-4">
-					<div className="mb-10 h-8 w-48 animate-pulse rounded bg-white/10" />
+					<div className="mb-10 h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-white/10" />
 					<div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 						{[1, 2, 3, 4, 5, 6].map((i) => (
-							<div key={i} className="h-64 animate-pulse rounded-2xl bg-white/5" />
+							<div key={i} className="h-64 animate-pulse rounded-2xl bg-gray-100 dark:bg-white/5" />
 						))}
 					</div>
 				</div>
@@ -42,21 +40,15 @@ export default function HomeOpportunitiesGrid() {
 
 	return (
 		<section className="relative overflow-hidden py-16 sm:py-20" aria-labelledby="opportunities-grid-title">
-			{/* Background: distinct from all other sections */}
-			<div className="absolute inset-0 bg-[#0B1220]" />
-			<div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(220,38,38,0.14),transparent)]" />
-			<div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_100%_50%,rgba(220,38,38,0.06),transparent)]" />
-			<div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-
 			<div className="relative mx-auto max-w-6xl px-4">
 				{/* Section header: premium, not SectionHeader */}
 				<header className="mb-10 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
 					<div>
 						<div className="mb-1.5 h-0.5 w-12 bg-primary" aria-hidden />
-						<h2 id="opportunities-grid-title" className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-							Latest opportunities
+						<h2 id="opportunities-grid-title" className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
+							Latest Opportunities
 						</h2>
-						<p className="mt-1.5 max-w-xl text-sm text-white/70">
+						<p className="mt-1.5 max-w-xl text-sm text-gray-600 dark:text-white/70">
 							Grants, accelerators, and programs for African MSMEs — updated regularly.
 						</p>
 					</div>
@@ -87,7 +79,7 @@ function OpportunityGridCard({ opp }) {
 	return (
 		<Link
 			to={`/opportunities/${encodeURIComponent(oppId)}`}
-			className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm transition hover:border-primary/30 hover:bg-white/10 dark:border-white/10 dark:bg-white/5 dark:hover:border-primary/30"
+			className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-200 transition hover:border-primary/30 hover:shadow-md dark:border-gray-800 dark:bg-white/5 dark:ring-gray-800 dark:hover:border-primary/30"
 		>
 			{/* Category tag: always visible, like other sections */}
 			<div className="absolute left-4 top-4 z-10">
@@ -97,7 +89,7 @@ function OpportunityGridCard({ opp }) {
 			</div>
 
 			{/* Image strip */}
-			<div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-800">
+			<div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-200 dark:bg-gray-800">
 				{img ? (
 					<img
 						src={img}
@@ -113,11 +105,11 @@ function OpportunityGridCard({ opp }) {
 					/>
 				) : null}
 				<div
-					className={`absolute inset-0 bg-gradient-to-br from-primary/20 via-gray-800 to-[#0B1220] ${img ? "hidden" : ""}`}
+					className={`absolute inset-0 bg-gradient-to-br from-primary/20 via-gray-300 to-gray-400 dark:via-gray-800 dark:to-[#0B1220] ${img ? "hidden" : ""}`}
 					aria-hidden
 				>
 					<div className="flex h-full items-center justify-center">
-						<Briefcase className="h-12 w-12 text-white/20" aria-hidden />
+						<Briefcase className="h-12 w-12 text-gray-400 dark:text-white/20" aria-hidden />
 					</div>
 				</div>
 				<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
@@ -125,13 +117,13 @@ function OpportunityGridCard({ opp }) {
 
 			{/* Content */}
 			<div className="flex flex-1 flex-col p-4">
-				<h3 className="line-clamp-2 text-base font-semibold leading-snug text-white transition group-hover:text-primary">
+				<h3 className="line-clamp-2 text-base font-semibold leading-snug text-gray-900 transition group-hover:text-primary dark:text-white">
 					{opp.title}
 				</h3>
 				{opp.org ? (
-					<p className="mt-1 text-xs text-white/60">{opp.org}</p>
+					<p className="mt-1 text-xs text-gray-600 dark:text-white/60">{opp.org}</p>
 				) : null}
-				<div className="mt-3 flex items-center gap-2 text-xs text-white/50">
+				<div className="mt-3 flex items-center gap-2 text-xs text-gray-500 dark:text-white/50">
 					<Calendar size={12} className="shrink-0" aria-hidden />
 					<span>Deadline {deadline}</span>
 				</div>

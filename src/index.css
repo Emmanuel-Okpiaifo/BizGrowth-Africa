@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Gilroy font family - assets in src/assets/gilroy */
+@font-face {
+  font-family: 'Gilroy';
+  src: url('./assets/gilroy/Gilroy-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Gilroy';
+  src: url('./assets/gilroy/Gilroy-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Gilroy';
+  src: url('./assets/gilroy/Gilroy-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Gilroy';
+  src: url('./assets/gilroy/Gilroy-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @keyframes slideUp {
 	from {
 		transform: translateY(100%);
@@ -21,6 +51,7 @@
     scroll-behavior: smooth;
   }
   body {
+    font-family: 'Gilroy', sans-serif;
     @apply antialiased text-gray-900 bg-white dark:text-gray-100 dark:bg-[#0B1220];
   }
   a {
@@ -46,9 +77,17 @@
   }
   .article-content ul, .article-content ol {
     @apply mb-4 ml-6;
+    padding-left: 1.5rem;
+  }
+  .article-content ul {
+    list-style-type: disc;
+  }
+  .article-content ol {
+    list-style-type: decimal;
   }
   .article-content li {
     @apply mb-2;
+    display: list-item;
   }
   .article-content a {
     @apply text-primary hover:underline;

@@ -41,7 +41,7 @@ export async function uploadImage(file, type = 'general') {
 		}
 
 		const result = await response.json();
-		console.log('Upload response:', result);
+		if (import.meta.env.DEV) console.log('Upload response:', result);
 		
 		// The PHP script now returns absolute URLs, but handle both cases
 		let imageUrl = result.url;
@@ -51,7 +51,7 @@ export async function uploadImage(file, type = 'general') {
 			imageUrl = baseUrl + (imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl);
 		}
 		
-		console.log('Final image URL:', imageUrl);
+		if (import.meta.env.DEV) console.log('Final image URL:', imageUrl);
 		return imageUrl;
 	} catch (error) {
 		console.error('Image upload error:', error);
@@ -80,7 +80,7 @@ export async function validateImageUrl(url) {
 	const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
 	const isImageUrl = imageExtensions.some(ext => 
 		url.toLowerCase().includes(ext)
-	) || url.includes('unsplash.com') || url.includes('images.unsplash.com');
+	);
 
 	if (!isImageUrl) {
 		return false;

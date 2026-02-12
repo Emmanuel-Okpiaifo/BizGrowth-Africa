@@ -25,11 +25,11 @@ export function generateBulkOriginals(count = 100) {
 		"Côte d’Ivoire": "West Africa",
 	};
 	const images = [
-		"https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=1600&auto=format&fit=crop",
-		"https://images.unsplash.com/photo-1559067096-49ebca3406aa?q=80&w=1600&auto=format&fit=crop",
-		"https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1600&auto=format&fit=crop",
-		"https://images.unsplash.com/photo-1531259683007-016a7b628fc3?q=80&w=1600&auto=format&fit=crop",
-		"https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?q=80&w=1600&auto=format&fit=crop",
+		"https://picsum.photos/seed/1/1600/900",
+		"https://picsum.photos/seed/2/1600/900",
+		"https://picsum.photos/seed/3/1600/900",
+		"https://picsum.photos/seed/4/1600/900",
+		"https://picsum.photos/seed/5/1600/900",
 	];
 
 	function pad(n) {

@@ -7,7 +7,7 @@ import { ErrorBoundary } from '../../components/admin/ErrorBoundary';
 import { toGMTPlus1ISO, getMinScheduleDateTime } from '../../utils/scheduling';
 import { uploadImage } from '../../utils/imageUpload';
 import { saveDraft, getDraft, deleteDraft } from '../../utils/draftStorage';
-import { getCurrentUser } from '../../utils/adminAuth';
+import { getCurrentUser, isAuthenticated } from '../../utils/adminAuth';
 
 const CATEGORIES = ['Fintech', 'Policy', 'Funding', 'Markets', 'SMEs', 'Reports'];
 
@@ -35,6 +35,14 @@ export default function AdminArticles() {
 	const [status, setStatus] = useState({ type: null, message: '' });
 	const [uploadingHeroImage, setUploadingHeroImage] = useState(false);
 	const [currentDraftId, setCurrentDraftId] = useState(draftId || null);
+
+	// Sync author to current user's full name when authenticated
+	useEffect(() => {
+		const name = defaultAuthor();
+		if (name && name !== 'BizGrowth Africa Editorial') {
+			setFormData(prev => (prev.author === '' || prev.author === 'BizGrowth Africa Editorial' ? { ...prev, author: name } : prev));
+		}
+	}, []);
 
 	// Load draft if editing
 	useEffect(() => {
@@ -95,7 +103,7 @@ export default function AdminArticles() {
 			if (isScheduled && scheduledDateTime) {
 				postStatus = 'scheduled';
 				scheduledAt = toGMTPlus1ISO(scheduledDateTime);
-				console.log('Scheduling article:', {
+				if (import.meta.env.DEV) console.log('Scheduling article:', {
 					selectedTime: scheduledDateTime,
 					convertedToUTC: scheduledAt,
 					status: postStatus
@@ -113,13 +121,13 @@ export default function AdminArticles() {
 				heroImage: formData.heroImage,
 				whyItMatters: formData.whyItMatters || '',
 				publishedAt: formData.publishedAt,
-				author: formData.author,
+				author: isAuthenticated() ? (getCurrentUser() || 'BizGrowth Africa Editorial') : (formData.author || 'BizGrowth Africa Editorial'),
 				status: postStatus,
 				scheduledAt: scheduledAt || '', // Always include, even if empty
 				createdAt: new Date().toISOString()
 			};
 
-			console.log('Saving article with data:', articleData);
+			if (import.meta.env.DEV) console.log('Saving article with data:', articleData);
 			const success = await appendSheetRow('Articles', articleData);
 
 			if (success) {
@@ -242,9 +250,9 @@ export default function AdminArticles() {
 									src={formData.heroImage} 
 									alt="Hero preview" 
 									className="w-full h-48 object-cover"
-									onLoad={() => console.log('Hero image preview loaded:', formData.heroImage)}
+									onLoad={() => { if (import.meta.env.DEV) console.log('Hero image preview loaded:', formData.heroImage); }}
 									onError={(e) => {
-										console.warn('Hero image preview failed to load (may work on website):', formData.heroImage);
+										if (import.meta.env.DEV) console.warn('Hero image preview failed to load (may work on website):', formData.heroImage);
 										// Don't hide or alert - just log it
 									}}
 								/>
@@ -274,7 +282,7 @@ export default function AdminArticles() {
 											setUploadingHeroImage(true);
 											try {
 												const url = await uploadImage(file, 'articles');
-												console.log('Hero image uploaded, URL:', url);
+												if (import.meta.env.DEV) console.log('Hero image uploaded, URL:', url);
 												
 												// Wait a moment for the file to be fully written
 												await new Promise(resolve => setTimeout(resolve, 500));
@@ -286,10 +294,10 @@ export default function AdminArticles() {
 												const img = new Image();
 												img.crossOrigin = 'anonymous';
 												img.onload = () => {
-													console.log('Hero image preview loaded successfully');
+													if (import.meta.env.DEV) console.log('Hero image preview loaded successfully');
 												};
 												img.onerror = () => {
-													console.warn('Hero image preview failed to load (may work on website):', url);
+													if (import.meta.env.DEV) console.warn('Hero image preview failed to load (may work on website):', url);
 													// Don't show alert - just log it
 												};
 												img.src = url;
@@ -379,7 +387,6 @@ export default function AdminArticles() {
 						onChange={(e) => setFormData(prev => ({ ...prev, whyItMatters: e.target.value }))}
 						rows={3}
 						className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none resize-none"
-						placeholder="1–2 sentences on why this story matters for African small businesses"
 					/>
 				</div>
 

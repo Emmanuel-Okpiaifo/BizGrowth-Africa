@@ -5,7 +5,8 @@ import { useGoogleSheetsArticlesAdmin } from '../../hooks/useGoogleSheetsArticle
 import { useGoogleSheetsOpportunitiesAdmin } from '../../hooks/useGoogleSheetsOpportunitiesAdmin';
 import { useGoogleSheetsTendersAdmin } from '../../hooks/useGoogleSheetsTendersAdmin';
 import { publishScheduledPosts } from '../../utils/publishScheduled';
-import { getTimeAgo } from '../../utils/timeUtils';
+import { getTimeAgo, formatCreatedAt } from '../../utils/timeUtils';
+import { isSuperAdmin, getCurrentUserIdentifiers } from '../../utils/adminAuth';
 
 export default function AdminDashboard() {
 	const { articles: allArticles, loading: articlesLoading, error: articlesError, refresh: refreshArticles } = useGoogleSheetsArticlesAdmin();
@@ -13,13 +14,24 @@ export default function AdminDashboard() {
 	const { tenders: allTenders, loading: tendersLoading, error: tendersError, refresh: refreshTenders } = useGoogleSheetsTendersAdmin();
 	const [publishing, setPublishing] = useState(false);
 	const [publishResult, setPublishResult] = useState(null);
-	
-	// Calculate real stats from Google Sheets
-	const totalArticles = articlesError ? 0 : allArticles.length;
-	const totalOpportunities = opportunitiesError ? 0 : allOpportunities.length;
-	const totalTenders = tendersError ? 0 : allTenders.length;
-	
-	const publishedToday = articlesError ? 0 : allArticles.filter(a => {
+
+	// Restrict to current user's items (Admin sees all; items without author visible only to Admin)
+	const { myArticles, myOpportunities, myTenders } = useMemo(() => {
+		const authorIds = getCurrentUserIdentifiers();
+		const superAdmin = isSuperAdmin();
+		return {
+			myArticles: superAdmin ? allArticles : allArticles.filter(a => authorIds.includes((a.author || '').trim().toLowerCase())),
+			myOpportunities: superAdmin ? allOpportunities : allOpportunities.filter(o => { const author = (o.author || '').trim().toLowerCase(); return author && authorIds.includes(author); }),
+			myTenders: superAdmin ? allTenders : allTenders.filter(t => { const author = (t.author || '').trim().toLowerCase(); return author && authorIds.includes(author); })
+		};
+	}, [allArticles, allOpportunities, allTenders]);
+
+	// Calculate real stats from Google Sheets (user-filtered)
+	const totalArticles = articlesError ? 0 : myArticles.length;
+	const totalOpportunities = opportunitiesError ? 0 : myOpportunities.length;
+	const totalTenders = tendersError ? 0 : myTenders.length;
+
+	const publishedToday = articlesError ? 0 : myArticles.filter(a => {
 		if (!a.publishedAt || (a.status || 'published').toLowerCase() !== 'published') return false;
 		// Parse publishedAt with timezone handling
 		const pubDate = getTimeAgo(a.publishedAt) ? new Date(a.publishedAt.includes('+') || a.publishedAt.includes('Z') ? a.publishedAt : a.publishedAt + '+01:00') : null;
@@ -36,7 +48,7 @@ export default function AdminDashboard() {
 		if (articlesError) return 0;
 		const now = new Date();
 		const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-		return allArticles.filter(a => {
+		return myArticles.filter(a => {
 			if (!a.publishedAt || (a.status || 'published').toLowerCase() !== 'published') return false;
 			let pubDateStr = a.publishedAt;
 			if (!pubDateStr.includes('+') && !pubDateStr.includes('Z')) {
@@ -49,15 +61,15 @@ export default function AdminDashboard() {
 			const pubDate = new Date(pubDateStr);
 			return pubDate >= startOfMonth;
 		}).length;
-	}, [allArticles, articlesError]);
-	
+	}, [myArticles, articlesError]);
+
 	// Calculate articles last month for trend
 	const articlesLastMonth = useMemo(() => {
 		if (articlesError) return 0;
 		const now = new Date();
 		const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 		const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-		return allArticles.filter(a => {
+		return myArticles.filter(a => {
 			if (!a.publishedAt || (a.status || 'published').toLowerCase() !== 'published') return false;
 			let pubDateStr = a.publishedAt;
 			if (!pubDateStr.includes('+') && !pubDateStr.includes('Z')) {
@@ -70,7 +82,7 @@ export default function AdminDashboard() {
 			const pubDate = new Date(pubDateStr);
 			return pubDate >= startOfLastMonth && pubDate <= endOfLastMonth;
 		}).length;
-	}, [allArticles, articlesError]);
+	}, [myArticles, articlesError]);
 	
 	// Calculate trend percentage
 	const articlesTrend = useMemo(() => {
@@ -83,12 +95,12 @@ export default function AdminDashboard() {
 	const categoryCounts = useMemo(() => {
 		if (articlesError) return {};
 		const counts = {};
-		allArticles.forEach(a => {
+		myArticles.forEach(a => {
 			const cat = a.category || 'Uncategorized';
 			counts[cat] = (counts[cat] || 0) + 1;
 		});
 		return counts;
-	}, [allArticles, articlesError]);
+	}, [myArticles, articlesError]);
 	
 	const topCategory = useMemo(() => {
 		const entries = Object.entries(categoryCounts);
@@ -101,38 +113,38 @@ export default function AdminDashboard() {
 		if (opportunitiesError) return 0;
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
-		return allOpportunities.filter(opp => {
+		return myOpportunities.filter(opp => {
 			if (!opp.deadline) return true; // No deadline = active
 			const deadline = new Date(opp.deadline);
 			deadline.setHours(0, 0, 0, 0);
 			return deadline >= today;
 		}).length;
-	}, [allOpportunities, opportunitiesError]);
-	
+	}, [myOpportunities, opportunitiesError]);
+
 	// Calculate active tenders (not past deadline)
 	const activeTenders = useMemo(() => {
 		if (tendersError) return 0;
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
-		return allTenders.filter(tender => {
+		return myTenders.filter(tender => {
 			if (!tender.deadline) return true; // No deadline = active
 			const deadline = new Date(tender.deadline);
 			deadline.setHours(0, 0, 0, 0);
 			return deadline >= today;
 		}).length;
-	}, [allTenders, tendersError]);
-	
+	}, [myTenders, tendersError]);
+
 	// Calculate opportunities posted this month
 	const opportunitiesThisMonth = useMemo(() => {
 		if (opportunitiesError) return 0;
 		const now = new Date();
 		const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-		return allOpportunities.filter(opp => {
+		return myOpportunities.filter(opp => {
 			if (!opp.postedAt) return false;
 			const postedDate = new Date(opp.postedAt);
 			return postedDate >= startOfMonth;
 		}).length;
-	}, [allOpportunities, opportunitiesError]);
+	}, [myOpportunities, opportunitiesError]);
 	
 	const stats = [
 		{ label: 'Total Articles', value: articlesLoading ? '—' : String(totalArticles), change: articlesTrend, trend: articlesThisMonth >= articlesLastMonth ? 'up' : 'down', icon: FileText, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', gradient: 'from-blue-500 to-cyan-500' },
@@ -175,12 +187,12 @@ export default function AdminDashboard() {
 		},
 	];
 
-	// Calculate recent activity from real data
+	// Calculate recent activity from real data (user-filtered)
 	const recentActivity = useMemo(() => {
 		const activities = [];
 		
 		// Get recent articles (last 2)
-		allArticles.slice(0, 2).forEach(article => {
+		myArticles.slice(0, 2).forEach(article => {
 			const status = (article.status || 'published').toLowerCase();
 			let timeAgo;
 			
@@ -196,14 +208,15 @@ export default function AdminDashboard() {
 				type: 'article',
 				title: article.title,
 				time: timeAgo,
-				status: status
+				status: status,
+				createdAt: article.createdAt
 			});
 		});
 		
 		// Get recent opportunities (last 1)
-		if (allOpportunities.length > 0) {
-			const opp = allOpportunities[0];
-			const postedDate = opp.postedAt ? new Date(opp.postedAt) : new Date();
+		if (myOpportunities.length > 0) {
+			const opp = myOpportunities[0];
+			const postedDate = opp.postedAt ? new Date(opp.postedAt) : new Date(opp.createdAt || 0);
 			const now = new Date();
 			const diffHours = Math.floor((now - postedDate) / (1000 * 60 * 60));
 			let timeAgo = '';
@@ -218,14 +231,15 @@ export default function AdminDashboard() {
 				type: 'opportunity',
 				title: opp.title,
 				time: timeAgo,
-				status: 'published'
+				status: 'published',
+				createdAt: opp.createdAt
 			});
 		}
 		
 		// Get recent tenders (last 1)
-		if (allTenders.length > 0) {
-			const tender = allTenders[0];
-			const postedDate = tender.postedAt ? new Date(tender.postedAt) : new Date();
+		if (myTenders.length > 0) {
+			const tender = myTenders[0];
+			const postedDate = tender.postedAt ? new Date(tender.postedAt) : new Date(tender.createdAt || 0);
 			const now = new Date();
 			const diffHours = Math.floor((now - postedDate) / (1000 * 60 * 60));
 			let timeAgo = '';
@@ -240,13 +254,14 @@ export default function AdminDashboard() {
 				type: 'tender',
 				title: tender.title,
 				time: timeAgo,
-				status: 'published'
+				status: 'published',
+				createdAt: tender.createdAt
 			});
 		}
 		
 		// Sort by time (most recent first) and limit to 3
 		return activities.slice(0, 3);
-	}, [allArticles, allOpportunities, allTenders]);
+	}, [myArticles, myOpportunities, myTenders]);
 
 	// Handle publishing scheduled posts
 	const handlePublishScheduled = async () => {
@@ -329,11 +344,11 @@ export default function AdminDashboard() {
 
 			{/* Stats Grid */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-				{stats.map((stat, idx) => {
+								{stats.map((stat, idx) => {
 					const Icon = stat.icon;
 					return (
 						<div
-							key={idx}
+							key={stat.label || idx}
 							className="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0B1220] p-6 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
 						>
 							{/* Gradient Background */}
@@ -378,7 +393,7 @@ export default function AdminDashboard() {
 						const Icon = item.icon;
 						return (
 							<div
-								key={idx}
+								key={item.label || idx}
 								className="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-white to-gray-50 dark:from-[#0B1220] dark:to-[#0A0F1A] p-6 shadow-sm hover:shadow-lg transition-all duration-300"
 							>
 								<div className="flex items-center justify-between mb-4">
@@ -410,7 +425,7 @@ export default function AdminDashboard() {
 						const Icon = action.icon;
 						return (
 							<Link
-								key={idx}
+								key={action.link || idx}
 								to={action.link}
 								className="group relative overflow-hidden rounded-2xl border-2 border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0B1220] p-6 shadow-sm hover:shadow-xl hover:border-primary/50 transition-all"
 							>
@@ -443,7 +458,7 @@ export default function AdminDashboard() {
 					</div>
 					<div className="space-y-4">
 						{recentActivity.length > 0 ? recentActivity.map((activity, idx) => (
-							<div key={idx} className="flex items-start gap-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-900 transition">
+							<div key={`${activity.title}-${activity.time}-${idx}`} className="flex items-start gap-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-900 transition">
 								<div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
 									activity.type === 'article' ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400' :
 									activity.type === 'opportunity' ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400' :
@@ -464,6 +479,9 @@ export default function AdminDashboard() {
 											{activity.status === 'published' ? 'Published' : 'Draft'}
 										</span>
 									</div>
+									<p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+										Created: {formatCreatedAt(activity.createdAt)}
+									</p>
 								</div>
 							</div>
 						)) : (
@@ -501,7 +519,7 @@ export default function AdminDashboard() {
 								<div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
 								<p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Loading articles...</p>
 							</div>
-						) : allArticles.length > 0 ? allArticles.slice(0, 3).map((article, idx) => {
+						) : myArticles.length > 0 ? myArticles.slice(0, 3).map((article, idx) => {
 							const timeAgo = (() => {
 								const status = (article.status || 'published').toLowerCase();
 								
@@ -518,7 +536,7 @@ export default function AdminDashboard() {
 							
 							return (
 								<Link
-									key={idx}
+									key={article.slug || idx}
 									to={`/articles/edit/${article.slug}`}
 									className="block p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-900 hover:border-primary/30 transition group"
 								>
@@ -534,6 +552,9 @@ export default function AdminDashboard() {
 												<span className="text-xs text-gray-500 dark:text-gray-400">{timeAgo}</span>
 												{article.publishedAt && <CheckCircle2 size={14} className="text-green-500" />}
 											</div>
+											<p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+												Created: {formatCreatedAt(article.createdAt)}
+											</p>
 										</div>
 										<List size={20} className="text-gray-400 group-hover:text-primary transition flex-shrink-0" />
 									</div>

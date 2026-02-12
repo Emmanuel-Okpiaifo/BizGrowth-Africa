@@ -14,7 +14,8 @@ export function useGoogleSheetsArticles() {
 		try {
 			setLoading(true);
 			setError(null);
-			const data = await getSheetData('Articles');
+			const raw = await getSheetData('Articles');
+			const data = Array.isArray(raw) ? raw : [];
 			
 			// Transform Google Sheets data to match expected article format
 			const transformed = data
@@ -37,17 +38,14 @@ export function useGoogleSheetsArticles() {
 						console.log(`[FILTER] Article "${article.title}" - Raw Status: "${rawStatus}", Normalized: "${articleStatus}", ScheduledAt: "${scheduledAt}"`);
 					}
 					
-					// Only show when status is 'published'. Scheduled and draft never show until status changes to published.
-					if (!articleStatus || articleStatus === '') {
-						return false;
-					}
+					// Consistent with opportunities: empty or missing status = show (legacy); draft/scheduled = hide until published.
 					if (articleStatus === 'draft') {
 						return false;
 					}
 					if (articleStatus === 'scheduled') {
 						return false; // Do not show on main site until backend has changed status to published
 					}
-					return articleStatus === 'published';
+					return articleStatus === '' || articleStatus === 'published';
 				})
 				.map(article => {
 					// Sheet keys are normalized to lowercase; support "whyItMatters" and "Why It Matters" column names
@@ -59,7 +57,7 @@ export function useGoogleSheetsArticles() {
 						title: (article.title || '').trim(),
 						source: "BizGrowth Africa",
 						image: img || heroImg,
-						heroImage: heroImg || img,
+						heroImage: heroImg,
 						imageCandidates: [heroImg, img].filter(Boolean),
 						url: `/news/${(article.slug || '').trim()}`,
 						publishedAt: article.publishedat || article.publishedAt || article.createdat || article.createdAt || new Date().toISOString(),
@@ -86,9 +84,11 @@ export function useGoogleSheetsArticles() {
 			// Only log error once, not repeatedly
 			if (!error) {
 				if (err.message.includes('403')) {
-					console.warn('⚠️ Google Sheets API 403: Your sheet needs to be publicly readable.');
-					console.warn('📖 See GOOGLE_SHEETS_API_FIX.md for fix instructions.');
-					console.warn('💡 The site will continue working with static content.');
+					if (import.meta.env.DEV) {
+						console.warn('⚠️ Google Sheets API 403: Your sheet needs to be publicly readable.');
+						console.warn('📖 See GOOGLE_SHEETS_API_FIX.md for fix instructions.');
+						console.warn('💡 The site will continue working with static content.');
+					}
 				} else {
 					console.error('Failed to load articles from Google Sheets:', err);
 				}

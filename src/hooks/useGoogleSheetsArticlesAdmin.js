@@ -14,7 +14,8 @@ export function useGoogleSheetsArticlesAdmin() {
 		try {
 			setLoading(true);
 			setError(null);
-			const data = await getSheetData('Articles');
+			const raw = await getSheetData('Articles');
+			const data = Array.isArray(raw) ? raw : [];
 			
 			// Transform Google Sheets data - include ALL articles (no filtering)
 			const transformed = data
@@ -47,7 +48,7 @@ export function useGoogleSheetsArticlesAdmin() {
 						author: (article.author || 'BizGrowth Africa Editorial').trim(),
 						status: articleStatus, // Include status
 						scheduledAt: article.scheduledAt || '', // Include scheduledAt
-						createdAt: article.createdAt || new Date().toISOString()
+						createdAt: (article.createdat ?? article.createdAt ?? '').toString().trim() || ''
 					};
 				})
 				.sort((a, b) => {

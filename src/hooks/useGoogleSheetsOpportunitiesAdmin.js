@@ -14,7 +14,8 @@ export function useGoogleSheetsOpportunitiesAdmin() {
 		try {
 			setLoading(true);
 			setError(null);
-			const data = await getSheetData('Opportunities');
+			const raw = await getSheetData('Opportunities');
+			const data = Array.isArray(raw) ? raw : [];
 			
 			const transformed = data
 				.filter(opp => {
@@ -51,9 +52,10 @@ export function useGoogleSheetsOpportunitiesAdmin() {
 						featured: opp.featured === 'true' || opp.featured === true,
 						description: (opp.description || '').trim(),
 						heroImage: (opp.heroImage || '').trim(), // Hero/banner image
+						author: (opp.author || '').trim(), // From sheet (for per-user filtering in admin)
 						status: oppStatus, // Include status
 						scheduledAt: opp.scheduledAt || '', // Include scheduledAt
-						createdAt: opp.createdAt || new Date().toISOString()
+						createdAt: (opp.createdat ?? opp.createdAt ?? '').toString().trim() || ''
 					};
 				})
 				.sort((a, b) => {

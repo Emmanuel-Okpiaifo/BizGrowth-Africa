@@ -1,3 +1,11 @@
+# Environment variables for BizGrowth Africa (Google Sheets / Apps Script)
+# If your host does not allow SetEnv in .htaccess, use a .env file in the project root or set vars in server config.
+<IfModule mod_env.c>
+	SetEnv GOOGLE_APPS_SCRIPT_URL "https://script.google.com/macros/s/AKfycbwnH4B-aTZMCFXybHF-wDyQ5v0YtO1OjKOnvn_-kQK0qj2o953le7YQ6XE5_TQMqzZU1A/exec"
+	SetEnv GOOGLE_SHEETS_API_KEY "AIzaSyBZfPhyU2ktSlkkqr2KQsvyO20_Af5Wg40"
+	SetEnv GOOGLE_SHEETS_ID "1UvV9_w8UDXcDC1G8_p6Z0TWj5O7W9_DXPBcCNHMwr7w"
+</IfModule>
+
 # Enable Rewrite Engine
 RewriteEngine On
 
