@@ -38,7 +38,8 @@ export default function Opportunities() {
 
 	// Use only Google Sheets opportunities (no placeholder/sample data)
 	const allOpps = useMemo(() => {
-		return sheetsOpps.map(opp => ({
+		const list = Array.isArray(sheetsOpps) ? sheetsOpps : [];
+		return list.map(opp => ({
 			...opp,
 			id: opp.id || `opp-${opp.title?.toLowerCase().replace(/\s+/g, '-')}`,
 			featured: opp.featured === true || opp.featured === 'true',
@@ -46,7 +47,7 @@ export default function Opportunities() {
 		}));
 	}, [sheetsOpps]);
 	
-	const regions = ["All", "West Africa", "East Africa", "Southern Africa", "North Africa", "Pan‑Africa"];
+	const regions = ["All", "West Africa", "East Africa", "Southern Africa", "North Africa", "Sub-Saharan Africa", "Pan‑Africa"];
 	const countries = ["All", ...Array.from(new Set(allOpps.map((o) => o.country).filter(Boolean)))];
 	const tags = ["All", ...Array.from(new Set(["Scholarship", ...allOpps.flatMap((o) => o.tags || []).filter(Boolean)]))];
 
@@ -55,7 +56,7 @@ export default function Opportunities() {
 	const [region, setRegion] = useState("All");
 	const [country, setCountry] = useState("All");
 	const [tag, setTag] = useState("All");
-	const [sort, setSort] = useState("Deadline"); // Deadline | Newest | Amount
+	const [sort, setSort] = useState("Newest"); // Newest (date posted) | Deadline | Amount
 	const [featuredOnly, setFeaturedOnly] = useState(false);
 
 	const filtered = useMemo(() => {
@@ -287,9 +288,7 @@ export default function Opportunities() {
 											<Link to={`/opportunities/${encodeURIComponent(oppId)}`}>{opp.title}</Link>
 										</h3>
 										{opp.description ? (
-											<p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-gray-700 dark:text-gray-300">
-												{opp.description}
-											</p>
+											<div className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-gray-700 dark:text-gray-300 [&>p]:inline [&>p]:my-0 [&>p:not(:last-child)]:after:content-['_']" dangerouslySetInnerHTML={{ __html: opp.description }} />
 										) : null}
 										<div className="mt-3">
 											<Link

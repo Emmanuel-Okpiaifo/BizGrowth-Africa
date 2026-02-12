@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "test": "vitest run",
     "dev": "vite",
     "dev:admin": "vite --config vite.config.admin.js",
     "dev:php": "php -S localhost:8000 -t .",
@@ -31,7 +32,10 @@
     "react-router-dom": "7.11.0"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.0.1",
     "@eslint/js": "^9.39.1",
+    "jsdom": "^25.0.1",
+    "vitest": "^2.1.6",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",

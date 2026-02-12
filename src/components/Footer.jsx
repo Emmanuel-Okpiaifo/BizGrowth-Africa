@@ -128,9 +128,9 @@ export default function Footer() {
 
 		// Fire-and-forget relay to Google Sheets
 		if (webhookUrl && !webhookUrl.includes('YOUR_DEPLOYMENT_ID')) {
-			postJSON(webhookUrl, payload).catch((err) =>
-				console.warn('Newsletter submission failed:', err)
-			);
+		postJSON(webhookUrl, payload).catch((err) => {
+			if (import.meta.env.DEV) console.warn('Newsletter submission failed:', err);
+		});
 		}
 
 		setIsSubmitting(false);

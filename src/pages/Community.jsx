@@ -103,7 +103,7 @@ export default function Community() {
 				<div className="mx-auto max-w-5xl text-center">
 					<div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2">
 						<Sparkles className="w-4 h-4 text-primary" />
-						<span className="text-sm font-semibold text-primary">Join 0 Entrepreneurs</span>
+						<span className="text-sm font-semibold text-primary">Join 71 Entrepreneurs</span>
 					</div>
 
 					<h1 className="pb-6 text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-0 leading-[1.18]">
@@ -119,15 +119,15 @@ export default function Community() {
 
 					<div className="flex flex-wrap justify-center gap-6 sm:gap-8 mb-12">
 						<div className="rounded-xl bg-white dark:bg-gray-800/50 backdrop-blur border border-gray-200 dark:border-gray-700/50 px-6 py-4 shadow-sm">
-							<div className="text-3xl sm:text-4xl font-bold text-primary mb-1">0</div>
+							<div className="text-3xl sm:text-4xl font-bold text-primary mb-1">71</div>
 							<div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Active Members</div>
 						</div>
 						<div className="rounded-xl bg-white dark:bg-gray-800/50 backdrop-blur border border-gray-200 dark:border-gray-700/50 px-6 py-4 shadow-sm">
-							<div className="text-3xl sm:text-4xl font-bold text-primary mb-1">0</div>
+							<div className="text-3xl sm:text-4xl font-bold text-primary mb-1">3</div>
 							<div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Connected Platforms</div>
 						</div>
 						<div className="rounded-xl bg-white dark:bg-gray-800/50 backdrop-blur border border-gray-200 dark:border-gray-700/50 px-6 py-4 shadow-sm">
-							<div className="text-3xl sm:text-4xl font-bold text-primary mb-1">0</div>
+							<div className="text-3xl sm:text-4xl font-bold text-primary mb-1">3</div>
 							<div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Active Discussions</div>
 						</div>
 					</div>
@@ -182,27 +182,19 @@ export default function Community() {
 
 								<div className="relative p-8">
 									{/* Header */}
-									<div className="flex items-start justify-between mb-6">
-										<div className="flex items-center gap-3">
-											<div
-												className="p-3 rounded-lg transition-all"
-												style={{ backgroundColor: link.accentColor + "15" }}
-											>
-												{Icon === "whatsapp" ? (
-													<FontAwesomeIcon icon={faWhatsapp} className="h-6 w-6" style={{ color: link.accentColor }} />
-												) : (
-													<Icon className="w-6 h-6" style={{ color: link.accentColor }} />
-												)}
-											</div>
-											<div>
-												<h3 className="text-xl font-bold text-gray-900 dark:text-white">{link.name}</h3>
-											</div>
+									<div className="flex items-center gap-3 mb-6">
+										<div
+											className="p-3 rounded-lg transition-all"
+											style={{ backgroundColor: link.accentColor + "15" }}
+										>
+											{Icon === "whatsapp" ? (
+												<FontAwesomeIcon icon={faWhatsapp} className="h-6 w-6" style={{ color: link.accentColor }} />
+											) : (
+												<Icon className="w-6 h-6" style={{ color: link.accentColor }} />
+											)}
 										</div>
-										<div className="text-right bg-white dark:bg-gray-800/50 backdrop-blur rounded-lg px-3 py-2">
-											<div className="text-2xl font-bold" style={{ color: link.accentColor }}>
-												{link.members}
-											</div>
-											<div className="text-xs text-gray-600 dark:text-gray-400">members</div>
+										<div>
+											<h3 className="text-xl font-bold text-gray-900 dark:text-white">{link.name}</h3>
 										</div>
 									</div>
 

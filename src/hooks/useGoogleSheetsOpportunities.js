@@ -13,7 +13,8 @@ export function useGoogleSheetsOpportunities() {
 		try {
 			setLoading(true);
 			setError(null);
-			const data = await getSheetData('Opportunities');
+			const raw = await getSheetData('Opportunities');
+			const data = Array.isArray(raw) ? raw : [];
 			
 			// Transform Google Sheets data
 			const transformed = data
@@ -58,7 +59,7 @@ export function useGoogleSheetsOpportunities() {
 						amountMax: parseFloat(opp.amountMax) || 0,
 						currency: (opp.currency || 'USD').trim(),
 						deadline: opp.deadline || '',
-						postedAt: opp.postedAt || opp.createdAt || new Date().toISOString().split('T')[0],
+						postedAt: (opp.postedat ?? opp.postedAt ?? '').toString().trim() || '',
 						link: (opp.link || '').trim(),
 						tags: tags,
 						heroImage: (opp.heroimage ?? opp['hero image'] ?? opp.heroImage ?? '').toString().trim(), // Uploaded image from admin (sheet keys are lowercase)

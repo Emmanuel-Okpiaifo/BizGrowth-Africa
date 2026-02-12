@@ -1,29 +1,16 @@
-import { useMemo, useEffect } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import Ticker from "../components/Ticker";
 import SectionHeader from "../components/SectionHeader";
 import NewsCard from "../components/NewsCard";
 import HomeOpportunitiesGrid from "../components/HomeOpportunitiesGrid";
 import HomepageCTABar from "../components/HomepageCTABar";
-import { useDailyOriginalArticles } from "../data/useDailyOriginalArticles";
 import { useGoogleSheetsArticles } from "../hooks/useGoogleSheetsArticles";
 import SEO from "../components/SEO";
 
 export default function Home() {
-	const { articles: staticArticles } = useDailyOriginalArticles();
 	const { articles: sheetsArticles, loading: sheetsLoading } = useGoogleSheetsArticles();
-	
-	// Combine static and Google Sheets articles, prioritizing Google Sheets
-	const articles = useMemo(() => {
-		const combined = [...sheetsArticles, ...staticArticles];
-		// Remove duplicates by slug, keeping Google Sheets articles first
-		const seen = new Set();
-		return combined.filter(article => {
-			if (seen.has(article.slug)) return false;
-			seen.add(article.slug);
-			return true;
-		});
-	}, [sheetsArticles, staticArticles]);
+	const articles = Array.isArray(sheetsArticles) ? sheetsArticles : [];
 
 	const trending = articles.slice(0, 8);
 

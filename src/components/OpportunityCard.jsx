@@ -95,7 +95,7 @@ export default function OpportunityCard({ opp, saved = false, onToggleSave, fram
 					</h3>
 				</div>
 			</div>
-			<p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-gray-700 dark:text-gray-300">{opp.description}</p>
+			<div className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-gray-700 dark:text-gray-300 [&>p]:inline [&>p]:my-0 [&>p:not(:last-child)]:after:content-['_']" dangerouslySetInnerHTML={{ __html: opp.description || '' }} />
 			<div className="mt-3 grid grid-cols-2 gap-2 text-[11px] sm:flex sm:flex-wrap">
 				<span className={isAurora ? "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-gray-700 ring-white/30 dark:border-gray-700 dark:text-gray-300" : "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-gray-700 dark:border-gray-700 dark:text-gray-300"}>
 					<Globe2 size={12} /> {opp.region || "—"}

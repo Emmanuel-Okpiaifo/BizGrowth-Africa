@@ -7,9 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 	exit;
 }
 
-json_headers(200);
-
-// Only allow POST requests
+// Only allow POST requests (do not send 200 first; send 405 for non-POST)
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 	json_error('Method not allowed', 405);
 }
@@ -45,13 +43,15 @@ $uploadDir = __DIR__ . '/../uploads/' . $type . '/';
 // Create directory if it doesn't exist
 if (!is_dir($uploadDir)) {
 	if (!mkdir($uploadDir, 0755, true)) {
-		json_error('Failed to create upload directory: ' . $uploadDir, 500);
+		error_log('Upload failed: could not create directory: ' . $uploadDir);
+		json_error('Failed to create upload directory.', 500);
 	}
 }
 
 // Verify directory is writable
 if (!is_writable($uploadDir)) {
-	json_error('Upload directory is not writable: ' . $uploadDir, 500);
+	error_log('Upload failed: directory not writable: ' . $uploadDir);
+	json_error('Upload directory is not writable.', 500);
 }
 
 // Generate unique filename
@@ -61,12 +61,14 @@ $filepath = $uploadDir . $filename;
 
 // Move uploaded file
 if (!move_uploaded_file($file['tmp_name'], $filepath)) {
-	json_error('Failed to save file. Check directory permissions. Path: ' . $filepath, 500);
+	error_log('Upload failed: move_uploaded_file failed: ' . $filepath);
+	json_error('Failed to save file. Check directory permissions.', 500);
 }
 
 // Verify file was actually saved
 if (!file_exists($filepath)) {
-	json_error('File was not saved. Path: ' . $filepath, 500);
+	error_log('Upload failed: file not found after save: ' . $filepath);
+	json_error('File was not saved.', 500);
 }
 
 // Set proper file permissions (readable by web server)
@@ -85,18 +87,11 @@ $urlPath = $baseUrl . '/uploads/' . $type . '/' . $filename;
 $fileSize = filesize($filepath);
 $isReadable = is_readable($filepath);
 
-// Return success with absolute URL
+// Return success with absolute URL (no server paths or debug info in response)
 json_ok([
 	'success' => true,
 	'url' => $urlPath,
 	'filename' => $filename,
 	'fileSize' => $fileSize,
-	'fileReadable' => $isReadable,
-	'debug' => [
-		'uploadDir' => $uploadDir,
-		'filepath' => $filepath,
-		'baseUrl' => $baseUrl,
-		'fileExists' => file_exists($filepath),
-		'filePermissions' => substr(sprintf('%o', fileperms($filepath)), -4)
-	]
+	'fileReadable' => $isReadable
 ]);

@@ -4,6 +4,8 @@ import { FileText, Plus, Search, Edit, Trash2, Eye, CheckCircle2, Clock, Refresh
 import { useGoogleSheetsArticlesAdmin } from '../../hooks/useGoogleSheetsArticlesAdmin';
 import { deleteSheetRow, getSheetData } from '../../utils/googleSheets';
 import { getDrafts, deleteDraft } from '../../utils/draftStorage';
+import { isSuperAdmin, getCurrentUserIdentifiers } from '../../utils/adminAuth';
+import { formatCreatedAt } from '../../utils/timeUtils';
 
 export default function AdminArticlesList() {
 	const [searchQuery, setSearchQuery] = useState('');
@@ -50,11 +52,17 @@ export default function AdminArticlesList() {
 		})),
 		...localDrafts
 	];
-	
-	// Transform articles for display
-	const articles = allArticlesCombined;
 
-	const filteredArticles = articles.filter(article => {
+	// Restrict to current user's items (Admin sees all)
+	const authorIds = getCurrentUserIdentifiers();
+	const articlesForUser = isSuperAdmin()
+		? allArticlesCombined
+		: allArticlesCombined.filter(article => {
+				const author = (article.author || '').trim().toLowerCase();
+				return author && authorIds.includes(author);
+			});
+
+	const filteredArticles = articlesForUser.filter(article => {
 		const matchesSearch = article.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			article.category?.toLowerCase().includes(searchQuery.toLowerCase());
 		
@@ -228,7 +236,7 @@ export default function AdminArticlesList() {
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 					{filteredArticles.map((article, idx) => (
 						<div
-							key={idx}
+							key={article.slug || idx}
 							className="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0B1220] shadow-sm hover:shadow-xl transition-all"
 						>
 							{/* Image - prefer heroImage, then image */}
@@ -297,12 +305,17 @@ export default function AdminArticlesList() {
 									const rawStatus = article.status ? String(article.status).trim() : '';
 									const status = rawStatus ? rawStatus.toLowerCase() : '';
 									return status === 'scheduled' && article.scheduledAt ? (
-										<p className="text-xs text-blue-600 dark:text-blue-400 mb-4 flex items-center gap-1">
+										<p className="text-xs text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-1">
 											<Calendar size={12} />
 											Scheduled: {new Date(article.scheduledAt).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', dateStyle: 'short', timeStyle: 'short' })} (GMT+1)
 										</p>
 									) : null;
 								})()}
+
+								<p className="text-xs text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1">
+									<Clock size={12} />
+									Created: {formatCreatedAt(article.createdAt)}
+								</p>
 
 								{/* Actions */}
 								<div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-800">
@@ -362,9 +375,9 @@ export default function AdminArticlesList() {
 							</button>
 							<button
 								onClick={() => {
-									const article = articles.find(a => (a.slug || '') === deleteConfirm || a === deleteConfirm);
+									const article = filteredArticles.find(a => (a.slug || '') === deleteConfirm || a === deleteConfirm);
 									if (article) {
-										const index = articles.indexOf(article);
+										const index = filteredArticles.indexOf(article);
 										handleDelete(article, index);
 									}
 								}}

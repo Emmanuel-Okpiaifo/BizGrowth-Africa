@@ -40,7 +40,7 @@ $company = isset($data['company']) ? htmlspecialchars(trim($data['company']), EN
 $subject = isset($data['subject']) ? htmlspecialchars(trim($data['subject']), ENT_QUOTES, 'UTF-8') : 'Contact Form Submission';
 $message = htmlspecialchars(trim($data['message']), ENT_QUOTES, 'UTF-8');
 
-// Recipient email (from your site)
+// Recipient email (from your site). For reliable delivery in production, consider SMTP or a transactional email service.
 $to = 'info@bizgrowthafrica.com';
 
 // Email subject

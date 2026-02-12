@@ -1,10 +1,43 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { readFileSync, existsSync } from 'fs'
-import { resolve } from 'path'
+import { readFileSync, existsSync, writeFileSync } from 'fs'
+import { resolve, join } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
+
+// Inject build timestamp into built HTML so you can verify deployed build (View Source)
+const buildTimestampPlugin = () => ({
+  name: 'build-timestamp',
+  transformIndexHtml(html) {
+    const ts = new Date().toISOString()
+    return html.replace(
+      '</head>',
+      `\n    <!-- Admin build: ${ts} -->\n  </head>`
+    )
+  }
+})
+
+// Write .htaccess in dist-admin so index.html is not cached (fixes "deploy but changes don't show")
+const adminHtaccessPlugin = () => ({
+  name: 'admin-htaccess',
+  writeBundle(_, bundle) {
+    const outDir = resolve(__dirname, 'dist-admin')
+    const htaccess = `# Prevent caching of index.html so admin deploys show new build
+<IfModule mod_headers.c>
+<Files "index.html">
+  Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+</Files>
+</IfModule>
+`
+    try {
+      writeFileSync(join(outDir, '.htaccess'), htaccess)
+      console.log('✅ Wrote dist-admin/.htaccess (no-cache for index.html)')
+    } catch (e) {
+      console.warn('⚠️ Could not write .htaccess:', e.message)
+    }
+  }
+})
 
 // Plugin to serve index.admin.html as index.html in dev mode
 const adminHtmlPlugin = () => {
@@ -48,7 +81,7 @@ const adminHtmlPlugin = () => {
 
 // Admin-only build configuration for subdomain
 export default defineConfig({
-  plugins: [react(), adminHtmlPlugin()],
+  plugins: [react(), adminHtmlPlugin(), buildTimestampPlugin(), adminHtaccessPlugin()],
   server: {
     proxy: {
       '/api': {

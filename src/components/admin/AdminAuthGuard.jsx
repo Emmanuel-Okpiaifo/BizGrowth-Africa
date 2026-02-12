@@ -1,75 +1,84 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AdminLogin from './AdminLogin';
-import { isAuthenticated, clearAuthSession } from '../../utils/adminAuth';
+import { isAuthenticated, clearAuthSession, updateLastActivity } from '../../utils/adminAuth';
+
+const INACTIVITY_MS = 4 * 60 * 60 * 1000; // 4 hours
+const ACTIVITY_THROTTLE_MS = 60 * 1000;    // update last activity at most once per minute
+const INACTIVITY_CHECK_MS = 5 * 60 * 1000; // re-check every 5 minutes
 
 /**
  * Admin Authentication Guard
- * Wraps admin content and shows login if not authenticated
- * Uses sessionStorage so auth clears when tab closes
+ * Logout only when: user clicks Logout, tab is refreshed/closed, or inactive for 4+ hours.
+ * Switching tabs does not log the user out; profile and dashboard stay correct until logout.
  */
 export default function AdminAuthGuard({ children }) {
 	const [isAuthenticatedState, setIsAuthenticatedState] = useState(false);
 	const [isChecking, setIsChecking] = useState(true);
+	const lastActivityUpdate = useRef(0);
 
 	useEffect(() => {
-		// Check if user is authenticated
 		const checkAuth = () => {
-			const authenticated = isAuthenticated();
-			const authTime = sessionStorage.getItem('admin_auth_time');
-			
-			// Optional: Check if session is too old (e.g., 8 hours)
-			if (authTime) {
-				const timeDiff = Date.now() - parseInt(authTime, 10);
-				const maxAge = 8 * 60 * 60 * 1000; // 8 hours
-				
-				if (timeDiff > maxAge) {
-					// Session expired
+			if (!isAuthenticated()) {
+				setIsAuthenticatedState(false);
+				setIsChecking(false);
+				return;
+			}
+			const lastActivity = sessionStorage.getItem('admin_last_activity') || sessionStorage.getItem('admin_auth_time');
+			if (lastActivity) {
+				const elapsed = Date.now() - parseInt(lastActivity, 10);
+				if (elapsed > INACTIVITY_MS) {
 					clearAuthSession();
 					setIsAuthenticatedState(false);
 					setIsChecking(false);
 					return;
 				}
 			}
-
-			setIsAuthenticatedState(authenticated);
+			setIsAuthenticatedState(true);
 			setIsChecking(false);
 		};
 
 		checkAuth();
 
-		// Clear auth when tab becomes hidden (user switches tabs or minimizes)
-		// This ensures fresh login when returning
-		const handleVisibilityChange = () => {
-			if (document.hidden) {
-				// Tab is now hidden - clear auth after a delay
-				// This way if user quickly switches back, they stay logged in
-				// But if they close tab and open new one, they need to login
-				setTimeout(() => {
-					if (document.hidden) {
-						clearAuthSession();
-					}
-				}, 1000); // 1 second delay
+		// Update last activity on user interaction (throttled)
+		const handleActivity = () => {
+			const now = Date.now();
+			if (now - lastActivityUpdate.current >= ACTIVITY_THROTTLE_MS) {
+				lastActivityUpdate.current = now;
+				updateLastActivity();
 			}
 		};
 
-		// Clear auth when page is about to unload (tab closing)
+		const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+		activityEvents.forEach((ev) => document.addEventListener(ev, handleActivity));
+
+		// Re-check inactivity every 5 minutes
+		const intervalId = setInterval(() => {
+			if (!document.hidden && isAuthenticated()) {
+				const lastActivity = sessionStorage.getItem('admin_last_activity') || sessionStorage.getItem('admin_auth_time');
+				if (lastActivity && Date.now() - parseInt(lastActivity, 10) > INACTIVITY_MS) {
+					clearAuthSession();
+					setIsAuthenticatedState(false);
+				}
+			}
+		}, INACTIVITY_CHECK_MS);
+
+		// Clear auth on refresh or tab close (so next load shows login)
 		const handleBeforeUnload = () => {
 			clearAuthSession();
 		};
 
-		// Clear auth when storage changes (another tab logged out)
 		const handleStorageChange = (e) => {
 			if (e.key === 'admin_authenticated' && !e.newValue) {
 				setIsAuthenticatedState(false);
 			}
 		};
 
-		document.addEventListener('visibilitychange', handleVisibilityChange);
 		window.addEventListener('beforeunload', handleBeforeUnload);
 		window.addEventListener('storage', handleStorageChange);
 
 		return () => {
-			document.removeEventListener('visibilitychange', handleVisibilityChange);
+			activityEvents.forEach((ev) => document.removeEventListener(ev, handleActivity));
+			clearInterval(intervalId);
 			window.removeEventListener('beforeunload', handleBeforeUnload);
 			window.removeEventListener('storage', handleStorageChange);
 		};

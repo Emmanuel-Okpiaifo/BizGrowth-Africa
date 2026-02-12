@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import placeholderUrl from "../assets/placeholder.svg";
 
 export default function NewsCard({ article, variant = "default", index = 0 }) {
+	if (!article || typeof article !== 'object') return null;
 	const { title, source, image, imageCandidates, url, publishedAt, summary, category, heroImage } = article;
 
 	const candidates = useMemo(() => {

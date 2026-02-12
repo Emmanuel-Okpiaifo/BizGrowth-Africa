@@ -1,3 +1,3 @@
-export const SITE_URL = "https://bizgrowthafrica.com";
+export const SITE_URL = "https://www.bizgrowthafrica.com";
 
 

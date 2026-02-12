@@ -35,17 +35,11 @@ function categorySynonyms(category) {
 }
 
 export function buildOpportunityImageCandidates(opp) {
-	const baseUnsplash = "https://source.unsplash.com/1600x900/";
 	const sig = hashStringToInt(opp.id || opp.title || "");
-	const country = sanitizeKeyword(opp.country || "africa");
-	const region = sanitizeKeyword(opp.region || "");
-	const catSyn = categorySynonyms(opp.category || "");
-	const k1 = [country, ...catSyn].filter(Boolean).map(sanitizeKeyword).join(",");
-	const k2 = ["africa", region, opp.category || ""].filter(Boolean).map(sanitizeKeyword).join(",");
 	return [
-		`${baseUnsplash}?${k1}&sig=${sig}`,
-		`${baseUnsplash}?${k2}&sig=${(sig + 17) % 100000}`,
 		`https://picsum.photos/seed/${sig}/1600/900`,
+		`https://picsum.photos/seed/${(sig + 17) % 100000}/1600/900`,
+		`https://picsum.photos/seed/${(sig + 31) % 100000}/1600/900`,
 	];
 }
 

@@ -75,7 +75,7 @@ export function trackEvent(eventName, params = {}) {
 	}
 
 	if (!eventName || typeof eventName !== 'string') {
-		console.warn('GA4: trackEvent requires a valid event name string');
+		if (import.meta.env.DEV) console.warn('GA4: trackEvent requires a valid event name string');
 		return;
 	}
 

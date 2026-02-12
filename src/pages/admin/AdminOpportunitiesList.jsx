@@ -4,6 +4,8 @@ import { Briefcase, Plus, Search, Edit, Trash2, Eye, RefreshCw, Loader2, Calenda
 import { useGoogleSheetsOpportunitiesAdmin } from '../../hooks/useGoogleSheetsOpportunitiesAdmin';
 import { deleteSheetRow, getSheetData } from '../../utils/googleSheets';
 import { getDrafts, deleteDraft } from '../../utils/draftStorage';
+import { isSuperAdmin, getCurrentUserIdentifiers } from '../../utils/adminAuth';
+import { formatCreatedAt } from '../../utils/timeUtils';
 
 export default function AdminOpportunitiesList() {
 	const [searchQuery, setSearchQuery] = useState('');
@@ -44,7 +46,16 @@ export default function AdminOpportunitiesList() {
 		...localDrafts
 	];
 
-	const filteredOpportunities = allOpportunitiesCombined.filter(opp => {
+	// Restrict to current user's items (Admin sees all; items without author visible only to Admin)
+	const authorIds = getCurrentUserIdentifiers();
+	const opportunitiesForUser = isSuperAdmin()
+		? allOpportunitiesCombined
+		: allOpportunitiesCombined.filter(opp => {
+				const author = (opp.author || '').trim().toLowerCase();
+				return author && authorIds.includes(author);
+			});
+
+	const filteredOpportunities = opportunitiesForUser.filter(opp => {
 		const matchesSearch = opp.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			opp.org?.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			opp.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -220,7 +231,7 @@ export default function AdminOpportunitiesList() {
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 					{filteredOpportunities.map((opp, idx) => (
 						<div
-							key={idx}
+							key={opp.id || idx}
 							className="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0B1220] shadow-sm hover:shadow-xl transition-all"
 						>
 							{/* Content */}
@@ -279,6 +290,11 @@ export default function AdminOpportunitiesList() {
 										Scheduled: {new Date(opp.scheduledAt).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', dateStyle: 'short', timeStyle: 'short' })} (GMT+1)
 									</p>
 								)}
+
+								<p className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
+									<Clock size={12} />
+									Created: {formatCreatedAt(opp.createdAt)}
+								</p>
 								
 								<div className="space-y-2 mb-4 text-sm text-gray-600 dark:text-gray-400">
 									{opp.country && (
@@ -298,22 +314,21 @@ export default function AdminOpportunitiesList() {
 									</div>
 								</div>
 
-								{/* Actions */}
+								{/* Actions — Edit for all (draft or published/scheduled); View for main site */}
 								<div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-800">
-									{opp.isDraft ? (
-										<Link
-											to={`/opportunities/new/${opp.id}`}
-											className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white transition text-sm font-medium"
-										>
-											<Edit size={16} />
-											Edit
-										</Link>
-									) : (
+									<Link
+										to={opp.isDraft ? `/opportunities/new/${opp.id}` : `/opportunities/edit/${encodeURIComponent(opp.id || idx)}`}
+										className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white transition text-sm font-medium"
+									>
+										<Edit size={16} />
+										Edit
+									</Link>
+									{!opp.isDraft && (
 										<a
 											href={`https://bizgrowthafrica.com/opportunities/${opp.id || idx}`}
 											target="_blank"
 											rel="noopener noreferrer"
-											className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white transition text-sm font-medium"
+											className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white transition text-sm font-medium"
 										>
 											<Eye size={16} />
 											View
@@ -356,9 +371,9 @@ export default function AdminOpportunitiesList() {
 							</button>
 							<button
 								onClick={() => {
-									const opp = allOpportunities.find(o => (o.id || '') === deleteConfirm || o === deleteConfirm);
+									const opp = filteredOpportunities.find(o => (o.id || '') === deleteConfirm || o === deleteConfirm);
 									if (opp) {
-										const index = allOpportunities.indexOf(opp);
+										const index = filteredOpportunities.indexOf(opp);
 										handleDelete(opp, index);
 									}
 								}}

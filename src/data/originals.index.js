@@ -10,22 +10,6 @@ function hashStringToInt(str) {
 	return h;
 }
 
-const categoryKeywordMap = {
-	Fintech: ["fintech", "mobile money", "banking", "payments", "pos"],
-	Policy: ["government", "regulation", "public sector", "ministry", "policy"],
-	Funding: ["venture capital", "term sheet", "founders", "investment", "startup"],
-	Markets: ["stock market", "bonds", "commodities", "trading", "charts"],
-	SMEs: ["small business", "retail", "workshop", "manufacturing", "market stall"],
-	Reports: ["data", "report", "dashboard", "analysis", "charts"],
-};
-
-function sanitizeKeyword(s) {
-	return String(s)
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, "-")
-		.replace(/^-+|-+$/g, "");
-}
-
 const STOPWORDS = new Set([
 	"the","and","for","with","from","that","this","into","across","over","under","about",
 	"of","in","on","to","by","at","as","is","are","was","were","be","been","it","its",
@@ -72,17 +56,8 @@ function categorySynonyms(category) {
 }
 
 function buildCuratedImageUrl(category, country, slug) {
-	const base = "https://source.unsplash.com/1600x900/";
-	// Build targeted keywords: africa + country + category synonyms + top title terms
-	const cat = String(category || "");
-	const parts = ["africa", country || "", ...categorySynonyms(cat)]
-		.filter(Boolean)
-		.map((s) => sanitizeKeyword(s))
-		.filter(Boolean);
-	const keywords = parts.join(",");
-	const sig = hashStringToInt(slug);
-	// Correct Source API pattern: keywords first, then &sig for deterministic uniqueness
-	return `${base}?${keywords}&sig=${sig}`;
+	const sig = hashStringToInt([slug, category, country].filter(Boolean).join("|"));
+	return `https://picsum.photos/seed/${sig}/1600/900`;
 }
 
 const base = [...originalArticles, ...generateBulkOriginals(100)];
@@ -160,25 +135,12 @@ function enrichBodyWithCitations(article) {
 }
 
 function buildImageCandidates(category, country, slug) {
-	const sig = hashStringToInt(slug);
-	const baseUnsplash = "https://source.unsplash.com/1600x900/";
-	const cat = String(category || "");
-	const kw = categoryKeywordMap[cat] || ["business", "economy", "industry", "trade"];
-	const a = sanitizeKeyword(country || "africa");
-	// Keyword sets: country + category terms; africa + category; country + top title words (derived later)
-	const k1 = [a, ...kw].map(sanitizeKeyword).filter(Boolean).join(",");
-	const k2 = [a, "africa", "business", cat].map(sanitizeKeyword).filter(Boolean).join(",");
-	const k3 = ["africa", cat, "markets"].map(sanitizeKeyword).filter(Boolean).join(",");
-
-	// Multiple deterministic candidates (vary sig to change redirect target)
-	const candidates = [
-		`${baseUnsplash}?${k1}&sig=${sig}`,
-		`${baseUnsplash}?${k2}&sig=${(sig + 17) % 100000}`,
-		`${baseUnsplash}?${k3}&sig=${(sig + 33) % 100000}`,
-		// Final stable fallback: picsum (always works), seeded by slug
+	const sig = hashStringToInt([slug, category, country].filter(Boolean).join("|"));
+	return [
 		`https://picsum.photos/seed/${sig}/1600/900`,
+		`https://picsum.photos/seed/${(sig + 17) % 100000}/1600/900`,
+		`https://picsum.photos/seed/${(sig + 33) % 100000}/1600/900`,
 	];
-	return candidates;
 }
 
 function getOverrideCandidates(article) {
@@ -202,13 +164,9 @@ export const allOriginalArticles = base.map((a) => {
 		candidates = [...overrides, ...candidates];
 	}
 	if (titleKeywords.length) {
-		const baseUnsplash = "https://source.unsplash.com/1600x900/";
-		const combined = ["africa", a.country || "", ...categorySynonyms(a.category), ...titleKeywords]
-			.filter(Boolean)
-			.map(sanitizeKeyword)
-			.join(",");
+		const extraSig = (hashStringToInt(a.slug) + 59) % 100000;
 		candidates = [
-			`${baseUnsplash}?${combined}&sig=${(hashStringToInt(a.slug) + 59) % 100000}`,
+			`https://picsum.photos/seed/${extraSig}/1600/900`,
 			...candidates,
 		];
 	}

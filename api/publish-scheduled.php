@@ -10,6 +10,7 @@
  *   your host's cron, or Google Cloud Scheduler) to GET or POST this URL every 5–15 minutes.
  */
 
+require_once __DIR__ . '/_lib/env.php';
 require_once __DIR__ . '/_lib/response.php';
 require_once __DIR__ . '/_lib/publish_scheduled_core.php';
 

@@ -23,20 +23,9 @@ function run_publish_scheduled() {
         if (!empty($keyMatch[1])) $apiKey = trim($keyMatch[1]);
     }
 
-    if (empty($webAppUrl)) $webAppUrl = getenv('GOOGLE_APPS_SCRIPT_URL') ?: getenv('VITE_GOOGLE_APPS_SCRIPT_URL') ?: '';
-    if (empty($spreadsheetId)) $spreadsheetId = getenv('GOOGLE_SHEETS_ID') ?: getenv('VITE_GOOGLE_SHEETS_ID') ?: '';
-    if (empty($apiKey)) $apiKey = getenv('GOOGLE_SHEETS_API_KEY') ?: getenv('VITE_GOOGLE_SHEETS_API_KEY') ?: '';
-
-    // Same fallback URL as google-sheets-proxy.php so it works without .env
-    if (empty($webAppUrl)) {
-        $webAppUrl = 'https://script.google.com/macros/s/AKfycbwnH4B-aTZMCFXybHF-wDyQ5v0YtO1OjKOnvn_-kQK0qj2o953le7YQ6XE5_TQMqzZU1A/exec';
-    }
-    if (empty($spreadsheetId)) {
-        $spreadsheetId = getenv('GOOGLE_SHEETS_ID') ?: getenv('VITE_GOOGLE_SHEETS_ID') ?: '1UvV9_w8UDXcDC1G8_p6Z0TWj5O7W9_DXPBcCNHMwr7w';
-    }
-    if (empty($apiKey)) {
-        $apiKey = getenv('GOOGLE_SHEETS_API_KEY') ?: getenv('VITE_GOOGLE_SHEETS_API_KEY') ?: 'AIzaSyBZfPhyU2ktSlkkqr2KQsvyO20_Af5Wg40';
-    }
+    if (empty($webAppUrl)) $webAppUrl = trim((string) (getenv('GOOGLE_APPS_SCRIPT_URL') ?: getenv('VITE_GOOGLE_APPS_SCRIPT_URL') ?: ''));
+    if (empty($spreadsheetId)) $spreadsheetId = trim((string) (getenv('GOOGLE_SHEETS_ID') ?: getenv('VITE_GOOGLE_SHEETS_ID') ?: ''));
+    if (empty($apiKey)) $apiKey = trim((string) (getenv('GOOGLE_SHEETS_API_KEY') ?: getenv('VITE_GOOGLE_SHEETS_API_KEY') ?: ''));
 
     if (empty($webAppUrl) || empty($spreadsheetId) || empty($apiKey)) {
         return ['published' => 0, 'errors' => ['Missing Google Sheets / Apps Script config.']];
@@ -52,7 +41,7 @@ function run_publish_scheduled() {
             $readUrl = "https://sheets.googleapis.com/v4/spreadsheets/" . urlencode($spreadsheetId) . "/values/" . urlencode($sheetName) . "!A1:Z1000?key=" . urlencode($apiKey);
             $ch = curl_init($readUrl);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
             curl_setopt($ch, CURLOPT_TIMEOUT, 15);
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -120,7 +109,7 @@ function run_publish_scheduled() {
                     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($updateData));
                     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
                     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
                     $updateResponse = curl_exec($ch);
                     $updateHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);

@@ -5,6 +5,7 @@
  * to avoid CORS issues from the browser
  */
 
+require_once __DIR__ . '/_lib/env.php';
 require_once __DIR__ . '/_lib/response.php';
 
 // Handle CORS
@@ -18,8 +19,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     json_error('Method not allowed', 405);
 }
 
-// Get the web app URL from environment or config
-$webAppUrl = 'https://script.google.com/macros/s/AKfycbwnH4B-aTZMCFXybHF-wDyQ5v0YtO1OjKOnvn_-kQK0qj2o953le7YQ6XE5_TQMqzZU1A/exec';
+// Require web app URL from environment – no hardcoded URL. Check both getenv and $_SERVER (e.g. SetEnv / FastCGI).
+$webAppUrl = trim((string) (getenv('GOOGLE_APPS_SCRIPT_URL') ?: getenv('VITE_GOOGLE_APPS_SCRIPT_URL') ?: $_SERVER['GOOGLE_APPS_SCRIPT_URL'] ?? $_SERVER['VITE_GOOGLE_APPS_SCRIPT_URL'] ?? ''));
+if ($webAppUrl === '') {
+    json_error('Google Apps Script URL not configured. Set GOOGLE_APPS_SCRIPT_URL or VITE_GOOGLE_APPS_SCRIPT_URL in your environment.', 500);
+}
 
 // Get the request body
 $input = file_get_contents('php://input');
@@ -31,7 +35,7 @@ if (!$data) {
 
 // Ensure "values" is sent for append so Apps Script gets correct column count (fixes "data has 1 but range has 14")
 $articlesColumns = ['title', 'slug', 'category', 'subheading', 'summary', 'content', 'image', 'heroImage', 'whyItMatters', 'publishedAt', 'author', 'status', 'scheduledAt', 'createdAt'];
-$opportunitiesColumns = ['title', 'org', 'country', 'region', 'category', 'amountMin', 'amountMax', 'currency', 'deadline', 'postedAt', 'link', 'tags', 'featured', 'description', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
+$opportunitiesColumns = ['title', 'org', 'country', 'region', 'category', 'amountMin', 'amountMax', 'currency', 'deadline', 'postedAt', 'link', 'tags', 'featured', 'description', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
 $tendersColumns = ['title', 'agency', 'category', 'country', 'region', 'deadline', 'postedAt', 'link', 'description', 'eligibility', 'value', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
 
 if (isset($data['action']) && $data['action'] === 'append' && isset($data['data']) && is_array($data['data']) && empty($data['values'])) {
@@ -60,7 +64,7 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'Content-Type: application/json',
 ]);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
 
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);

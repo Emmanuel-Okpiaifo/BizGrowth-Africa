@@ -3,12 +3,43 @@
  */
 
 /**
+ * Format createdAt for admin display: show date and time exactly as in the stored ISO string (no conversion).
+ * e.g. "2026-02-07T02:21:57.954Z" → "2026-02-07, 02:21"
+ * @param {string} createdAt - ISO date-time string from sheet/row
+ * @returns {string}
+ */
+export function formatCreatedAt(createdAt) {
+	if (!createdAt) return '—';
+	try {
+		const s = String(createdAt).trim();
+		// Match ISO: YYYY-MM-DD then T or space, then HH:mm (optional :ss.ms and Z)
+		const match = s.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+		if (match) {
+			const [, y, m, d, hh, mm] = match;
+			return `${y}-${m}-${d}, ${hh}:${mm}`;
+		}
+		const d = new Date(createdAt);
+		if (isNaN(d.getTime())) return '—';
+		// Fallback: format from UTC so time is not shifted by locale
+		const pad = (n) => String(n).padStart(2, '0');
+		const u = d.getUTCFullYear();
+		const mo = d.getUTCMonth() + 1;
+		const da = d.getUTCDate();
+		const h = d.getUTCHours();
+		const mi = d.getUTCMinutes();
+		return `${u}-${pad(mo)}-${pad(da)}, ${pad(h)}:${pad(mi)}`;
+	} catch {
+		return '—';
+	}
+}
+
+/**
  * Calculate time ago from a date string, handling timezone properly
  * @param {string} dateString - Date string (can be date-only or datetime)
  * @param {string} timezone - Timezone to interpret the date in (default: 'Africa/Lagos' for GMT+1)
  * @returns {string} Human-readable time ago string
  */
-export function getTimeAgo(dateString, timezone = 'Africa/Lagos') {
+export function getTimeAgo(dateString, _timezone = 'Africa/Lagos') {
 	if (!dateString) return 'Recently';
 	
 	let date;

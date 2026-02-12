@@ -15,6 +15,23 @@ function formatAmount(min, max, currency = "USD") {
 	return `${currency} ${fmt(val)}`;
 }
 
+/** Generate a short "about the org" blurb from opportunity data (org name is not modified; used only as context). */
+function getAboutOrgBlurb(opp) {
+	if (!opp || !opp.org || !opp.org.trim()) return '';
+	const parts = [];
+	const cat = (opp.category || '').trim();
+	const region = (opp.region || '').trim();
+	const country = (opp.country || '').trim();
+	const loc = [region, country].filter(Boolean).join(country && region ? ' • ' : '') || 'Africa';
+	if (cat) parts.push(`runs this ${cat} opportunity`);
+	else parts.push('runs this opportunity');
+	parts.push(`for ${loc}`);
+	const deadlineStr = opp.deadline && String(opp.deadline).trim() ? new Date(opp.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+	if (deadlineStr) parts.push(`with a deadline of ${deadlineStr}`);
+	const suffix = parts.join(' ');
+	return `${opp.org} ${suffix}. This opportunity supports African MSMEs.`;
+}
+
 export default function OpportunityDetail() {
 	const { id: rawId } = useParams();
 	const id = rawId ? decodeURIComponent(rawId) : '';
@@ -22,7 +39,8 @@ export default function OpportunityDetail() {
 
 	// Use only Google Sheets opportunities (no placeholder/sample data)
 	const allOpportunities = useMemo(() => {
-		return sheetsOpps.map(opp => ({
+		const list = Array.isArray(sheetsOpps) ? sheetsOpps : [];
+		return list.map(opp => ({
 			...opp,
 			id: opp.id || `opp-${opp.title?.toLowerCase().replace(/\s+/g, '-')}`,
 		}));
@@ -58,6 +76,8 @@ export default function OpportunityDetail() {
 			};
 		}
 	}, [id, opp?.heroImage, candidates]);
+
+	const aboutOrgBlurb = useMemo(() => getAboutOrgBlurb(opp), [opp]);
 
 	if (loading) {
 		return (
@@ -164,31 +184,10 @@ export default function OpportunityDetail() {
 									</p>
 								</div>
 
-								{/* Full Description */}
-								<div className="space-y-4">
-									<p>
-										This opportunity offers comprehensive support tailored to strengthen African MSMEs. Successful applicants gain access to capital, expert mentorship, and valuable market connections. The program is designed to accelerate business growth while building resilience and sustainability.
-									</p>
-									<p>
-										Participants benefit from structured guidance on compliance, go-to-market strategies, and fundraising readiness. Real impact is measured through revenue growth, job creation, and improved operational resilience.
-									</p>
-								</div>
-
-								{/* Key Details as Blockquote */}
-								<figure className="my-8 border-l-4 border-primary pl-6 py-4 bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 rounded-lg shadow-sm">
-									<blockquote className="text-lg font-semibold text-gray-900 dark:text-white">
-										"Strong programs combine capital, mentorship, and market access. Success is measured by sustainable growth and resilience."
-									</blockquote>
-								</figure>
-
-								<div className="space-y-4">
-									<p>
-										Eligibility spans early to growth-stage MSMEs with demonstrated traction. Priority is given to businesses showing innovation, inclusivity, climate-smart solutions, and participation in localized value chains.
-									</p>
-									<p>
-										The application process is straightforward and transparent. We're committed to supporting ambitious entrepreneurs who want to scale their impact across Africa.
-									</p>
-								</div>
+								{/* Full Description — from admin / Google Sheets only */}
+								{opp.description && opp.description.trim() ? (
+									<div className="article-content space-y-4" dangerouslySetInnerHTML={{ __html: opp.description }} />
+								) : null}
 
 								{/* Tags */}
 								{Array.isArray(opp.tags) && opp.tags.length ? (
@@ -242,22 +241,6 @@ export default function OpportunityDetail() {
 											>
 												<svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.658 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
 											</button>
-										</div>
-									</div>
-
-									{/* Organization Info */}
-									<div className="rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 dark:border-primary/40 p-6 shadow-md hover:shadow-lg transition-all">
-										<div className="flex gap-4">
-											<div className="h-16 w-16 flex-none rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
-												<Building2 className="text-white" size={24} />
-											</div>
-											<div>
-												<h3 className="font-bold text-gray-900 dark:text-white">{opp.org}</h3>
-												<p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Organization</p>
-												<p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
-													Dedicated to supporting and scaling businesses across Africa through capital, mentorship, and market access.
-												</p>
-											</div>
 										</div>
 									</div>
 								</div>
@@ -317,7 +300,9 @@ export default function OpportunityDetail() {
 									<h3 className="font-bold text-gray-900 dark:text-white mb-4 text-lg">Similar Opportunities</h3>
 									<div className="space-y-3">
 										{more.slice(0, 4).map((m, idx) => {
-											const img = getOpportunityImage(m);
+											const heroImg = (m.heroImage && m.heroImage.trim()) ? m.heroImage : '';
+											const img = heroImg || getOpportunityImage(m);
+											const fallbackImg = getOpportunityImage(m);
 											return (
 												<Link key={m.id} to={`/opportunities/${encodeURIComponent(m.id)}`} className="group block">
 													<div className="mb-2 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700 aspect-video">
@@ -329,8 +314,8 @@ export default function OpportunityDetail() {
 															fetchpriority={idx < 2 ? "high" : "auto"}
 															decoding="async"
 															onError={(e) => {
-																if (e.currentTarget.src !== `https://source.unsplash.com/1600x900/?africa,business&sig=${m.id}`) {
-																	e.currentTarget.src = `https://source.unsplash.com/1600x900/?africa,business&sig=${m.id}`;
+																if (fallbackImg && e.currentTarget.src !== fallbackImg) {
+																	e.currentTarget.src = fallbackImg;
 																}
 															}}
 														/>

@@ -13,7 +13,8 @@ export function useGoogleSheetsTenders() {
 		try {
 			setLoading(true);
 			setError(null);
-			const data = await getSheetData('Tenders');
+			const raw = await getSheetData('Tenders');
+			const data = Array.isArray(raw) ? raw : [];
 			
 			// Transform Google Sheets data
 			const transformed = data

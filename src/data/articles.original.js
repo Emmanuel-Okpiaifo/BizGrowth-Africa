@@ -9,7 +9,7 @@ export const originalArticles = [
 		region: "West Africa",
 		publishedAt: "2025-12-21T09:00:00Z",
 		image:
-			"https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=1600&auto=format&fit=crop",
+			"https://picsum.photos/seed/101/1600/900",
 		summary:
 			"The policy tweak is designed to free up liquidity for on-lending to MSMEs amid tight credit conditions.",
 		body: [
@@ -42,7 +42,7 @@ export const originalArticles = [
 		region: "East Africa",
 		publishedAt: "2025-12-19T10:30:00Z",
 		image:
-			"https://images.unsplash.com/photo-1559067096-49ebca3406aa?q=80&w=1600&auto=format&fit=crop",
+			"https://picsum.photos/seed/102/1600/900",
 		summary:
 			"Alternative data underwriting is helping small businesses build credit histories and secure flexible loans.",
 		body: [
@@ -75,7 +75,7 @@ export const originalArticles = [
 		region: "North Africa",
 		publishedAt: "2025-12-18T14:00:00Z",
 		image:
-			"https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1600&auto=format&fit=crop",
+			"https://picsum.photos/seed/103/1600/900",
 		summary:
 			"International partners back industrial decarbonization and SME competitiveness in priority clusters.",
 		body: [
@@ -108,7 +108,7 @@ export const originalArticles = [
 		region: "Southern Africa",
 		publishedAt: "2025-12-17T08:45:00Z",
 		image:
-			"https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?q=80&w=1600&auto=format&fit=crop",
+			"https://picsum.photos/seed/104/1600/900",
 		summary:
 			"Enhanced guarantees reduce non-payment risk and enable longer tenors for SME exporters.",
 		body: [
@@ -141,7 +141,7 @@ export const originalArticles = [
 		region: "West Africa",
 		publishedAt: "2025-12-16T11:20:00Z",
 		image:
-			"https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1600&auto=format&fit=crop",
+			"https://picsum.photos/seed/105/1600/900",
 		summary:
 			"Low-cost digitization boosts visibility and margins for micro and small retailers.",
 		body: [
@@ -174,7 +174,7 @@ export const originalArticles = [
 		region: "North Africa",
 		publishedAt: "2025-12-15T09:40:00Z",
 		image:
-			"https://images.unsplash.com/photo-1531259683007-016a7b628fc3?q=80&w=1600&auto=format&fit=crop",
+			"https://picsum.photos/seed/106/1600/900",
 		summary:
 			"Stable issuance and liquidity management support predictable pricing for corporate borrowers.",
 		body: [
