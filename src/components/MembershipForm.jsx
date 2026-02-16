@@ -142,7 +142,7 @@ const MembershipForm = ({
     setIsSubmitting(true);
 
     const payload = {
-      form: 'waitlist',
+      form: 'membership',
       formType: 'membership',
       ts: new Date().toISOString(),
       userId: userId || getOrCreateUserId(),
