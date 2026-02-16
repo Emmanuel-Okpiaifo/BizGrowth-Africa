@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './MembershipForm.css';
 
 const MembershipForm = ({ 
-  webhookUrl = 'https://script.google.com/macros/s/AKfycbw6IyBFIF0qLhH1qXctH58GBTPFj2wrqv9oZJqUGXGxJ7y5Ti0Gm8ubrXgNvh6I-LdiLA/exec',
+  webhookUrl = 'https://flow.zoho.com/914809505/flow/webhook/incoming?zapikey=1001.9cdf0a2d4b94899d479d0ef38486c1ad.b92d6c920b34354d3acc2211f2166377&isdebug=false',
   onSuccess,
   showDisclaimer = true
 }) => {
