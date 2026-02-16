@@ -399,6 +399,13 @@ title | agency | category | country | region | deadline | postedAt | link | desc
 - `value` - Tender value
 - `createdAt` - Creation timestamp
 
+#### Membership & Newsletter sheets (same spreadsheet, form submissions)
+The **membership form** (Community) and **newsletter form** (Footer) submit to the same Google Apps Script web app. The spreadsheet that receives them should have **two sheets**: **Membership** and **Newsletter**. Row 1 of each sheet = headers (e.g. `form`, `formType`, `ts`, `firstName`, `lastName`, `email`, etc.). The script uses the **form** (or **formType**) field in each submission to decide which sheet to append to:
+- `form` / `formType` = **newsletter** → append to sheet **Newsletter**
+- `form` / `formType` = **membership**, **waitlist**, or missing → append to sheet **Membership**
+
+Use the script in **`GoogleAppsScript_FormHandler.js`** in the Apps Script project that is deployed as the form web app (the URL used in `MembershipForm.jsx` and `Footer.jsx` as `webhookUrl`). Deploy as Web app (Execute as: Me, Who has access: Anyone) and keep the web app URL in the frontend.
+
 ### Step 3: Enable Google Sheets API
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
