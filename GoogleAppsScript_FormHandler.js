@@ -3,6 +3,7 @@
  *
  * Same Google Spreadsheet, two sheets: "Membership" and "Newsletter".
  * The request body includes a "form" (or "formType") field; use it to decide which sheet to append to.
+ * After appending to the sheet, the same payload is forwarded to Zoho Flow webhook.
  *
  * SETUP:
  * 1. In the same spreadsheet that has "Membership" and "Newsletter" sheets, open Extensions → Apps Script.
@@ -13,6 +14,8 @@
  * SHEET NAMES: Must match exactly — "Membership" and "Newsletter".
  * ROW 1 of each sheet = headers (e.g. form, formType, ts, firstName, lastName, email, …). Incoming payload keys (lowercase-matched) fill the columns.
  */
+
+var ZOHO_WEBHOOK_URL = 'https://flow.zoho.com/914809505/flow/webhook/incoming?zapikey=1001.9cdf0a2d4b94899d479d0ef38486c1ad.b92d6c920b34354d3acc2211f2166377&isdebug=false';
 
 function getRowFromPayload(sheet, payload) {
   if (!sheet || typeof sheet.getRange !== 'function') return [];
@@ -73,6 +76,21 @@ function doPost(e) {
     var row = getRowFromPayload(sheet, payload);
     sheet.appendRow(row);
 
+    // Forward same payload to Zoho Flow (fire-and-forget; failures don't affect response)
+    if (ZOHO_WEBHOOK_URL && payload && typeof payload === 'object') {
+      try {
+        UrlFetchApp.fetch(ZOHO_WEBHOOK_URL, {
+          method: 'post',
+          contentType: 'application/json',
+          payload: JSON.stringify(payload),
+          muteHttpExceptions: true
+        });
+      } catch (zohoErr) {
+        // Log but don't fail the request — sheet was already updated
+        Logger.log('Zoho forward error: ' + zohoErr);
+      }
+    }
+
     return ContentService.createTextOutput(JSON.stringify({
       success: true,
       message: 'Saved to ' + sheetName
@@ -92,4 +110,34 @@ function doGet(e) {
     sheets: ['Membership', 'Newsletter'],
     timestamp: new Date().toISOString()
   })).setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Test Zoho Flow webhook (Run from editor: Run → testZohoWebhook).
+ * Sends a sample payload to the Zoho webhook URL.
+ */
+function testZohoWebhook() {
+  var data = {
+    form: 'membership',
+    formType: 'membership',
+    ts: new Date().toISOString(),
+    email: 'test+flow@gmail.com',
+    firstName: 'Test',
+    lastName: 'User',
+    phone: '+2348012345678',
+    country: 'Nigeria',
+    interest: 'Business',
+    page: 'https://example.com/homepage',
+    userAgent: 'Apps Script test'
+  };
+
+  var response = UrlFetchApp.fetch(ZOHO_WEBHOOK_URL, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(data),
+    muteHttpExceptions: true
+  });
+
+  Logger.log('Zoho response code: ' + response.getResponseCode());
+  Logger.log('Zoho response: ' + response.getContentText());
 }
