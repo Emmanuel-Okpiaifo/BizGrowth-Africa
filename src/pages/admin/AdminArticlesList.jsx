@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Plus, Search, Edit, Trash2, Eye, CheckCircle2, Clock, RefreshCw, Loader2, Calendar } from 'lucide-react';
+import { FileText, Plus, Search, Edit, Trash2, Eye, CheckCircle2, Clock, RefreshCw, Loader2, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useGoogleSheetsArticlesAdmin } from '../../hooks/useGoogleSheetsArticlesAdmin';
 import { deleteSheetRow, getSheetData } from '../../utils/googleSheets';
 import { getDrafts, deleteDraft } from '../../utils/draftStorage';
 import { isSuperAdmin, getCurrentUserIdentifiers } from '../../utils/adminAuth';
 import { formatCreatedAt } from '../../utils/timeUtils';
 
+const PER_PAGE = 12;
+
 export default function AdminArticlesList() {
 	const [searchQuery, setSearchQuery] = useState('');
 	const [filter, setFilter] = useState('all'); // all, published, draft, scheduled
+	const [page, setPage] = useState(1);
 	const [deletingId, setDeletingId] = useState(null);
 	const [deleteConfirm, setDeleteConfirm] = useState(null);
 	const { articles: allArticles, loading, error, refresh } = useGoogleSheetsArticlesAdmin();
@@ -76,6 +79,20 @@ export default function AdminArticlesList() {
 		
 		return matchesSearch && matchesFilter;
 	});
+
+	// Sort by most recently published (publishedAt > scheduledAt > createdAt)
+	const sortedArticles = [...filteredArticles].sort((a, b) => {
+		const dateA = new Date(a.publishedAt || a.scheduledAt || a.createdAt || 0).getTime();
+		const dateB = new Date(b.publishedAt || b.scheduledAt || b.createdAt || 0).getTime();
+		return dateB - dateA;
+	});
+
+	const totalPages = Math.max(1, Math.ceil(sortedArticles.length / PER_PAGE));
+	const currentPage = Math.min(page, totalPages);
+	const paged = sortedArticles.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+
+	useEffect(() => setPage(1), [filter, searchQuery]);
+	useEffect(() => { if (page > totalPages && totalPages >= 1) setPage(totalPages); }, [totalPages, page]);
 
 	const handleDelete = async (article, index) => {
 		try {
@@ -227,14 +244,15 @@ export default function AdminArticlesList() {
 					<div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
 					<p className="mt-4 text-gray-600 dark:text-gray-400">Loading articles...</p>
 				</div>
-			) : filteredArticles.length === 0 ? (
+			) : sortedArticles.length === 0 ? (
 				<div className="text-center py-12 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0B1220]">
 					<FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
 					<p className="text-gray-600 dark:text-gray-400">No articles found</p>
 				</div>
 			) : (
+				<>
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-					{filteredArticles.map((article, idx) => (
+					{paged.map((article, idx) => (
 						<div
 							key={article.slug || idx}
 							className="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0B1220] shadow-sm hover:shadow-xl transition-all"
@@ -354,6 +372,45 @@ export default function AdminArticlesList() {
 						</div>
 					))}
 				</div>
+
+				{/* Pagination */}
+				{totalPages > 1 && (
+					<nav className="flex flex-wrap items-center justify-center gap-2 pt-6" aria-label="Articles pagination">
+						<button
+							type="button"
+							onClick={() => setPage(p => Math.max(1, p - 1))}
+							disabled={currentPage <= 1}
+							className="inline-flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#0B1220] px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+						>
+							<ChevronLeft size={18} /> Previous
+						</button>
+						<div className="flex items-center gap-1">
+							{Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+								<button
+									key={p}
+									type="button"
+									onClick={() => setPage(p)}
+									className={`min-w-[2.25rem] rounded-lg border px-3 py-2 text-sm font-medium transition ${
+										p === currentPage
+											? 'border-primary bg-primary text-white'
+											: 'border-gray-300 dark:border-gray-600 bg-white dark:bg-[#0B1220] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+									}`}
+								>
+									{p}
+								</button>
+							))}
+						</div>
+						<button
+							type="button"
+							onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+							disabled={currentPage >= totalPages}
+							className="inline-flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#0B1220] px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+						>
+							Next <ChevronRight size={18} />
+						</button>
+					</nav>
+				)}
+				</>
 			)}
 
 			{/* Delete Confirmation Modal */}
@@ -375,9 +432,9 @@ export default function AdminArticlesList() {
 							</button>
 							<button
 								onClick={() => {
-									const article = filteredArticles.find(a => (a.slug || '') === deleteConfirm || a === deleteConfirm);
+									const article = sortedArticles.find(a => (a.slug || '') === deleteConfirm || a === deleteConfirm);
 									if (article) {
-										const index = filteredArticles.indexOf(article);
+										const index = sortedArticles.indexOf(article);
 										handleDelete(article, index);
 									}
 								}}
