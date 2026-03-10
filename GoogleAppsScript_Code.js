@@ -55,8 +55,16 @@ function doPost(e) {
       var existingRow = existingRange.getValues()[0];
       for (var i = 0; i < headers.length; i++) {
         var h = (headers[i] != null && headers[i].toString) ? headers[i].toString().trim().toLowerCase() : '';
-        if ((h === 'heroimage' || h === 'hero image' || h === 'image') && (!row[i] || (String(row[i]).trim && String(row[i]).trim() === '')) && existingRow[i]) {
-          row[i] = existingRow[i];
+        var isEmpty = !row[i] || (String(row[i]).trim && String(row[i]).trim() === '');
+        if (isEmpty && existingRow[i]) {
+          // Preserve heroImage, image when incoming value is empty
+          if (h === 'heroimage' || h === 'hero image' || h === 'image') {
+            row[i] = existingRow[i];
+          }
+          // Preserve author when re-editing/publishing so it stays as the publishing user
+          if (h === 'author') {
+            row[i] = existingRow[i];
+          }
         }
       }
       sheet.getRange(data.row + 1, 1, 1, row.length).setValues([row]);

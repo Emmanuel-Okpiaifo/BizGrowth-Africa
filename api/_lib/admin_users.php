@@ -7,4 +7,5 @@ return [
 	'Mayowa' => '$2y$10$u/OlGvsNUkKQjxnwny1q8edjPoro9Xoc0.pVmMvTrPPXPr8SSlScK',
 	'Eniola' => '$2y$10$Ww/xvPrd4v6Site1dJjIl.6Pyw48QUHGjeqV/zcrdJRzSrx78Oqxi',
 	'Ade' => '$2y$10$2aav/Fj4sGCvV.FcbMwutuGk8dUFbMZT6DOTyhEtL0m9pnboMbD/.',
+	'samuel' => '$2y$10$5c59eXCrV1q3SC98.jsKkug.67TjFMnBzDXqsHahiIiZQAJSVxxSC',
 ];
