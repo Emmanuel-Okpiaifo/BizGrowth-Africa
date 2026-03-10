@@ -12,7 +12,8 @@ const ADMIN_USERS = [
 	{ username: 'Rachael', displayName: 'Rachael Aimola' },
 	{ username: 'Mayowa', displayName: 'Oluwamayowa Adewuyi' },
 	{ username: 'Eniola', displayName: 'Eniola Oyewole' },
-	{ username: 'Ade', displayName: 'Ade Olowojoba' }
+	{ username: 'Ade', displayName: 'Ade Olowojoba' },
+	{ username: 'samuel', displayName: 'Samuel Smith' }
 ];
 
 /**
