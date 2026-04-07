@@ -7,6 +7,17 @@ import SEO from "../components/SEO";
 import { useGoogleSheetsArticles } from "../hooks/useGoogleSheetsArticles";
 
 const PER_PAGE = 12;
+function buildCompactPages(current, total) {
+	if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+	const pages = [1];
+	const start = Math.max(2, current - 1);
+	const end = Math.min(total - 1, current + 1);
+	if (start > 2) pages.push("...");
+	for (let p = start; p <= end; p += 1) pages.push(p);
+	if (end < total - 1) pages.push("...");
+	pages.push(total);
+	return pages;
+}
 
 export default function NewsInsights() {
 	const { articles: sheetsArticles, loading: sheetsLoading } = useGoogleSheetsArticles();
@@ -31,6 +42,7 @@ export default function NewsInsights() {
 	// Pagination over filtered list
 	const totalPages = Math.max(1, Math.ceil(filteredArticles.length / PER_PAGE));
 	const currentPage = Math.min(page, totalPages);
+	const compactPages = useMemo(() => buildCompactPages(currentPage, totalPages), [currentPage, totalPages]);
 	const paged = useMemo(
 		() => filteredArticles.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE),
 		[filteredArticles, currentPage]
@@ -126,19 +138,25 @@ export default function NewsInsights() {
 								<ChevronLeft size={18} /> Previous
 							</button>
 							<div className="flex items-center gap-1">
-								{Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-									<button
-										key={p}
-										type="button"
-										onClick={() => setPage(p)}
-										className={`min-w-[2.25rem] rounded-lg border px-3 py-2 text-sm font-medium transition ${
-											p === currentPage
-												? "border-primary bg-primary text-white"
-												: "border-gray-300 dark:border-gray-600 bg-white dark:bg-[#0B1220] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-										}`}
-									>
-										{p}
-									</button>
+								{compactPages.map((p, idx) => (
+									typeof p === "number" ? (
+										<button
+											key={p}
+											type="button"
+											onClick={() => setPage(p)}
+											className={`min-w-[2.25rem] rounded-lg border px-3 py-2 text-sm font-medium transition ${
+												p === currentPage
+													? "border-primary bg-primary text-white"
+													: "border-gray-300 dark:border-gray-600 bg-white dark:bg-[#0B1220] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+											}`}
+										>
+											{p}
+										</button>
+									) : (
+										<span key={`ellipsis-${idx}`} className="px-2 text-sm text-gray-500 dark:text-gray-400">
+											...
+										</span>
+									)
 								))}
 							</div>
 							<button

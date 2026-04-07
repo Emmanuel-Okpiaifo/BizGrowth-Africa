@@ -19,10 +19,14 @@ export default function AdminDashboard() {
 	const { myArticles, myOpportunities, myTenders } = useMemo(() => {
 		const authorIds = getCurrentUserIdentifiers();
 		const superAdmin = isSuperAdmin();
+		const onlyTenders = allTenders.filter((t) => {
+			const type = (t.type || '').trim().toLowerCase();
+			return type === '' || type === 'tender';
+		});
 		return {
 			myArticles: superAdmin ? allArticles : allArticles.filter(a => authorIds.includes((a.author || '').trim().toLowerCase())),
 			myOpportunities: superAdmin ? allOpportunities : allOpportunities.filter(o => { const author = (o.author || '').trim().toLowerCase(); return author && authorIds.includes(author); }),
-			myTenders: superAdmin ? allTenders : allTenders.filter(t => { const author = (t.author || '').trim().toLowerCase(); return author && authorIds.includes(author); })
+			myTenders: superAdmin ? onlyTenders : onlyTenders.filter(t => { const author = (t.author || '').trim().toLowerCase(); return author && authorIds.includes(author); })
 		};
 	}, [allArticles, allOpportunities, allTenders]);
 
@@ -176,6 +180,14 @@ export default function AdminDashboard() {
 			link: '/opportunities/new',
 			gradient: 'from-emerald-500 to-teal-500',
 			action: 'Add'
+		},
+		{
+			title: 'Post Procurement',
+			description: 'Add a procurement posting',
+			icon: FolderOpen,
+			link: '/procurements/new',
+			gradient: 'from-yellow-500 to-amber-500',
+			action: 'Post'
 		},
 		{
 			title: 'Post Tender',
@@ -420,7 +432,7 @@ export default function AdminDashboard() {
 				<div className="flex items-center justify-between mb-6">
 					<h2 className="text-2xl font-bold text-gray-900 dark:text-white">Quick Actions</h2>
 				</div>
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 					{quickActions.map((action, idx) => {
 						const Icon = action.icon;
 						return (

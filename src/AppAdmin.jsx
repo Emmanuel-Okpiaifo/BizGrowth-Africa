@@ -11,6 +11,8 @@ import AdminOpportunitiesEdit from "./pages/admin/AdminOpportunitiesEdit";
 import AdminOpportunitiesList from "./pages/admin/AdminOpportunitiesList";
 import AdminTenders from "./pages/admin/AdminTenders";
 import AdminTendersList from "./pages/admin/AdminTendersList";
+import AdminProcurements from "./pages/admin/AdminProcurements";
+import AdminProcurementsList from "./pages/admin/AdminProcurementsList";
 import AdminProfile from "./pages/admin/AdminProfile";
 import AdminActivity from "./pages/admin/AdminActivity";
 
@@ -35,9 +37,14 @@ export default function AppAdmin() {
 					<Route path="opportunities/new" element={<AdminOpportunities />} />
 					<Route path="opportunities/new/:draftId" element={<AdminOpportunities />} />
 					<Route path="opportunities/edit/:id" element={<AdminOpportunitiesEdit />} />
+					<Route path="procurements" element={<AdminProcurementsList />} />
+					<Route path="procurements/new" element={<AdminProcurements />} />
+					<Route path="procurements/new/:draftId" element={<AdminProcurements />} />
+					<Route path="procurements/edit/:id" element={<AdminProcurements />} />
 					<Route path="tenders" element={<AdminTendersList />} />
 					<Route path="tenders/new" element={<AdminTenders />} />
 					<Route path="tenders/new/:draftId" element={<AdminTenders />} />
+					<Route path="tenders/edit/:id" element={<AdminTenders />} />
 					<Route path="profile" element={<AdminProfile />} />
 					<Route path="activity" element={<AdminActivity />} />
 				</Route>

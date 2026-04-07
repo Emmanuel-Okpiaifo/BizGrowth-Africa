@@ -5,7 +5,7 @@ import { useGoogleSheetsArticlesAdmin } from '../../hooks/useGoogleSheetsArticle
 import { deleteSheetRow, getSheetData } from '../../utils/googleSheets';
 import { getDrafts, deleteDraft } from '../../utils/draftStorage';
 import { isSuperAdmin, getCurrentUserIdentifiers } from '../../utils/adminAuth';
-import { formatCreatedAt } from '../../utils/timeUtils';
+import { formatCreatedAt, getSortableTimestamp } from '../../utils/timeUtils';
 
 const PER_PAGE = 12;
 
@@ -82,9 +82,9 @@ export default function AdminArticlesList() {
 
 	// Sort by most recently published (publishedAt > scheduledAt > createdAt)
 	const sortedArticles = [...filteredArticles].sort((a, b) => {
-		const dateA = new Date(a.publishedAt || a.scheduledAt || a.createdAt || 0).getTime();
-		const dateB = new Date(b.publishedAt || b.scheduledAt || b.createdAt || 0).getTime();
-		return dateB - dateA;
+		const dateDiff = getSortableTimestamp(b.publishedAt || b.scheduledAt || b.createdAt || 0) - getSortableTimestamp(a.publishedAt || a.scheduledAt || a.createdAt || 0);
+		if (dateDiff !== 0) return dateDiff;
+		return (a.title || '').localeCompare(b.title || '');
 	});
 
 	const totalPages = Math.max(1, Math.ceil(sortedArticles.length / PER_PAGE));

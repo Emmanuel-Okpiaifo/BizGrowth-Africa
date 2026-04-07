@@ -5,7 +5,7 @@ import { useGoogleSheetsOpportunitiesAdmin } from '../../hooks/useGoogleSheetsOp
 import { deleteSheetRow, getSheetData } from '../../utils/googleSheets';
 import { getDrafts, deleteDraft } from '../../utils/draftStorage';
 import { isSuperAdmin, getCurrentUserIdentifiers } from '../../utils/adminAuth';
-import { formatCreatedAt } from '../../utils/timeUtils';
+import { formatCreatedAt, getSortableTimestamp } from '../../utils/timeUtils';
 
 const PER_PAGE = 12;
 
@@ -77,9 +77,9 @@ export default function AdminOpportunitiesList() {
 
 	// Sort by most recently published (postedAt > publishedAt > createdAt)
 	const sortedOpportunities = [...filteredOpportunities].sort((a, b) => {
-		const dateA = new Date(a.postedAt || a.publishedAt || a.createdAt || 0).getTime();
-		const dateB = new Date(b.postedAt || b.publishedAt || b.createdAt || 0).getTime();
-		return dateB - dateA;
+		const dateDiff = getSortableTimestamp(b.postedAt || b.publishedAt || b.createdAt || 0) - getSortableTimestamp(a.postedAt || a.publishedAt || a.createdAt || 0);
+		if (dateDiff !== 0) return dateDiff;
+		return (a.title || '').localeCompare(b.title || '');
 	});
 
 	const totalPages = Math.max(1, Math.ceil(sortedOpportunities.length / PER_PAGE));

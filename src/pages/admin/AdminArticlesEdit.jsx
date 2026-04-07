@@ -23,6 +23,8 @@ export default function AdminArticlesEdit() {
 		image: '',
 		heroImage: '',
 		whyItMatters: '',
+		homepageFeatureSlot: 'none',
+		homepageFeaturePriority: 0,
 		publishedAt: new Date().toISOString().split('T')[0],
 		author: 'BizGrowth Africa Editorial',
 		status: 'published',
@@ -77,6 +79,8 @@ export default function AdminArticlesEdit() {
 					image: (article.image || '').trim(),
 					heroImage: (article.heroimage ?? article.heroImage ?? '').toString().trim(),
 					whyItMatters: (article.whyitmatters ?? article['why it matters'] ?? article.whyItMatters ?? '').toString().trim(),
+					homepageFeatureSlot: (article.homepagefeatureslot ?? article.homepageFeatureSlot ?? 'none').toString().trim().toLowerCase() || 'none',
+					homepageFeaturePriority: Number.parseInt(article.homepagefeaturepriority ?? article.homepageFeaturePriority ?? '0', 10) || 0,
 					publishedAt: article.publishedAt ? article.publishedAt.split('T')[0] : (article.createdAt ? article.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]),
 					author: (article.author || 'BizGrowth Africa Editorial').trim(),
 					createdAt: article.createdAt || new Date().toISOString(),
@@ -111,6 +115,29 @@ export default function AdminArticlesEdit() {
 		}));
 	};
 
+	const clearExistingLeadSlots = async (currentSlug) => {
+		const rows = await getSheetData('Articles');
+		const leadRows = rows
+			.map((row, idx) => ({ row, rowIndex: idx + 1 }))
+			.filter(({ row }) => {
+				const slot = (row.homepagefeatureslot ?? row.homepageFeatureSlot ?? '').toString().trim().toLowerCase();
+				const slug = (row.slug || '').toString().trim();
+				return slot === 'lead' && slug && slug !== currentSlug;
+			});
+
+		if (leadRows.length === 0) return;
+
+		await Promise.all(
+			leadRows.map(({ row, rowIndex }) =>
+				updateSheetRow('Articles', rowIndex, {
+					...row,
+					homepageFeatureSlot: 'none',
+					homepageFeaturePriority: 0
+				})
+			)
+		);
+	};
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		setIsSubmitting(true);
@@ -140,12 +167,18 @@ export default function AdminArticlesEdit() {
 				image: formData.image || '',
 				heroImage: formData.heroImage || '',
 				whyItMatters: formData.whyItMatters || '',
+				homepageFeatureSlot: formData.homepageFeatureSlot || 'none',
+				homepageFeaturePriority: Number.parseInt(formData.homepageFeaturePriority || '0', 10) || 0,
 				publishedAt: formData.publishedAt,
 				author: getCurrentUser() || formData.author,
 				createdAt: formData.createdAt || new Date().toISOString(),
 				status: formData.status || 'published',
 				scheduledAt: formData.scheduledAt || ''
 			};
+
+			if ((articleData.homepageFeatureSlot || '').toLowerCase() === 'lead') {
+				await clearExistingLeadSlots(articleData.slug);
+			}
 
 			if (import.meta.env.DEV) console.log('Updating article at row:', rowIndex);
 			const success = await updateSheetRow('Articles', rowIndex, articleData);
@@ -340,6 +373,36 @@ export default function AdminArticlesEdit() {
 							rows={3}
 							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none resize-none"
 						/>
+					</div>
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div>
+							<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+								Homepage Feature Slot
+							</label>
+							<select
+								value={formData.homepageFeatureSlot}
+								onChange={(e) => setFormData(prev => ({ ...prev, homepageFeatureSlot: e.target.value }))}
+								className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+							>
+								<option value="none">None (use automatic order)</option>
+								<option value="lead">Lead article (big head slot)</option>
+								<option value="supporting">Supporting headlines</option>
+							</select>
+						</div>
+						<div>
+							<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+								Homepage Feature Priority
+							</label>
+							<input
+								type="number"
+								min="0"
+								value={formData.homepageFeaturePriority}
+								onChange={(e) => setFormData(prev => ({ ...prev, homepageFeaturePriority: e.target.value }))}
+								className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+								placeholder="0"
+							/>
+						</div>
 					</div>
 
 					{/* Content */}

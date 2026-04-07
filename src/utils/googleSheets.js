@@ -74,14 +74,16 @@ export async function getSheetData(sheetName, range = 'A1:Z1000') {
 }
 
 // Column order for each sheet (must match Row 1 headers exactly for Apps Script fallback)
-const ARTICLES_COLUMNS = ['title', 'slug', 'category', 'subheading', 'summary', 'content', 'image', 'heroImage', 'whyItMatters', 'publishedAt', 'author', 'status', 'scheduledAt', 'createdAt'];
+const ARTICLES_COLUMNS = ['title', 'slug', 'category', 'subheading', 'summary', 'content', 'image', 'heroImage', 'whyItMatters', 'homepageFeatureSlot', 'homepageFeaturePriority', 'publishedAt', 'author', 'status', 'scheduledAt', 'createdAt'];
 const OPPORTUNITIES_COLUMNS = ['title', 'org', 'country', 'region', 'category', 'amountMin', 'amountMax', 'currency', 'deadline', 'postedAt', 'link', 'tags', 'featured', 'description', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
-const TENDERS_COLUMNS = ['title', 'agency', 'category', 'country', 'region', 'deadline', 'postedAt', 'link', 'description', 'eligibility', 'value', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
+const TENDERS_COLUMNS = ['type', 'title', 'agency', 'category', 'subCategory', 'country', 'region', 'deadline', 'postedAt', 'link', 'reference', 'quickSummary', 'overview', 'whoCanApply', 'scopeOfWork', 'requirements', 'applicationProcess', 'disclaimer', 'description', 'eligibility', 'value', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
+const PROCUREMENTS_COLUMNS = ['title', 'agency', 'category', 'subCategory', 'country', 'region', 'deadline', 'postedAt', 'link', 'reference', 'quickSummary', 'overview', 'whoCanApply', 'scopeOfWork', 'requirements', 'applicationProcess', 'description', 'eligibility', 'value', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
 
 function buildValuesRow(sheetName, data) {
 	const columns = sheetName === 'Articles' ? ARTICLES_COLUMNS
 		: sheetName === 'Opportunities' ? OPPORTUNITIES_COLUMNS
 		: sheetName === 'Tenders' ? TENDERS_COLUMNS
+		: sheetName === 'Procurements' ? PROCUREMENTS_COLUMNS
 		: null;
 	if (!columns) return null;
 	return columns.map((key) => {

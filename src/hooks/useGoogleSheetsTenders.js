@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getSheetData } from '../utils/googleSheets';
+import { getSortableTimestamp } from '../utils/timeUtils';
 
 /**
  * Hook to fetch tenders from Google Sheets
@@ -32,28 +33,43 @@ export function useGoogleSheetsTenders() {
 					return tenderStatus === 'published';
 				})
 				.map(tender => {
+					const displayPublishedAt =
+						(tender.scheduledat ?? tender.scheduledAt ?? '').toString().trim() ||
+						(tender.createdat ?? tender.createdAt ?? '').toString().trim() ||
+						new Date().toISOString();
+
 					return {
 						id: tender.id || `tender-${tender.title?.toLowerCase().replace(/\s+/g, '-')}`,
+						type: (tender.type || '').trim(),
 						title: (tender.title || '').trim(),
 						agency: (tender.agency || '').trim(),
 						category: (tender.category || '').trim(),
+						subCategory: (tender.subcategory || tender.subCategory || '').trim(),
 						country: (tender.country || '').trim(),
 						region: (tender.region || '').trim(),
 						deadline: tender.deadline || '',
-						postedAt: tender.postedAt || tender.createdAt || new Date().toISOString().split('T')[0],
+						postedAt: displayPublishedAt,
 						link: (tender.link || '').trim(),
+						reference: (tender.reference || '').trim(),
+						quickSummary: (tender.quicksummary || tender.quickSummary || '').trim(),
+						overview: (tender.overview || '').trim(),
+						whoCanApply: (tender.whocanapply || tender.whoCanApply || '').trim(),
+						scopeOfWork: (tender.scopeofwork || tender.scopeOfWork || '').trim(),
+						requirements: (tender.requirements || '').trim(),
+						applicationProcess: (tender.applicationprocess || tender.applicationProcess || '').trim(),
+						disclaimer: (tender.disclaimer || '').trim(),
 						description: (tender.description || '').trim(),
 						eligibility: (tender.eligibility || '').trim(),
 						value: (tender.value || '').trim(),
 						heroImage: (tender.heroimage ?? tender['hero image'] ?? tender.heroImage ?? '').toString().trim(), // Uploaded image from admin (sheet keys are lowercase)
-						createdAt: tender.createdAt || new Date().toISOString()
+						createdAt: (tender.createdat ?? tender.createdAt ?? '').toString().trim() || new Date().toISOString()
 					};
 				})
 				.sort((a, b) => {
-					// Sort by postedAt date, most recent first
-					const dateA = new Date(a.postedAt);
-					const dateB = new Date(b.postedAt);
-					return dateB - dateA;
+					// Sort by deterministic timestamp, most recent first
+					const dateDiff = getSortableTimestamp(b.postedAt) - getSortableTimestamp(a.postedAt);
+					if (dateDiff !== 0) return dateDiff;
+					return (a.title || '').localeCompare(b.title || '');
 				});
 			
 			setTenders(transformed);

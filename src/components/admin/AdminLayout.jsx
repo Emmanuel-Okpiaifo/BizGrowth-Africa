@@ -37,6 +37,7 @@ export default function AdminLayout() {
 		{ path: '/', label: 'Dashboard', icon: LayoutDashboard },
 		{ path: '/articles', label: 'Articles', icon: FileText },
 		{ path: '/opportunities', label: 'Opportunities', icon: Briefcase },
+		{ path: '/procurements', label: 'Procurements', icon: FolderOpen },
 		{ path: '/tenders', label: 'Tenders', icon: FolderOpen },
 		{ path: '/profile', label: 'Profile', icon: User },
 	];
@@ -50,19 +51,19 @@ export default function AdminLayout() {
 						{/* Logo & Title */}
 						<Link 
 							to="/" 
-							className="flex items-center gap-3 group transition-transform duration-300 hover:scale-105"
+							className="flex min-w-0 items-center gap-3 group transition-transform duration-300 hover:scale-105"
 						>
 							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-red-700 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
 								<span className="text-lg font-bold text-white">BA</span>
 							</div>
-							<div>
-								<h1 className="text-lg font-bold text-gray-900 dark:text-white transition-colors">Admin Panel</h1>
-								<p className="text-xs text-gray-500 dark:text-gray-400 transition-colors">Content Management</p>
+							<div className="min-w-0">
+								<h1 className="truncate text-base lg:text-lg font-bold text-gray-900 dark:text-white transition-colors">Admin Panel</h1>
+								<p className="hidden xl:block truncate text-xs text-gray-500 dark:text-gray-400 transition-colors">Content Management</p>
 							</div>
 						</Link>
 
 						{/* Desktop Navigation */}
-						<div className="hidden md:flex items-center gap-1">
+						<div className="hidden xl:flex items-center gap-1">
 							{navItems.map((item) => {
 								const Icon = item.icon;
 								const isActive = location.pathname === item.path;
@@ -70,7 +71,7 @@ export default function AdminLayout() {
 									<Link
 										key={item.path}
 										to={item.path}
-										className={`group relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+										className={`group relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
 											isActive
 												? 'bg-primary text-white shadow-md scale-105'
 												: 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-105'

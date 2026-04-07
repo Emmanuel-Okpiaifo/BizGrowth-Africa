@@ -4,6 +4,7 @@ import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Opportunities from "./pages/Opportunities";
 import ProcurementTenders from "./pages/ProcurementTenders";
+import ProcurementTenderDetail from "./pages/ProcurementTenderDetail";
 import NewsInsights from "./pages/NewsInsights";
 import ToolsTemplates from "./pages/ToolsTemplates";
 import Community from "./pages/Community";
@@ -23,6 +24,7 @@ export default function App() {
 				<Route path="opportunities" element={<Opportunities />} />
 				<Route path="opportunities/:id" element={<OpportunityDetail />} />
 				<Route path="procurement-tenders" element={<ProcurementTenders />} />
+				<Route path="procurement-tenders/:id" element={<ProcurementTenderDetail />} />
 				<Route path="news-insights" element={<NewsInsights />} />
 				<Route path="news/:slug" element={<NewsArticle />} />
 				<Route path="tools-templates" element={<ToolsTemplates />} />

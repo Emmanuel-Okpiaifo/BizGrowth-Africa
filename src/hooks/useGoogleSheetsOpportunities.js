@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getSheetData } from '../utils/googleSheets';
+import { getSortableTimestamp } from '../utils/timeUtils';
 
 /**
  * Hook to fetch opportunities from Google Sheets
@@ -48,6 +49,11 @@ export function useGoogleSheetsOpportunities() {
 						}
 					}
 					
+					const displayPublishedAt =
+						(opp.scheduledat ?? opp.scheduledAt ?? '').toString().trim() ||
+						(opp.createdat ?? opp.createdAt ?? '').toString().trim() ||
+						new Date().toISOString();
+					
 					return {
 						id: opp.id || `opp-${opp.title?.toLowerCase().replace(/\s+/g, '-')}`,
 						title: (opp.title || '').trim(),
@@ -59,20 +65,20 @@ export function useGoogleSheetsOpportunities() {
 						amountMax: parseFloat(opp.amountMax) || 0,
 						currency: (opp.currency || 'USD').trim(),
 						deadline: opp.deadline || '',
-						postedAt: (opp.postedat ?? opp.postedAt ?? '').toString().trim() || '',
+						postedAt: displayPublishedAt,
 						link: (opp.link || '').trim(),
 						tags: tags,
 						heroImage: (opp.heroimage ?? opp['hero image'] ?? opp.heroImage ?? '').toString().trim(), // Uploaded image from admin (sheet keys are lowercase)
 						featured: opp.featured === 'true' || opp.featured === true,
 						description: (opp.description || '').trim(),
-						createdAt: opp.createdAt || new Date().toISOString()
+						createdAt: (opp.createdat ?? opp.createdAt ?? '').toString().trim() || new Date().toISOString()
 					};
 				})
 				.sort((a, b) => {
-					// Sort by postedAt date, most recent first
-					const dateA = new Date(a.postedAt);
-					const dateB = new Date(b.postedAt);
-					return dateB - dateA;
+					// Sort by deterministic timestamp, most recent first
+					const dateDiff = getSortableTimestamp(b.postedAt) - getSortableTimestamp(a.postedAt);
+					if (dateDiff !== 0) return dateDiff;
+					return (a.title || '').localeCompare(b.title || '');
 				});
 			
 			setOpportunities(transformed);

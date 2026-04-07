@@ -2,16 +2,18 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Save, FileText, ArrowLeft, Clock, Upload, X } from 'lucide-react';
 import RichTextEditor from '../../components/admin/RichTextEditor';
-import { appendSheetRow } from '../../utils/googleSheets';
+import { appendSheetRow, getSheetData, updateSheetRow } from '../../utils/googleSheets';
 import { ErrorBoundary } from '../../components/admin/ErrorBoundary';
 import { toGMTPlus1ISO, getMinScheduleDateTime } from '../../utils/scheduling';
 import { uploadImage } from '../../utils/imageUpload';
 import { saveDraft, getDraft, deleteDraft } from '../../utils/draftStorage';
+import { getCurrentUser } from '../../utils/adminAuth';
 
 const CATEGORIES = ['IT & Telecoms', 'Construction', 'Healthcare', 'Energy', 'Logistics', 'Education', 'Agriculture'];
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 export default function AdminTenders() {
-	const { draftId } = useParams();
+	const { draftId, id } = useParams();
 	const navigate = useNavigate();
 	const [formData, setFormData] = useState({
 		title: '',
@@ -33,9 +35,13 @@ export default function AdminTenders() {
 	const [status, setStatus] = useState({ type: null, message: '' });
 	const [uploadingHeroImage, setUploadingHeroImage] = useState(false);
 	const [currentDraftId, setCurrentDraftId] = useState(draftId || null);
+	const [editingRowIndex, setEditingRowIndex] = useState(null);
+	const isEditing = Boolean(id);
+	const deadlineDateValue = DATE_ONLY_REGEX.test((formData.deadline || '').trim()) ? formData.deadline.trim() : '';
 
 	// Load draft if editing
 	useEffect(() => {
+		if (isEditing) return;
 		if (draftId) {
 			const draft = getDraft('tenders', draftId);
 			if (draft) {
@@ -57,7 +63,50 @@ export default function AdminTenders() {
 				setStatus({ type: 'success', message: 'Draft loaded. Continue editing...' });
 			}
 		}
-	}, [draftId]);
+	}, [draftId, isEditing]);
+
+	useEffect(() => {
+		if (!isEditing) return;
+		(async () => {
+			try {
+				const rows = await getSheetData('Tenders');
+				const targetId = decodeURIComponent(id || '');
+				const idx = rows.findIndex((row) => {
+					const rowId = (row.id || `tender-${(row.title || '').toLowerCase().replace(/\s+/g, '-')}`).toString();
+					return rowId === targetId;
+				});
+				if (idx === -1) {
+					setStatus({ type: 'error', message: 'Tender not found.' });
+					return;
+				}
+				const row = rows[idx];
+				setEditingRowIndex(idx + 1);
+				setFormData({
+					title: row.title || '',
+					agency: row.agency || '',
+					category: row.category || '',
+					country: row.country || '',
+					region: row.region || '',
+					deadline: row.deadline || '',
+					postedAt: row.postedat || row.postedAt || new Date().toISOString().split('T')[0],
+					link: row.link || '',
+					description: row.description || '',
+					eligibility: row.eligibility || '',
+					value: row.value || '',
+					heroImage: row.heroimage ?? row.heroImage ?? ''
+				});
+				const rowStatus = (row.status || 'published').toString().toLowerCase();
+				if (rowStatus === 'scheduled' && (row.scheduledat || row.scheduledAt)) {
+					setIsScheduled(true);
+					const raw = (row.scheduledat || row.scheduledAt).toString();
+					const local = raw.includes('T') ? raw.slice(0, 16) : '';
+					setScheduledDateTime(local);
+				}
+			} catch (error) {
+				setStatus({ type: 'error', message: error.message || 'Failed to load tender.' });
+			}
+		})();
+	}, [id, isEditing]);
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -81,7 +130,8 @@ export default function AdminTenders() {
 				scheduledAt = toGMTPlus1ISO(scheduledDateTime);
 			}
 
-			const success = await appendSheetRow('Tenders', {
+			const payload = {
+				type: 'tender',
 				title: formData.title,
 				agency: formData.agency,
 				category: formData.category,
@@ -93,11 +143,15 @@ export default function AdminTenders() {
 				description: formData.description,
 				eligibility: formData.eligibility,
 				value: formData.value,
+				author: getCurrentUser() || '',
 				heroImage: formData.heroImage || '',
 				status: postStatus,
 				scheduledAt: scheduledAt,
 				createdAt: new Date().toISOString()
-			});
+			};
+			const success = isEditing && editingRowIndex
+				? await updateSheetRow('Tenders', editingRowIndex, payload)
+				: await appendSheetRow('Tenders', payload);
 
 			if (success) {
 				// Delete draft from localStorage if it was a draft
@@ -108,7 +162,7 @@ export default function AdminTenders() {
 
 				const message = isScheduled && scheduledDateTime
 					? `Tender scheduled successfully! It will be published on ${new Date(scheduledDateTime).toLocaleString('en-GB', { timeZone: 'Africa/Lagos' })} (GMT+1).`
-					: 'Tender published successfully!';
+					: (isEditing ? 'Tender updated successfully!' : 'Tender published successfully!');
 				setStatus({ type: 'success', message });
 				// Redirect to tenders list after a short delay
 				setTimeout(() => {
@@ -136,7 +190,7 @@ export default function AdminTenders() {
 						<ArrowLeft size={18} />
 					</Link>
 					<FileText className="w-6 h-6 text-primary" />
-					<h1 className="text-3xl font-bold text-gray-900 dark:text-white">Create Tender</h1>
+					<h1 className="text-3xl font-bold text-gray-900 dark:text-white">{isEditing ? 'Edit Tender' : 'Create Tender'}</h1>
 				</div>
 			</div>
 
@@ -223,12 +277,21 @@ export default function AdminTenders() {
 						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 							Deadline
 						</label>
-						<input
-							type="date"
-							value={formData.deadline}
-							onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
-							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-						/>
+						<div className="space-y-2">
+							<input
+								type="date"
+								value={deadlineDateValue}
+								onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
+								className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+							/>
+							<input
+								type="text"
+								value={formData.deadline}
+								onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
+								className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+								placeholder="Or type custom deadline e.g. 02 April 2026 (09:59 GMT+1)"
+							/>
+						</div>
 					</div>
 
 					<div>
@@ -484,7 +547,7 @@ export default function AdminTenders() {
 						className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-semibold text-white transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
 					>
 						<Save size={18} />
-						{isSubmitting ? 'Saving...' : isScheduled ? 'Schedule Post' : 'Publish Tender'}
+						{isSubmitting ? 'Saving...' : isScheduled ? 'Schedule Post' : (isEditing ? 'Update Tender' : 'Publish Tender')}
 					</button>
 				</div>
 			</form>

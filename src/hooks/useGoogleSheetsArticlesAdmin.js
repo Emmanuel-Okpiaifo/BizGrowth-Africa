@@ -46,6 +46,8 @@ export function useGoogleSheetsArticlesAdmin() {
 						richBody: null,
 						body: null,
 						author: (article.author || 'BizGrowth Africa Editorial').trim(),
+						homepageFeatureSlot: (article.homepagefeatureslot ?? article.homepageFeatureSlot ?? '').toString().trim().toLowerCase(),
+						homepageFeaturePriority: Number.parseInt(article.homepagefeaturepriority ?? article.homepageFeaturePriority ?? '0', 10) || 0,
 						status: articleStatus, // Include status
 						scheduledAt: article.scheduledAt || '', // Include scheduledAt
 						createdAt: (article.createdat ?? article.createdAt ?? '').toString().trim() || ''

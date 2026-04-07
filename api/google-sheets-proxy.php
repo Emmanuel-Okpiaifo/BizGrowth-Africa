@@ -34,14 +34,15 @@ if (!$data) {
 }
 
 // Ensure "values" is sent for append so Apps Script gets correct column count (fixes "data has 1 but range has 14")
-$articlesColumns = ['title', 'slug', 'category', 'subheading', 'summary', 'content', 'image', 'heroImage', 'whyItMatters', 'publishedAt', 'author', 'status', 'scheduledAt', 'createdAt'];
+$articlesColumns = ['title', 'slug', 'category', 'subheading', 'summary', 'content', 'image', 'heroImage', 'whyItMatters', 'homepageFeatureSlot', 'homepageFeaturePriority', 'publishedAt', 'author', 'status', 'scheduledAt', 'createdAt'];
 $opportunitiesColumns = ['title', 'org', 'country', 'region', 'category', 'amountMin', 'amountMax', 'currency', 'deadline', 'postedAt', 'link', 'tags', 'featured', 'description', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
-$tendersColumns = ['title', 'agency', 'category', 'country', 'region', 'deadline', 'postedAt', 'link', 'description', 'eligibility', 'value', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
+$tendersColumns = ['type', 'title', 'agency', 'category', 'subCategory', 'country', 'region', 'deadline', 'postedAt', 'link', 'reference', 'quickSummary', 'overview', 'whoCanApply', 'scopeOfWork', 'requirements', 'applicationProcess', 'disclaimer', 'description', 'eligibility', 'value', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
+$procurementsColumns = ['title', 'agency', 'category', 'subCategory', 'country', 'region', 'deadline', 'postedAt', 'link', 'reference', 'quickSummary', 'overview', 'whoCanApply', 'scopeOfWork', 'requirements', 'applicationProcess', 'description', 'eligibility', 'value', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
 
 if (isset($data['action']) && $data['action'] === 'append' && isset($data['data']) && is_array($data['data']) && empty($data['values'])) {
     $sheet = isset($data['sheet']) ? $data['sheet'] : '';
     $rowData = $data['data'];
-    $columns = $sheet === 'Articles' ? $articlesColumns : ($sheet === 'Opportunities' ? $opportunitiesColumns : ($sheet === 'Tenders' ? $tendersColumns : null));
+    $columns = $sheet === 'Articles' ? $articlesColumns : ($sheet === 'Opportunities' ? $opportunitiesColumns : ($sheet === 'Tenders' ? $tendersColumns : ($sheet === 'Procurements' ? $procurementsColumns : null)));
     if ($columns) {
         $row = [];
         foreach ($columns as $key) {

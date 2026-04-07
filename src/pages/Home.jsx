@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Ticker from "../components/Ticker";
 import SectionHeader from "../components/SectionHeader";
@@ -7,16 +7,47 @@ import HomeOpportunitiesGrid from "../components/HomeOpportunitiesGrid";
 import HomepageCTABar from "../components/HomepageCTABar";
 import { useGoogleSheetsArticles } from "../hooks/useGoogleSheetsArticles";
 import SEO from "../components/SEO";
+import { getSortableTimestamp } from "../utils/timeUtils";
 
 export default function Home() {
 	const { articles: sheetsArticles, loading: sheetsLoading } = useGoogleSheetsArticles();
 	const articles = Array.isArray(sheetsArticles) ? sheetsArticles : [];
 
+	const featuredConfig = useMemo(() => {
+		const leadCandidates = articles
+			.filter((a) => (a.homepageFeatureSlot || "") === "lead")
+			.sort((a, b) => {
+				const priorityDiff = (a.homepageFeaturePriority || 0) - (b.homepageFeaturePriority || 0);
+				if (priorityDiff !== 0) return priorityDiff;
+				return getSortableTimestamp(b.publishedAt) - getSortableTimestamp(a.publishedAt);
+			});
+		const leadArticle = leadCandidates[0] || articles[0];
+
+		const supportingCandidates = articles
+			.filter((a) => (a.homepageFeatureSlot || "") === "supporting" && a.slug !== leadArticle?.slug)
+			.sort((a, b) => {
+				const priorityDiff = (a.homepageFeaturePriority || 0) - (b.homepageFeaturePriority || 0);
+				if (priorityDiff !== 0) return priorityDiff;
+				return getSortableTimestamp(b.publishedAt) - getSortableTimestamp(a.publishedAt);
+			});
+
+		const fallbackSupporting = articles.filter((a) => a.slug !== leadArticle?.slug);
+		const sideArticles = (supportingCandidates.length > 0 ? supportingCandidates : fallbackSupporting).slice(0, 4);
+		const usedSlugs = new Set([leadArticle?.slug, ...sideArticles.map((a) => a.slug)].filter(Boolean));
+		const remaining = articles.filter((a) => !usedSlugs.has(a.slug));
+
+		return {
+			lead: leadArticle,
+			sideHeadlines: sideArticles,
+			remainingArticles: remaining
+		};
+	}, [articles]);
+
 	const trending = articles.slice(0, 8);
 
-	const lead = articles[0];
-	const sideHeadlines = articles.slice(1, 5);
-	const analysis = articles.slice(4, 10);
+	const lead = featuredConfig.lead;
+	const sideHeadlines = featuredConfig.sideHeadlines;
+	const analysis = featuredConfig.remainingArticles.slice(0, 6);
 
 	// Preload hero image for faster loading
 	useEffect(() => {
@@ -49,7 +80,16 @@ export default function Home() {
 			{/* Spotlight hero with side headlines */}
 			<section className="grid gap-4 lg:grid-cols-12">
 				<div className="lg:col-span-8">
-					{lead ? (
+					{sheetsLoading ? (
+						<div className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-[#0B1220]">
+							<div className="aspect-[3/4] sm:aspect-[4/3] lg:aspect-[16/9] w-full animate-pulse rounded-xl bg-gray-200 dark:bg-gray-800" />
+							<div className="mt-4 space-y-2">
+								<div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
+								<div className="h-6 w-4/5 animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
+								<div className="h-4 w-2/3 animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
+							</div>
+						</div>
+					) : lead ? (
 						<Link
 							to={lead.url}
 							className="group relative block overflow-hidden rounded-2xl bg-gray-900 ring-1 ring-gray-200 transition hover:ring-primary/30 dark:ring-gray-800"
@@ -96,19 +136,22 @@ export default function Home() {
 								</div>
 							</div>
 						</Link>
-					) : (
-						<div className="flex min-h-[280px] flex-col items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 p-8 text-center dark:border-gray-800 dark:bg-[#0B1220]">
-							<h2 className="text-xl font-bold text-gray-900 dark:text-white">Latest stories</h2>
-							<p className="mt-2 text-sm text-gray-600 dark:text-gray-400">No featured story right now. Check back soon or browse News &amp; Insights.</p>
-							<Link to="/news-insights" className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">Browse News</Link>
-						</div>
-					)}
+					) : null}
 				</div>
 				<div className="lg:col-span-4">
 					<div className="rounded-2xl border bg-white p-4 shadow-sm ring-1 ring-gray-200 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
 						<div className="mb-2 text-sm font-semibold text-gray-900 dark:text-white">Top headlines</div>
 						<ul className="divide-y divide-gray-200 dark:divide-gray-800">
-							{sideHeadlines.map((h) => (
+							{sheetsLoading
+								? [1, 2, 3, 4].map((k) => (
+									<li key={k} className="py-3">
+										<div className="space-y-2">
+											<div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
+											<div className="h-3 w-2/3 animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
+										</div>
+									</li>
+								))
+								: sideHeadlines.map((h) => (
 								<li key={h.url} className="py-3">
 									<Link to={h.url} className="group block">
 										<p className="line-clamp-2 text-sm font-semibold text-gray-900 transition group-hover:text-primary dark:text-white">
@@ -128,17 +171,46 @@ export default function Home() {
 			{/* Trending Stories */}
 			<section className="space-y-4">
 				<SectionHeader title="Trending Stories" />
-				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-					<div className="sm:col-span-2 lg:col-span-2">
-						{analysis[0] ? <NewsCard article={analysis[0]} variant="featured" index={0} /> : null}
-					</div>
-					{analysis.slice(1, 3).map((a, idx) => (
-						<NewsCard key={a.url} article={a} variant="tall" index={idx + 1} />
-					))}
-				</div>
-				<div className="rounded-2xl border bg-white p-4 shadow-sm ring-1 ring-gray-200 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
-					<ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-						{analysis.slice(3, 9).map((a, idx) => (
+				{sheetsLoading ? (
+					<>
+						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+							{[1, 2, 3].map((k) => (
+								<div key={k} className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-[#0B1220]">
+									<div className="h-44 animate-pulse bg-gray-200 dark:bg-gray-800" />
+									<div className="p-4 space-y-2">
+										<div className="h-4 w-5/6 animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
+										<div className="h-3 w-2/3 animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
+									</div>
+								</div>
+							))}
+						</div>
+						<div className="rounded-2xl border bg-white p-4 shadow-sm ring-1 ring-gray-200 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
+							<ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+								{[1, 2, 3, 4, 5, 6].map((k) => (
+									<li key={k} className="flex items-start gap-3">
+										<div className="h-14 w-20 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800" />
+										<div className="flex-1 space-y-2">
+											<div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
+											<div className="h-3 w-2/3 animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
+										</div>
+									</li>
+								))}
+							</ul>
+						</div>
+					</>
+				) : (
+					<>
+						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+							<div className="sm:col-span-2 lg:col-span-2">
+								{analysis[0] ? <NewsCard article={analysis[0]} variant="featured" index={0} /> : null}
+							</div>
+							{analysis.slice(1, 3).map((a, idx) => (
+								<NewsCard key={a.url} article={a} variant="tall" index={idx + 1} />
+							))}
+						</div>
+						<div className="rounded-2xl border bg-white p-4 shadow-sm ring-1 ring-gray-200 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
+							<ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+								{analysis.slice(3, 9).map((a, idx) => (
 							<li key={`${a.url}-mini`}>
 								<Link to={a.url} className="group flex items-start gap-3">
 									<img
@@ -171,8 +243,10 @@ export default function Home() {
 								</Link>
 							</li>
 						))}
-					</ul>
-			</div>
+							</ul>
+						</div>
+					</>
+				)}
 			</section>
 
 			{/* Latest opportunities — premium grid (distinct from news/trending) */}

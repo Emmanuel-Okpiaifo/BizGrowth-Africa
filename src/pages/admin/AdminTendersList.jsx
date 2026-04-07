@@ -5,7 +5,7 @@ import { useGoogleSheetsTendersAdmin } from '../../hooks/useGoogleSheetsTendersA
 import { deleteSheetRow, getSheetData } from '../../utils/googleSheets';
 import { getDrafts, deleteDraft } from '../../utils/draftStorage';
 import { isSuperAdmin, getCurrentUserIdentifiers } from '../../utils/adminAuth';
-import { formatCreatedAt } from '../../utils/timeUtils';
+import { formatCreatedAt, getSortableTimestamp } from '../../utils/timeUtils';
 
 const PER_PAGE = 12;
 
@@ -43,9 +43,15 @@ export default function AdminTendersList() {
 		return () => clearInterval(interval);
 	}, [refresh]);
 
+	// Tenders view excludes procurement rows and includes local draft tenders
+	const tenderRows = allTenders.filter((tender) => {
+		const type = (tender.type || '').toLowerCase();
+		return type === '' || type === 'tender';
+	});
+
 	// Combine Google Sheets tenders with localStorage drafts
 	const allTendersCombined = [
-		...allTenders.map(tender => ({ ...tender, isDraft: false })),
+		...tenderRows.map(tender => ({ ...tender, isDraft: false })),
 		...localDrafts
 	];
 
@@ -77,9 +83,9 @@ export default function AdminTendersList() {
 
 	// Sort by most recently published (postedAt > publishedAt > createdAt)
 	const sortedTenders = [...filteredTenders].sort((a, b) => {
-		const dateA = new Date(a.postedAt || a.publishedAt || a.createdAt || 0).getTime();
-		const dateB = new Date(b.postedAt || b.publishedAt || b.createdAt || 0).getTime();
-		return dateB - dateA;
+		const dateDiff = getSortableTimestamp(b.postedAt || b.publishedAt || b.createdAt || 0) - getSortableTimestamp(a.postedAt || a.publishedAt || a.createdAt || 0);
+		if (dateDiff !== 0) return dateDiff;
+		return (a.title || '').localeCompare(b.title || '');
 	});
 
 	const totalPages = Math.max(1, Math.ceil(sortedTenders.length / PER_PAGE));
@@ -244,6 +250,18 @@ export default function AdminTendersList() {
 							key={tender.id || idx}
 							className="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0B1220] shadow-sm hover:shadow-xl transition-all"
 						>
+							{tender.heroImage ? (
+								<img
+									src={tender.heroImage}
+									alt={tender.title || 'Tender'}
+									className="h-36 w-full object-cover"
+									loading="lazy"
+								/>
+							) : (
+								<div className="h-36 w-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs text-gray-500 dark:text-gray-400">
+									No hero image
+								</div>
+							)}
 							{/* Content */}
 							<div className="p-6">
 								<div className="flex items-start justify-between gap-3 mb-3">
@@ -330,15 +348,24 @@ export default function AdminTendersList() {
 											Edit
 										</Link>
 									) : (
-										<a
-											href={`https://bizgrowthafrica.com/procurement-tenders`}
-											target="_blank"
-											rel="noopener noreferrer"
-											className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white transition text-sm font-medium"
-										>
-											<Eye size={16} />
-											View
-										</a>
+										<>
+											<Link
+												to={`/tenders/edit/${encodeURIComponent(tender.id)}`}
+												className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-primary hover:text-white transition text-sm font-medium"
+											>
+												<Edit size={16} />
+												Edit
+											</Link>
+											<a
+												href={`https://bizgrowthafrica.com/procurement-tenders/${encodeURIComponent(tender.id)}`}
+												target="_blank"
+												rel="noopener noreferrer"
+												className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white transition text-sm font-medium"
+											>
+												<Eye size={16} />
+												View
+											</a>
+										</>
 									)}
 									<button 
 										onClick={() => setDeleteConfirm(tender.id || idx)}

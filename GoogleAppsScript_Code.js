@@ -9,7 +9,33 @@
  * main site can show published/scheduled content correctly.
  */
 
-function getRowFromData(sheet, data) {
+var EXPECTED_HEADERS = {
+  Articles: ['title', 'slug', 'category', 'subheading', 'summary', 'content', 'image', 'heroImage', 'whyItMatters', 'homepageFeatureSlot', 'homepageFeaturePriority', 'publishedAt', 'author', 'status', 'scheduledAt', 'createdAt'],
+  Opportunities: ['title', 'org', 'country', 'region', 'category', 'amountMin', 'amountMax', 'currency', 'deadline', 'postedAt', 'link', 'tags', 'featured', 'description', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'],
+  Tenders: ['type', 'title', 'agency', 'category', 'subCategory', 'country', 'region', 'deadline', 'postedAt', 'link', 'reference', 'quickSummary', 'overview', 'whoCanApply', 'scopeOfWork', 'requirements', 'applicationProcess', 'disclaimer', 'description', 'eligibility', 'value', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'],
+  Procurements: ['title', 'agency', 'category', 'subCategory', 'country', 'region', 'deadline', 'postedAt', 'link', 'reference', 'quickSummary', 'overview', 'whoCanApply', 'scopeOfWork', 'requirements', 'applicationProcess', 'description', 'eligibility', 'value', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage']
+};
+
+function ensureHeaders(sheet, sheetName) {
+  var expected = EXPECTED_HEADERS[sheetName];
+  if (!expected || expected.length === 0) return;
+
+  var lastCol = sheet.getLastColumn();
+  var current = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+  var hasAnyHeader = current.some(function(h) { return h && String(h).trim() !== ''; });
+  var currentLower = current.map(function(h) { return String(h || '').trim().toLowerCase(); });
+  var expectedLower = expected.map(function(h) { return String(h || '').trim().toLowerCase(); });
+  var isSame = hasAnyHeader &&
+    currentLower.length >= expectedLower.length &&
+    expectedLower.every(function(h, idx) { return currentLower[idx] === h; });
+
+  if (!isSame) {
+    sheet.getRange(1, 1, 1, expected.length).setValues([expected]);
+  }
+}
+
+function getRowFromData(sheet, data, sheetName) {
+  ensureHeaders(sheet, sheetName);
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   var obj = data.data || {};
   return headers.map(function(header) {
@@ -40,7 +66,7 @@ function doPost(e) {
 
     if (data.action === 'append') {
       // Always build row from sheet headers + data.data so status/scheduledAt go to the right column
-      var row = getRowFromData(sheet, data);
+      var row = getRowFromData(sheet, data, data.sheet);
       sheet.appendRow(row);
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
@@ -49,9 +75,9 @@ function doPost(e) {
     }
 
     if (data.action === 'update') {
-      var row = getRowFromData(sheet, data);
+      var row = getRowFromData(sheet, data, data.sheet);
       var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-      var existingRange = sheet.getRange(data.row + 1, 1, data.row + 1, Math.max(row.length, headers.length));
+      var existingRange = sheet.getRange(data.row + 1, 1, 1, Math.max(row.length, headers.length));
       var existingRow = existingRange.getValues()[0];
       for (var i = 0; i < headers.length; i++) {
         var h = (headers[i] != null && headers[i].toString) ? headers[i].toString().trim().toLowerCase() : '';
@@ -115,7 +141,7 @@ function doGet(e) {
 function publishDueScheduledPosts() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var now = new Date();
-  var sheetNames = ['Articles', 'Opportunities', 'Tenders'];
+  var sheetNames = ['Articles', 'Opportunities', 'Tenders', 'Procurements'];
   var timeZone = 'Africa/Lagos';
   var publishedAtValue = Utilities.formatDate(now, timeZone, "yyyy-MM-dd'T'HH:mm:ss'+01:00'");
 

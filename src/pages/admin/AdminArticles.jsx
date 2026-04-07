@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Save, FileText, ArrowLeft, Clock, Image as ImageIcon, Upload, X } from 'lucide-react';
 import RichTextEditor from '../../components/admin/RichTextEditor';
-import { appendSheetRow } from '../../utils/googleSheets';
+import { appendSheetRow, getSheetData, updateSheetRow } from '../../utils/googleSheets';
 import { ErrorBoundary } from '../../components/admin/ErrorBoundary';
 import { toGMTPlus1ISO, getMinScheduleDateTime } from '../../utils/scheduling';
 import { uploadImage } from '../../utils/imageUpload';
@@ -26,6 +26,8 @@ export default function AdminArticles() {
 		image: '',
 		heroImage: '',
 		whyItMatters: '',
+		homepageFeatureSlot: 'none',
+		homepageFeaturePriority: 0,
 		publishedAt: new Date().toISOString().split('T')[0],
 		author: defaultAuthor()
 	});
@@ -59,6 +61,8 @@ export default function AdminArticles() {
 					image: draft.image || '',
 					heroImage: draft.heroImage || '',
 					whyItMatters: draft.whyItMatters || '',
+					homepageFeatureSlot: draft.homepageFeatureSlot || 'none',
+					homepageFeaturePriority: Number.parseInt(draft.homepageFeaturePriority || '0', 10) || 0,
 					publishedAt: draft.publishedAt || new Date().toISOString().split('T')[0],
 					author: draft.author || defaultAuthor()
 				});
@@ -81,6 +85,29 @@ export default function AdminArticles() {
 			title,
 			slug
 		}));
+	};
+
+	const clearExistingLeadSlots = async (currentSlug) => {
+		const rows = await getSheetData('Articles');
+		const leadRows = rows
+			.map((row, idx) => ({ row, rowIndex: idx + 1 }))
+			.filter(({ row }) => {
+				const slot = (row.homepagefeatureslot ?? row.homepageFeatureSlot ?? '').toString().trim().toLowerCase();
+				const slug = (row.slug || '').toString().trim();
+				return slot === 'lead' && slug && slug !== currentSlug;
+			});
+
+		if (leadRows.length === 0) return;
+
+		await Promise.all(
+			leadRows.map(({ row, rowIndex }) =>
+				updateSheetRow('Articles', rowIndex, {
+					...row,
+					homepageFeatureSlot: 'none',
+					homepageFeaturePriority: 0
+				})
+			)
+		);
 	};
 
 	const handleSubmit = async (e) => {
@@ -120,12 +147,18 @@ export default function AdminArticles() {
 				image: formData.image,
 				heroImage: formData.heroImage,
 				whyItMatters: formData.whyItMatters || '',
+				homepageFeatureSlot: formData.homepageFeatureSlot || 'none',
+				homepageFeaturePriority: Number.parseInt(formData.homepageFeaturePriority || '0', 10) || 0,
 				publishedAt: formData.publishedAt,
 				author: isAuthenticated() ? (getCurrentUser() || 'BizGrowth Africa Editorial') : (formData.author || 'BizGrowth Africa Editorial'),
 				status: postStatus,
 				scheduledAt: scheduledAt || '', // Always include, even if empty
 				createdAt: new Date().toISOString()
 			};
+
+			if ((articleData.homepageFeatureSlot || '').toLowerCase() === 'lead') {
+				await clearExistingLeadSlots(articleData.slug);
+			}
 
 			if (import.meta.env.DEV) console.log('Saving article with data:', articleData);
 			const success = await appendSheetRow('Articles', articleData);
@@ -154,6 +187,8 @@ export default function AdminArticles() {
 						image: '',
 						heroImage: '',
 						whyItMatters: '',
+						homepageFeatureSlot: 'none',
+						homepageFeaturePriority: 0,
 						publishedAt: new Date().toISOString().split('T')[0],
 						author: formData.author || defaultAuthor()
 					});
@@ -390,6 +425,36 @@ export default function AdminArticles() {
 					/>
 				</div>
 
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div>
+						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+							Homepage Feature Slot
+						</label>
+						<select
+							value={formData.homepageFeatureSlot}
+							onChange={(e) => setFormData(prev => ({ ...prev, homepageFeatureSlot: e.target.value }))}
+							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+						>
+							<option value="none">None (use automatic order)</option>
+							<option value="lead">Lead article (big head slot)</option>
+							<option value="supporting">Supporting headlines</option>
+						</select>
+					</div>
+					<div>
+						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+							Homepage Feature Priority
+						</label>
+						<input
+							type="number"
+							min="0"
+							value={formData.homepageFeaturePriority}
+							onChange={(e) => setFormData(prev => ({ ...prev, homepageFeaturePriority: e.target.value }))}
+							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+							placeholder="0"
+						/>
+					</div>
+				</div>
+
 				{/* Content */}
 				<div>
 					<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -495,6 +560,8 @@ export default function AdminArticles() {
 									image: formData.image || '',
 									heroImage: formData.heroImage || '',
 									whyItMatters: formData.whyItMatters || '',
+									homepageFeatureSlot: formData.homepageFeatureSlot || 'none',
+									homepageFeaturePriority: Number.parseInt(formData.homepageFeaturePriority || '0', 10) || 0,
 									publishedAt: formData.publishedAt,
 									author: formData.author
 								};

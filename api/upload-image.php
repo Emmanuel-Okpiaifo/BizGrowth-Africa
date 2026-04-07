@@ -75,8 +75,14 @@ if (!file_exists($filepath)) {
 chmod($filepath, 0644);
 
 // Get the absolute URL
-// Determine the base URL from the request
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+// Determine protocol safely (supports reverse proxies/CDNs)
+$forwardedProto = strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
+$isHttps = (
+	(!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+	$forwardedProto === 'https' ||
+	((string)($_SERVER['SERVER_PORT'] ?? '') === '443')
+);
+$protocol = $isHttps ? 'https://' : 'http://';
 $host = $_SERVER['HTTP_HOST'] ?? 'www.bizgrowthafrica.com';
 $baseUrl = $protocol . $host;
 

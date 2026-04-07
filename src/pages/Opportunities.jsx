@@ -6,9 +6,21 @@ import BrandMarquee from "../components/BrandMarquee";
 import { getOpportunityImage, buildOpportunityImageCandidates } from "../data/opportunities.images";
 import { useDailyOriginalArticles } from "../data/useDailyOriginalArticles";
 import { useGoogleSheetsOpportunities } from "../hooks/useGoogleSheetsOpportunities";
+import { getSortableTimestamp } from "../utils/timeUtils";
 
 // Single source of truth for category filter options (including Scholarship)
 const OPPORTUNITY_CATEGORIES = ["All", "Grant", "Accelerator", "Competition", "Fellowship", "Training", "Impact Loan", "Scholarship"];
+function buildCompactPages(current, total) {
+	if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+	const pages = [1];
+	const start = Math.max(2, current - 1);
+	const end = Math.min(total - 1, current + 1);
+	if (start > 2) pages.push("...");
+	for (let p = start; p <= end; p += 1) pages.push(p);
+	if (end < total - 1) pages.push("...");
+	pages.push(total);
+	return pages;
+}
 
 function hashStringToInt(str) {
 	let h = 0;
@@ -73,9 +85,9 @@ export default function Opportunities() {
 			);
 		}
 		if (sort === "Deadline") {
-			items.sort((a, b) => new Date(a.deadline || "2100-01-01") - new Date(b.deadline || "2100-01-01"));
+			items.sort((a, b) => getSortableTimestamp(a.deadline || "2100-01-01") - getSortableTimestamp(b.deadline || "2100-01-01"));
 		} else if (sort === "Newest") {
-			items.sort((a, b) => new Date(b.postedAt || "1970-01-01") - new Date(a.postedAt || "1970-01-01"));
+			items.sort((a, b) => getSortableTimestamp(b.postedAt || "1970-01-01") - getSortableTimestamp(a.postedAt || "1970-01-01"));
 		} else if (sort === "Amount") {
 			items.sort((a, b) => (b.amountMax || 0) - (a.amountMax || 0));
 		}
@@ -86,6 +98,7 @@ export default function Opportunities() {
 	const [page, setPage] = useState(1);
 	const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
 	const currentPage = Math.min(page, totalPages);
+	const compactPages = useMemo(() => buildCompactPages(currentPage, totalPages), [currentPage, totalPages]);
 	const paged = useMemo(() => filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE), [filtered, currentPage]);
 
 	// Reset to page 1 when filters change; clamp page when total pages shrinks
@@ -154,35 +167,35 @@ export default function Opportunities() {
 			<div className="grid gap-6 lg:grid-cols-[300px,1fr]">
 				{/* Sticky Sidebar Filters */}
 				<aside className="lg:sticky lg:top-20">
-					<div className="rounded-2xl border bg-red-50 p-4 shadow-sm ring-1 ring-red-100 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
-						<div className="grid gap-3">
-							<label className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm dark:border-gray-700">
+					<div className="overflow-hidden rounded-2xl border bg-red-50 p-4 shadow-sm ring-1 ring-red-100 dark:border-gray-800 dark:bg-[#0B1220] dark:ring-gray-800">
+						<div className="grid min-w-0 gap-3">
+							<label className="inline-flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm dark:border-gray-700">
 								<Search size={14} className="text-gray-500" />
 								<input
 									value={q}
 									onChange={(e) => setQ(e.target.value)}
 									placeholder="Search title, org, tags…"
-									className="w-full bg-transparent outline-none"
+									className="w-full min-w-0 bg-transparent outline-none"
 								/>
 							</label>
 							<label className="text-xs font-semibold text-gray-600 dark:text-gray-400">Category</label>
-							<select value={cat} onChange={(e) => setCat(e.target.value)} className="rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white" aria-label="Filter by category">
+							<select value={cat} onChange={(e) => setCat(e.target.value)} className="w-full min-w-0 rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white" aria-label="Filter by category">
 								{OPPORTUNITY_CATEGORIES.map((c) => (<option key={c} value={c}>{c}</option>))}
 							</select>
 							<label className="text-xs font-semibold text-gray-600 dark:text-gray-400">Region</label>
-							<select value={region} onChange={(e) => setRegion(e.target.value)} className="rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white" aria-label="Filter by region">
+							<select value={region} onChange={(e) => setRegion(e.target.value)} className="w-full min-w-0 rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white" aria-label="Filter by region">
 								{regions.map((r) => (<option key={r} value={r}>{r}</option>))}
 							</select>
 							<label className="text-xs font-semibold text-gray-600 dark:text-gray-400">Country</label>
-							<select value={country} onChange={(e) => setCountry(e.target.value)} className="rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white" aria-label="Filter by country">
+							<select value={country} onChange={(e) => setCountry(e.target.value)} className="w-full min-w-0 rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white" aria-label="Filter by country">
 								{countries.map((r) => (<option key={r} value={r}>{r}</option>))}
 							</select>
 							<label className="text-xs font-semibold text-gray-600 dark:text-gray-400">Tag</label>
-							<select value={tag} onChange={(e) => setTag(e.target.value)} className="rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white" aria-label="Filter by tag">
+							<select value={tag} onChange={(e) => setTag(e.target.value)} className="w-full min-w-0 rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white" aria-label="Filter by tag">
 								{tags.map((r) => (<option key={r} value={r}>{r}</option>))}
 							</select>
 							<label className="text-xs font-semibold text-gray-600 dark:text-gray-400">Sort</label>
-							<select value={sort} onChange={(e) => setSort(e.target.value)} className="rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white">
+							<select value={sort} onChange={(e) => setSort(e.target.value)} className="w-full min-w-0 rounded-lg border px-3 py-2 text-sm dark:border-gray-700 dark:bg-transparent dark:text-white">
 								<option>Deadline</option>
 								<option>Newest</option>
 								<option>Amount</option>
@@ -315,19 +328,25 @@ export default function Opportunities() {
 								Previous
 							</button>
 							<div className="flex items-center gap-1">
-								{Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-									<button
-										key={p}
-										type="button"
-										onClick={() => setPage(p)}
-										className={`min-w-[2.25rem] rounded-lg border px-3 py-2 text-sm font-semibold transition ${
-											p === currentPage
-												? "border-primary bg-primary text-white dark:border-primary dark:bg-primary"
-												: "border-gray-300 text-gray-700 hover:border-primary hover:text-primary dark:border-gray-600 dark:text-gray-300 dark:hover:border-primary"
-										}`}
-									>
-										{p}
-									</button>
+								{compactPages.map((p, idx) => (
+									typeof p === "number" ? (
+										<button
+											key={p}
+											type="button"
+											onClick={() => setPage(p)}
+											className={`min-w-[2.25rem] rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+												p === currentPage
+													? "border-primary bg-primary text-white dark:border-primary dark:bg-primary"
+													: "border-gray-300 text-gray-700 hover:border-primary hover:text-primary dark:border-gray-600 dark:text-gray-300 dark:hover:border-primary"
+											}`}
+										>
+											{p}
+										</button>
+									) : (
+										<span key={`ellipsis-${idx}`} className="px-2 text-sm text-gray-500 dark:text-gray-400">
+											...
+										</span>
+									)
 								))}
 							</div>
 							<button

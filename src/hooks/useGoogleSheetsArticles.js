@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getSheetData } from '../utils/googleSheets';
+import { getSortableTimestamp } from '../utils/timeUtils';
 
 /**
  * Hook to fetch articles from Google Sheets
@@ -52,6 +53,10 @@ export function useGoogleSheetsArticles() {
 					const whyItMattersRaw = article.whyitmatters ?? article['why it matters'] ?? article.whyItMatters ?? '';
 					const heroImg = (article.heroimage ?? article['hero image'] ?? article.heroImage ?? '').toString().trim();
 					const img = (article.image ?? '').toString().trim();
+					const displayPublishedAt =
+						(article.scheduledat ?? article.scheduledAt ?? '').toString().trim() ||
+						(article.createdat ?? article.createdAt ?? '').toString().trim() ||
+						new Date().toISOString();
 					return {
 						slug: (article.slug || '').trim(),
 						title: (article.title || '').trim(),
@@ -60,7 +65,7 @@ export function useGoogleSheetsArticles() {
 						heroImage: heroImg,
 						imageCandidates: [heroImg, img].filter(Boolean),
 						url: `/news/${(article.slug || '').trim()}`,
-						publishedAt: article.publishedat || article.publishedAt || article.createdat || article.createdAt || new Date().toISOString(),
+						publishedAt: displayPublishedAt,
 						summary: (article.summary || article.subheading || '').trim(),
 						category: (article.category || 'Uncategorized').trim(),
 						subheading: (article.subheading || '').trim(),
@@ -69,13 +74,15 @@ export function useGoogleSheetsArticles() {
 						body: null,
 						whyItMatters: (typeof whyItMattersRaw === 'string' ? whyItMattersRaw : '').trim(),
 						author: (article.author || 'BizGrowth Africa Editorial').trim(),
+						homepageFeatureSlot: (article.homepagefeatureslot ?? article.homepageFeatureSlot ?? '').toString().trim().toLowerCase(),
+						homepageFeaturePriority: Number.parseInt(article.homepagefeaturepriority ?? article.homepageFeaturePriority ?? '0', 10) || 0,
 					};
 				})
 				.sort((a, b) => {
-					// Sort by publishedAt date, most recent first
-					const dateA = new Date(a.publishedAt);
-					const dateB = new Date(b.publishedAt);
-					return dateB - dateA;
+					// Sort by deterministic timestamp, most recent first
+					const dateDiff = getSortableTimestamp(b.publishedAt) - getSortableTimestamp(a.publishedAt);
+					if (dateDiff !== 0) return dateDiff;
+					return (a.title || '').localeCompare(b.title || '');
 				});
 			
 			setArticles(transformed);

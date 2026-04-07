@@ -111,6 +111,49 @@ export function getDateForTimeCalculation(item) {
 }
 
 /**
+ * Convert sheet date strings into a deterministic timestamp for sorting across browsers/devices.
+ * Rules:
+ * - YYYY-MM-DD -> midnight UTC of that date
+ * - datetime without timezone -> interpreted as GMT+1 (+01:00)
+ * - datetime with timezone -> parsed as-is
+ * - invalid/missing -> 0
+ * @param {string|number|Date} input
+ * @returns {number} Unix ms timestamp
+ */
+export function getSortableTimestamp(input) {
+	if (input == null || input === '') return 0;
+	if (input instanceof Date) {
+		const t = input.getTime();
+		return Number.isNaN(t) ? 0 : t;
+	}
+	if (typeof input === 'number') return Number.isFinite(input) ? input : 0;
+
+	const raw = String(input).trim();
+	if (!raw) return 0;
+
+	if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+		const [y, m, d] = raw.split('-').map(Number);
+		return Date.UTC(y, m - 1, d, 0, 0, 0, 0);
+	}
+
+	// YYYY-MM-DD HH:mm[:ss[.sss]] (no timezone) -> treat as +01:00
+	if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?$/.test(raw)) {
+		const isoLike = raw.replace(' ', 'T');
+		const t = Date.parse(`${isoLike}+01:00`);
+		return Number.isNaN(t) ? 0 : t;
+	}
+
+	// ISO without timezone -> treat as +01:00
+	if (/^\d{4}-\d{2}-\d{2}T/.test(raw) && !/[zZ]|[+\-]\d{2}:\d{2}$/.test(raw)) {
+		const t = Date.parse(`${raw}+01:00`);
+		return Number.isNaN(t) ? 0 : t;
+	}
+
+	const parsed = Date.parse(raw);
+	return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+/**
  * Parse a date string, handling GMT+1 timezone properly
  * @param {string} dateString - Date string
  * @returns {Date} Date object
