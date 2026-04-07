@@ -16,6 +16,22 @@ var EXPECTED_HEADERS = {
   Procurements: ['title', 'agency', 'category', 'subCategory', 'country', 'region', 'deadline', 'postedAt', 'link', 'reference', 'quickSummary', 'overview', 'whoCanApply', 'scopeOfWork', 'requirements', 'applicationProcess', 'description', 'eligibility', 'value', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage']
 };
 
+// Set these in Apps Script Project Settings > Script properties for security:
+// SNAPSHOT_REFRESH_URL = https://yourdomain.com/api/snapshot-refresh.php
+// SNAPSHOT_REFRESH_TOKEN = your-strong-token
+function notifySnapshotRefresh_() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var baseUrl = String(props.getProperty('SNAPSHOT_REFRESH_URL') || '').trim();
+    var token = String(props.getProperty('SNAPSHOT_REFRESH_TOKEN') || '').trim();
+    if (!baseUrl) return;
+    var url = token ? (baseUrl + '?token=' + encodeURIComponent(token)) : baseUrl;
+    UrlFetchApp.fetch(url, { method: 'post', muteHttpExceptions: true });
+  } catch (e) {
+    // Ignore to avoid breaking content operations
+  }
+}
+
 function ensureHeaders(sheet, sheetName) {
   var expected = EXPECTED_HEADERS[sheetName];
   if (!expected || expected.length === 0) return;
@@ -68,6 +84,7 @@ function doPost(e) {
       // Always build row from sheet headers + data.data so status/scheduledAt go to the right column
       var row = getRowFromData(sheet, data, data.sheet);
       sheet.appendRow(row);
+      notifySnapshotRefresh_();
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         message: 'Row appended successfully'
@@ -94,6 +111,7 @@ function doPost(e) {
         }
       }
       sheet.getRange(data.row + 1, 1, 1, row.length).setValues([row]);
+      notifySnapshotRefresh_();
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         message: 'Row updated successfully'
@@ -102,6 +120,7 @@ function doPost(e) {
 
     if (data.action === 'delete' && data.row != null) {
       sheet.deleteRow(data.row + 1);
+      notifySnapshotRefresh_();
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         message: 'Row deleted successfully'
@@ -145,6 +164,7 @@ function publishDueScheduledPosts() {
   var timeZone = 'Africa/Lagos';
   var publishedAtValue = Utilities.formatDate(now, timeZone, "yyyy-MM-dd'T'HH:mm:ss'+01:00'");
 
+  var anyChanged = false;
   sheetNames.forEach(function(sheetName) {
     var sheet = ss.getSheetByName(sheetName);
     if (!sheet) return;
@@ -182,6 +202,14 @@ function publishDueScheduledPosts() {
       if (publishedAtColIndex !== -1) {
         sheet.getRange(sheetRow, publishedAtColIndex + 1).setValue(publishedAtValue);
       }
+      anyChanged = true;
     }
   });
+  if (anyChanged) {
+    notifySnapshotRefresh_();
+  }
+}
+
+function refreshSnapshotOnSheetEdit(e) {
+  notifySnapshotRefresh_();
 }

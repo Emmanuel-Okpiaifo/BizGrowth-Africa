@@ -7,6 +7,7 @@
 
 require_once __DIR__ . '/_lib/env.php';
 require_once __DIR__ . '/_lib/response.php';
+require_once __DIR__ . '/_lib/snapshot.php';
 
 // Handle CORS
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -91,6 +92,17 @@ if ($responseData) {
     if (isset($responseData['success']) && $responseData['success'] === false) {
         json_error($responseData['error'] ?? 'Unknown error from Google Apps Script', 500);
     }
+}
+
+// Refresh snapshot after successful write operations so public reads are instant.
+if (
+    $responseData &&
+    isset($responseData['success']) &&
+    $responseData['success'] === true &&
+    isset($data['action']) &&
+    in_array($data['action'], ['append', 'update', 'delete'], true)
+) {
+    @snapshot_refresh();
 }
 
 // Return the response

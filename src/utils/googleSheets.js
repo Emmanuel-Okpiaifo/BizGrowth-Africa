@@ -12,14 +12,20 @@ import { getApiBaseUrl } from './apiBaseUrl';
  * @returns {Promise<Array>} Array of rows
  */
 export async function getSheetData(sheetName, range = 'A1:Z1000') {
-	// Use PHP proxy to read from Google Sheets (server-side, avoids API restrictions)
+	// Read from live snapshot first for speed; fallback to direct Sheets read if needed.
 	const apiBaseUrl = getApiBaseUrl();
-	const proxyUrl = apiBaseUrl
+	const snapshotUrl = apiBaseUrl
+		? `${apiBaseUrl}/api/snapshot-read.php?sheet=${encodeURIComponent(sheetName)}&range=${encodeURIComponent(range)}`
+		: `/api/snapshot-read.php?sheet=${encodeURIComponent(sheetName)}&range=${encodeURIComponent(range)}`;
+	const fallbackUrl = apiBaseUrl
 		? `${apiBaseUrl}/api/google-sheets-read.php?sheet=${encodeURIComponent(sheetName)}&range=${encodeURIComponent(range)}`
 		: `/api/google-sheets-read.php?sheet=${encodeURIComponent(sheetName)}&range=${encodeURIComponent(range)}`;
 
 	try {
-		const response = await fetch(proxyUrl);
+		let response = await fetch(snapshotUrl);
+		if (!response.ok) {
+			response = await fetch(fallbackUrl);
+		}
 		
 		if (!response.ok) {
 			const errorData = await response.json().catch(() => ({}));

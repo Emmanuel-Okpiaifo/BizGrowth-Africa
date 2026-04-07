@@ -5,6 +5,54 @@ import SEO from "../components/SEO";
 import { useGoogleSheetsTenders } from "../hooks/useGoogleSheetsTenders";
 import { useGoogleSheetsProcurements } from "../hooks/useGoogleSheetsProcurements";
 
+function stripHtml(value = "") {
+	return String(value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function normalizeHeading(value = "") {
+	return String(value || "")
+		.toLowerCase()
+		.replace(/&amp;/g, "and")
+		.replace(/[^a-z0-9\s]/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+}
+
+function sectionFromLabel(label = "") {
+	const n = normalizeHeading(label);
+	if (/(^| )overview( |$)|summary/.test(n)) return "overview";
+	if (/who can apply|eligibility|eligible applicants|applicant eligibility/.test(n)) return "whoCanApply";
+	if (/scope of work|scope|deliverables/.test(n)) return "scopeOfWork";
+	if (/requirements|required documents|documents required|criteria/.test(n)) return "requirements";
+	if (/application process|how to apply|application procedure|submission process/.test(n)) return "applicationProcess";
+	return null;
+}
+
+function parseDescriptionSections(html = "") {
+	const source = String(html || "").trim();
+	if (!source) return {};
+
+	const sections = {};
+	const headingRegex = /<(h[1-6]|strong|b)[^>]*>(.*?)<\/\1>/gi;
+	const matches = [...source.matchAll(headingRegex)];
+	if (!matches.length) return sections;
+
+	for (let i = 0; i < matches.length; i += 1) {
+		const current = matches[i];
+		const next = matches[i + 1];
+		const label = stripHtml(current[2]);
+		const key = sectionFromLabel(label);
+		if (!key) continue;
+
+		const contentStart = current.index + current[0].length;
+		const contentEnd = next ? next.index : source.length;
+		const content = stripHtml(source.slice(contentStart, contentEnd));
+		if (content && !sections[key]) sections[key] = content;
+	}
+
+	return sections;
+}
+
 export default function ProcurementTenderDetail() {
 	const { id } = useParams();
 	const { tenders, loading: tendersLoading, error: tendersError } = useGoogleSheetsTenders();
@@ -17,6 +65,12 @@ export default function ProcurementTenderDetail() {
 		() => allItems.find((entry) => String(entry.id) === String(decodeURIComponent(id || ""))),
 		[allItems, id]
 	);
+	const parsedDescriptionSections = useMemo(() => parseDescriptionSections(item?.description || ""), [item?.description]);
+	const overviewText = item?.overview || parsedDescriptionSections.overview;
+	const whoCanApplyText = item?.whoCanApply || item?.eligibility || parsedDescriptionSections.whoCanApply;
+	const scopeOfWorkText = item?.scopeOfWork || parsedDescriptionSections.scopeOfWork;
+	const requirementsText = item?.requirements || parsedDescriptionSections.requirements;
+	const applicationProcessText = item?.applicationProcess || parsedDescriptionSections.applicationProcess;
 
 	if (loading) {
 		return <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center dark:border-gray-800 dark:bg-[#0B1220]">Loading details...</div>;
@@ -69,48 +123,38 @@ export default function ProcurementTenderDetail() {
 						) : null}
 					</section>
 
-					{item.overview ? (
+					{overviewText ? (
 						<section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-[#0B1220]">
 							<h2 className="text-lg font-bold text-gray-900 dark:text-white">Overview</h2>
-							<p className="mt-2 whitespace-pre-line text-gray-700 dark:text-gray-300">{item.overview}</p>
+							<p className="mt-2 whitespace-pre-line text-gray-700 dark:text-gray-300">{overviewText}</p>
 						</section>
 					) : null}
 
-					{item.whoCanApply || item.eligibility ? (
+					{whoCanApplyText ? (
 						<section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-[#0B1220]">
 							<h2 className="text-lg font-bold text-gray-900 dark:text-white">Who Can Apply</h2>
-							<p className="mt-2 whitespace-pre-line text-gray-700 dark:text-gray-300">{item.whoCanApply || item.eligibility}</p>
+							<p className="mt-2 whitespace-pre-line text-gray-700 dark:text-gray-300">{whoCanApplyText}</p>
 						</section>
 					) : null}
 
-					{item.scopeOfWork ? (
+					{scopeOfWorkText ? (
 						<section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-[#0B1220]">
 							<h2 className="text-lg font-bold text-gray-900 dark:text-white">Scope of Work</h2>
-							<p className="mt-2 whitespace-pre-line text-gray-700 dark:text-gray-300">{item.scopeOfWork}</p>
+							<p className="mt-2 whitespace-pre-line text-gray-700 dark:text-gray-300">{scopeOfWorkText}</p>
 						</section>
 					) : null}
 
-					{item.requirements ? (
+					{requirementsText ? (
 						<section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-[#0B1220]">
 							<h2 className="text-lg font-bold text-gray-900 dark:text-white">Requirements</h2>
-							<p className="mt-2 whitespace-pre-line text-gray-700 dark:text-gray-300">{item.requirements}</p>
+							<p className="mt-2 whitespace-pre-line text-gray-700 dark:text-gray-300">{requirementsText}</p>
 						</section>
 					) : null}
 
-					{item.applicationProcess ? (
+					{applicationProcessText ? (
 						<section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-[#0B1220]">
 							<h2 className="text-lg font-bold text-gray-900 dark:text-white">Application Process</h2>
-							<p className="mt-2 whitespace-pre-line text-gray-700 dark:text-gray-300">{item.applicationProcess}</p>
-						</section>
-					) : null}
-
-					{item.description ? (
-						<section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-[#0B1220]">
-							<h2 className="text-lg font-bold text-gray-900 dark:text-white">Description</h2>
-							<div
-								className="mt-2 prose prose-sm max-w-none text-gray-700 dark:prose-invert dark:text-gray-300"
-								dangerouslySetInnerHTML={{ __html: item.description }}
-							/>
+							<p className="mt-2 whitespace-pre-line text-gray-700 dark:text-gray-300">{applicationProcessText}</p>
 						</section>
 					) : null}
 				</div>
