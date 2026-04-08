@@ -9,6 +9,32 @@ function stripHtml(value = "") {
 	return String(value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function stripHtmlKeepLines(value = "") {
+	return String(value || "")
+		.replace(/<br\s*\/?>/gi, "\n")
+		.replace(/<\/p>/gi, "\n")
+		.replace(/<\/div>/gi, "\n")
+		.replace(/<[^>]*>/g, " ")
+		.replace(/\u00a0/g, " ")
+		.replace(/[ \t]+/g, " ")
+		.replace(/\n{2,}/g, "\n")
+		.trim();
+}
+
+function removeDuplicateMetaLines(value = "") {
+	const text = String(value || "").trim();
+	if (!text) return "";
+
+	const metaLineRegex = /^(category|sub[\s-]?category|location\s*\(?.*?\)?|deadline|organisation|organization|reference)\s*:/i;
+	const lines = text
+		.split(/\r?\n+/)
+		.map((line) => line.trim())
+		.filter(Boolean)
+		.filter((line) => !metaLineRegex.test(line));
+
+	return lines.join("\n").trim();
+}
+
 function normalizeHeading(value = "") {
 	return String(value || "")
 		.toLowerCase()
@@ -46,7 +72,7 @@ function parseDescriptionSections(html = "") {
 
 		const contentStart = current.index + current[0].length;
 		const contentEnd = next ? next.index : source.length;
-		const content = stripHtml(source.slice(contentStart, contentEnd));
+		const content = removeDuplicateMetaLines(stripHtmlKeepLines(source.slice(contentStart, contentEnd)));
 		if (content && !sections[key]) sections[key] = content;
 	}
 
@@ -67,10 +93,14 @@ export default function ProcurementTenderDetail() {
 	);
 	const parsedDescriptionSections = useMemo(() => parseDescriptionSections(item?.description || ""), [item?.description]);
 	const overviewText = item?.overview || parsedDescriptionSections.overview;
-	const whoCanApplyText = item?.whoCanApply || item?.eligibility || parsedDescriptionSections.whoCanApply;
+	const whoCanApplyRaw = item?.whoCanApply || parsedDescriptionSections.whoCanApply || "";
 	const scopeOfWorkText = item?.scopeOfWork || parsedDescriptionSections.scopeOfWork;
 	const requirementsText = item?.requirements || parsedDescriptionSections.requirements;
 	const applicationProcessText = item?.applicationProcess || parsedDescriptionSections.applicationProcess;
+	const whoCanApplyText =
+		normalizeHeading(whoCanApplyRaw) && normalizeHeading(whoCanApplyRaw) !== normalizeHeading(requirementsText)
+			? whoCanApplyRaw
+			: "";
 
 	if (loading) {
 		return <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center dark:border-gray-800 dark:bg-[#0B1220]">Loading details...</div>;

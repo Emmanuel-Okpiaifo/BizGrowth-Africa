@@ -13,15 +13,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 $sheetName = isset($_GET['sheet']) ? trim((string) $_GET['sheet']) : 'Articles';
-$all = snapshot_read_data();
-if (!$all || !isset($all['sheets']) || !is_array($all['sheets'])) {
+$sheet = snapshot_read_sheet_data($sheetName);
+if (!$sheet) {
   list($ok, $payload) = snapshot_refresh();
   if (!$ok) {
     json_error('Snapshot unavailable', 500);
   }
-  $all = $payload;
+  $sheet = $payload['sheets'][$sheetName] ?? ['values' => []];
 }
-
-$sheet = $all['sheets'][$sheetName] ?? ['values' => []];
 json_ok($sheet);
 

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Save, FileText, ArrowLeft, Clock, Upload, X } from 'lucide-react';
-import RichTextEditor from '../../components/admin/RichTextEditor';
 import { appendSheetRow, getSheetData, updateSheetRow } from '../../utils/googleSheets';
 import { ErrorBoundary } from '../../components/admin/ErrorBoundary';
 import { toGMTPlus1ISO, getMinScheduleDateTime } from '../../utils/scheduling';
@@ -9,7 +8,6 @@ import { uploadImage } from '../../utils/imageUpload';
 import { saveDraft, getDraft, deleteDraft } from '../../utils/draftStorage';
 import { getCurrentUser } from '../../utils/adminAuth';
 
-const CATEGORIES = ['IT & Telecoms', 'Construction', 'Healthcare', 'Energy', 'Logistics', 'Education', 'Agriculture'];
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 export default function AdminTenders() {
@@ -17,16 +15,20 @@ export default function AdminTenders() {
 	const navigate = useNavigate();
 	const [formData, setFormData] = useState({
 		title: '',
-		agency: '',
+		quickSummary: '',
 		category: '',
+		subCategory: '',
 		country: '',
 		region: '',
 		deadline: '',
-		postedAt: new Date().toISOString().split('T')[0],
-		link: '',
-		description: '',
-		eligibility: '',
-		value: '',
+		organisation: '',
+		reference: '',
+		overview: '',
+		whoCanApply: '',
+		scopeOfWork: '',
+		requirements: '',
+		applicationProcess: '',
+		officialLink: '',
 		heroImage: ''
 	});
 	const [isScheduled, setIsScheduled] = useState(false);
@@ -47,16 +49,20 @@ export default function AdminTenders() {
 			if (draft) {
 				setFormData({
 					title: draft.title || '',
-					agency: draft.agency || '',
+					quickSummary: draft.quickSummary || '',
 					category: draft.category || '',
+					subCategory: draft.subCategory || '',
 					country: draft.country || '',
 					region: draft.region || '',
 					deadline: draft.deadline || '',
-					postedAt: draft.postedAt || new Date().toISOString().split('T')[0],
-					link: draft.link || '',
-					description: draft.description || '',
-					eligibility: draft.eligibility || '',
-					value: draft.value || '',
+					organisation: draft.organisation || '',
+					reference: draft.reference || '',
+					overview: draft.overview || '',
+					whoCanApply: draft.whoCanApply || '',
+					scopeOfWork: draft.scopeOfWork || '',
+					requirements: draft.requirements || '',
+					applicationProcess: draft.applicationProcess || '',
+					officialLink: draft.officialLink || '',
 					heroImage: draft.heroImage || ''
 				});
 				setCurrentDraftId(draftId);
@@ -83,16 +89,20 @@ export default function AdminTenders() {
 				setEditingRowIndex(idx + 1);
 				setFormData({
 					title: row.title || '',
-					agency: row.agency || '',
+					quickSummary: row.quicksummary || row.quickSummary || '',
 					category: row.category || '',
+					subCategory: row.subcategory || row.subCategory || '',
 					country: row.country || '',
 					region: row.region || '',
 					deadline: row.deadline || '',
-					postedAt: row.postedat || row.postedAt || new Date().toISOString().split('T')[0],
-					link: row.link || '',
-					description: row.description || '',
-					eligibility: row.eligibility || '',
-					value: row.value || '',
+					organisation: row.agency || '',
+					reference: row.reference || '',
+					overview: row.overview || '',
+					whoCanApply: row.whocanapply || row.whoCanApply || '',
+					scopeOfWork: row.scopeofwork || row.scopeOfWork || '',
+					requirements: row.requirements || '',
+					applicationProcess: row.applicationprocess || row.applicationProcess || '',
+					officialLink: row.link || '',
 					heroImage: row.heroimage ?? row.heroImage ?? ''
 				});
 				const rowStatus = (row.status || 'published').toString().toLowerCase();
@@ -108,14 +118,29 @@ export default function AdminTenders() {
 		})();
 	}, [id, isEditing]);
 
+	const buildDescription = () => {
+		return [
+			'<h3>Overview</h3>',
+			formData.overview || '',
+			'<h3>Who Can Apply</h3>',
+			formData.whoCanApply || '',
+			'<h3>Scope of Work</h3>',
+			formData.scopeOfWork || '',
+			'<h3>Requirements</h3>',
+			formData.requirements || '',
+			'<h3>Application Process</h3>',
+			formData.applicationProcess || ''
+		].join('\n');
+	};
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		setIsSubmitting(true);
 		setStatus({ type: null, message: '' });
 
 		// Validation
-		if (!formData.title || !formData.description || !formData.category) {
-			setStatus({ type: 'error', message: 'Please fill in all required fields.' });
+		if (!formData.title || !formData.category || !formData.overview || !formData.officialLink) {
+			setStatus({ type: 'error', message: 'Please fill title, category, overview, and official link.' });
 			setIsSubmitting(false);
 			return;
 		}
@@ -133,16 +158,24 @@ export default function AdminTenders() {
 			const payload = {
 				type: 'tender',
 				title: formData.title,
-				agency: formData.agency,
+				agency: formData.organisation,
 				category: formData.category,
+				subCategory: formData.subCategory,
 				country: formData.country,
 				region: formData.region,
 				deadline: formData.deadline,
-				postedAt: formData.postedAt,
-				link: formData.link,
-				description: formData.description,
-				eligibility: formData.eligibility,
-				value: formData.value,
+				postedAt: new Date().toISOString().split('T')[0],
+				link: formData.officialLink,
+				reference: formData.reference,
+				quickSummary: formData.quickSummary,
+				overview: formData.overview,
+				whoCanApply: formData.whoCanApply,
+				scopeOfWork: formData.scopeOfWork,
+				requirements: formData.requirements,
+				applicationProcess: formData.applicationProcess,
+				description: buildDescription(),
+				eligibility: formData.whoCanApply,
+				value: '',
 				author: getCurrentUser() || '',
 				heroImage: formData.heroImage || '',
 				status: postStatus,
@@ -195,55 +228,55 @@ export default function AdminTenders() {
 			</div>
 
 			<form onSubmit={handleSubmit} className="space-y-6">
-				{/* Title & Agency */}
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-					<div>
-						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-							Title <span className="text-primary">*</span>
-						</label>
-						<input
-							type="text"
-							value={formData.title}
-							onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-							required
-							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-							placeholder="Tender title"
-						/>
-					</div>
-
-					<div>
-						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-							Agency/Organization
-						</label>
-						<input
-							type="text"
-							value={formData.agency}
-							onChange={(e) => setFormData(prev => ({ ...prev, agency: e.target.value }))}
-							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-							placeholder="Agency name"
-						/>
-					</div>
+				<div>
+					<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+						Tender Title <span className="text-primary">*</span>
+					</label>
+					<input
+						type="text"
+						value={formData.title}
+						onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+						required
+						className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+						placeholder="Community Water Treatment Plant Development"
+					/>
 				</div>
 
-				{/* Category, Country, Region */}
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+				<div>
+					<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quick Summary</label>
+					<textarea
+						value={formData.quickSummary}
+						onChange={(e) => setFormData(prev => ({ ...prev, quickSummary: e.target.value }))}
+						rows={3}
+						className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+						placeholder="2-3 lines summary"
+					/>
+				</div>
+
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div>
 						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 							Category <span className="text-primary">*</span>
 						</label>
-						<select
+						<input
+							type="text"
 							value={formData.category}
 							onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
 							required
 							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-						>
-							<option value="">Select category</option>
-							{CATEGORIES.map(cat => (
-								<option key={cat} value={cat}>{cat}</option>
-							))}
-						</select>
+						/>
 					</div>
-
+					<div>
+						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+							Sub-category (optional)
+						</label>
+						<input
+							type="text"
+							value={formData.subCategory}
+							onChange={(e) => setFormData(prev => ({ ...prev, subCategory: e.target.value }))}
+							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+						/>
+					</div>
 					<div>
 						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 							Country
@@ -253,26 +286,24 @@ export default function AdminTenders() {
 							value={formData.country}
 							onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
 							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-							placeholder="Country"
+							placeholder="Nigeria"
 						/>
 					</div>
-
 					<div>
 						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-							Region
+							State/Region
 						</label>
 						<input
 							type="text"
 							value={formData.region}
 							onChange={(e) => setFormData(prev => ({ ...prev, region: e.target.value }))}
 							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-							placeholder="Region"
+							placeholder="Lagos State"
 						/>
 					</div>
 				</div>
 
-				{/* Dates, Link, Value */}
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div>
 						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 							Deadline
@@ -293,43 +324,28 @@ export default function AdminTenders() {
 							/>
 						</div>
 					</div>
-
 					<div>
 						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-							Posted Date
-						</label>
-						<input
-							type="date"
-							value={formData.postedAt}
-							onChange={(e) => setFormData(prev => ({ ...prev, postedAt: e.target.value }))}
-							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-						/>
-					</div>
-
-					<div>
-						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-							Tender Value
+							Organisation
 						</label>
 						<input
 							type="text"
-							value={formData.value}
-							onChange={(e) => setFormData(prev => ({ ...prev, value: e.target.value }))}
+							value={formData.organisation}
+							onChange={(e) => setFormData(prev => ({ ...prev, organisation: e.target.value }))}
 							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-							placeholder="Tender value"
 						/>
 					</div>
 				</div>
 
 				<div>
 					<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-						Tender Link
+						Reference (if any)
 					</label>
 					<input
-						type="url"
-						value={formData.link}
-						onChange={(e) => setFormData(prev => ({ ...prev, link: e.target.value }))}
+						type="text"
+						value={formData.reference}
+						onChange={(e) => setFormData(prev => ({ ...prev, reference: e.target.value }))}
 						className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-						placeholder="https://..."
 					/>
 				</div>
 
@@ -408,29 +424,39 @@ export default function AdminTenders() {
 					</div>
 				</div>
 
-				{/* Description */}
-				<div>
-					<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-						Description <span className="text-primary">*</span>
-					</label>
-					<RichTextEditor
-						value={formData.description}
-						onChange={(content) => setFormData(prev => ({ ...prev, description: content }))}
-						type="tenders"
-					/>
-				</div>
+				{[
+					['overview', 'Overview', 'Write a short 2-3 line summary of the tender.'],
+					['whoCanApply', 'Who Can Apply', 'Registered companies, vendors, contractors...'],
+					['scopeOfWork', 'Scope of Work', 'Lot breakdown, deliverables, services to be provided...'],
+					['requirements', 'Requirements', 'Documents, technical capacity, compliance, etc...'],
+					['applicationProcess', 'Application Process', 'How to apply and submission steps...']
+				].map(([key, label, placeholder]) => (
+					<div key={key}>
+						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+							{label} {key === 'overview' ? <span className="text-primary">*</span> : null}
+						</label>
+						<textarea
+							value={formData[key]}
+							onChange={(e) => setFormData(prev => ({ ...prev, [key]: e.target.value }))}
+							rows={4}
+							required={key === 'overview'}
+							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+							placeholder={placeholder}
+						/>
+					</div>
+				))}
 
-				{/* Eligibility */}
 				<div>
 					<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-						Eligibility Requirements
+						Official Link <span className="text-primary">*</span>
 					</label>
-					<textarea
-						value={formData.eligibility}
-						onChange={(e) => setFormData(prev => ({ ...prev, eligibility: e.target.value }))}
-						rows={4}
-						className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none resize-none"
-						placeholder="Eligibility requirements..."
+					<input
+						type="url"
+						value={formData.officialLink}
+						onChange={(e) => setFormData(prev => ({ ...prev, officialLink: e.target.value }))}
+						required
+						className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+						placeholder="https://..."
 					/>
 				</div>
 
@@ -505,16 +531,20 @@ export default function AdminTenders() {
 							try {
 								const tenderData = {
 									title: formData.title,
-									agency: formData.agency || '',
+									quickSummary: formData.quickSummary || '',
 									category: formData.category || '',
+									subCategory: formData.subCategory || '',
 									country: formData.country || '',
 									region: formData.region || '',
 									deadline: formData.deadline || '',
-									postedAt: formData.postedAt,
-									link: formData.link || '',
-									description: formData.description || '',
-									eligibility: formData.eligibility || '',
-									value: formData.value || '',
+									organisation: formData.organisation || '',
+									reference: formData.reference || '',
+									overview: formData.overview || '',
+									whoCanApply: formData.whoCanApply || '',
+									scopeOfWork: formData.scopeOfWork || '',
+									requirements: formData.requirements || '',
+									applicationProcess: formData.applicationProcess || '',
+									officialLink: formData.officialLink || '',
 									heroImage: formData.heroImage || ''
 								};
 
