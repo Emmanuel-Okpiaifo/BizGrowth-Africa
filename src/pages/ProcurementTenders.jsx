@@ -49,11 +49,14 @@ export default function ProcurementTenders() {
 			return matchesSearch && matchesCategory && matchesCountry;
 		});
 	}, [activeItems, searchQuery, categoryFilter, countryFilter]);
+	const sortedItems = useMemo(() => {
+		return [...filteredItems].sort((a, b) => new Date(b.postedAt || 0).getTime() - new Date(a.postedAt || 0).getTime());
+	}, [filteredItems]);
 	const totalPages = Math.max(1, Math.ceil(filteredItems.length / PER_PAGE));
 	const currentPage = Math.min(page, totalPages);
 	const pagedItems = useMemo(
-		() => filteredItems.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE),
-		[filteredItems, currentPage]
+		() => sortedItems.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE),
+		[sortedItems, currentPage]
 	);
 	useEffect(() => {
 		setPage(1);

@@ -9,8 +9,22 @@ function stripHtml(value = "") {
 	return String(value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function stripHtmlKeepLines(value = "") {
+function decodeHtmlEntities(value = "") {
 	return String(value || "")
+		.replace(/&lt;/gi, "<")
+		.replace(/&gt;/gi, ">")
+		.replace(/&amp;/gi, "&")
+		.replace(/&quot;/gi, '"')
+		.replace(/&#39;/gi, "'")
+		.replace(/&nbsp;/gi, " ");
+}
+
+function hasMeaningfulContent(value = "") {
+	return stripHtml(decodeHtmlEntities(value)).length > 0;
+}
+
+function stripHtmlKeepLines(value = "") {
+	return decodeHtmlEntities(value || "")
 		.replace(/<br\s*\/?>/gi, "\n")
 		.replace(/<\/p>/gi, "\n")
 		.replace(/<\/div>/gi, "\n")
@@ -42,6 +56,61 @@ function normalizeHeading(value = "") {
 		.replace(/[^a-z0-9\s]/g, " ")
 		.replace(/\s+/g, " ")
 		.trim();
+}
+
+function renderSectionContent(value = "") {
+	const text = decodeHtmlEntities(value || "").trim();
+	if (!text) return null;
+	if (!hasMeaningfulContent(text)) return null;
+	const hasHtml = /<[^>]+>/.test(text);
+	if (hasHtml) {
+		return (
+			<div
+				className="mt-2 text-gray-700 dark:text-gray-300 leading-relaxed whitespace-normal
+					[&_p]:my-3 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0
+					[&_ul]:my-3 [&_ul]:ml-5 [&_ul]:list-disc
+					[&_ol]:my-3 [&_ol]:ml-5 [&_ol]:list-decimal
+					[&_li]:my-1
+					[&_a]:text-primary [&_a]:underline
+					[&_strong]:font-semibold [&_b]:font-semibold"
+				dangerouslySetInnerHTML={{ __html: text }}
+			/>
+		);
+	}
+
+	const lines = text
+		.split(/\r?\n+/)
+		.map((line) => line.trim())
+		.filter(Boolean);
+
+	const bulletLines = lines.filter((line) => /^([•*-]\s+|\d+[.)]\s+)/.test(line));
+	if (bulletLines.length > 0) {
+		const allNumbered = bulletLines.every((line) => /^\d+[.)]\s+/.test(line));
+		const ListTag = allNumbered ? "ol" : "ul";
+		const listClass = allNumbered
+			? "mt-2 list-decimal pl-5 space-y-1 text-gray-700 dark:text-gray-300"
+			: "mt-2 list-disc pl-5 space-y-1 text-gray-700 dark:text-gray-300";
+		return (
+			<ListTag className={listClass}>
+				{bulletLines.map((line, idx) => (
+					<li key={`${idx}-${line.slice(0, 24)}`}>
+						{line.replace(/^([•*-]\s+|\d+[.)]\s+)/, "")}
+					</li>
+				))}
+			</ListTag>
+		);
+	}
+
+	const paragraphs = lines.join("\n").split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+	return (
+		<div className="mt-2 text-gray-700 dark:text-gray-300 leading-relaxed">
+			{paragraphs.map((p, i) => (
+				<p key={`${i}-${p.slice(0, 20)}`} className={i === 0 ? "mt-0 mb-3" : "my-3"}>
+					{p}
+				</p>
+			))}
+		</div>
+	);
 }
 
 function sectionFromLabel(label = "") {
@@ -153,38 +222,38 @@ export default function ProcurementTenderDetail() {
 						) : null}
 					</section>
 
-					{overviewText ? (
+					{hasMeaningfulContent(overviewText) ? (
 						<section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-[#0B1220]">
 							<h2 className="text-lg font-bold text-gray-900 dark:text-white">Overview</h2>
-							<p className="mt-2 whitespace-pre-line text-gray-700 dark:text-gray-300">{overviewText}</p>
+							{renderSectionContent(overviewText)}
 						</section>
 					) : null}
 
-					{whoCanApplyText ? (
+					{hasMeaningfulContent(whoCanApplyText) ? (
 						<section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-[#0B1220]">
 							<h2 className="text-lg font-bold text-gray-900 dark:text-white">Who Can Apply</h2>
-							<p className="mt-2 whitespace-pre-line text-gray-700 dark:text-gray-300">{whoCanApplyText}</p>
+							{renderSectionContent(whoCanApplyText)}
 						</section>
 					) : null}
 
-					{scopeOfWorkText ? (
+					{hasMeaningfulContent(scopeOfWorkText) ? (
 						<section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-[#0B1220]">
 							<h2 className="text-lg font-bold text-gray-900 dark:text-white">Scope of Work</h2>
-							<p className="mt-2 whitespace-pre-line text-gray-700 dark:text-gray-300">{scopeOfWorkText}</p>
+							{renderSectionContent(scopeOfWorkText)}
 						</section>
 					) : null}
 
-					{requirementsText ? (
+					{hasMeaningfulContent(requirementsText) ? (
 						<section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-[#0B1220]">
 							<h2 className="text-lg font-bold text-gray-900 dark:text-white">Requirements</h2>
-							<p className="mt-2 whitespace-pre-line text-gray-700 dark:text-gray-300">{requirementsText}</p>
+							{renderSectionContent(requirementsText)}
 						</section>
 					) : null}
 
-					{applicationProcessText ? (
+					{hasMeaningfulContent(applicationProcessText) ? (
 						<section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-[#0B1220]">
 							<h2 className="text-lg font-bold text-gray-900 dark:text-white">Application Process</h2>
-							<p className="mt-2 whitespace-pre-line text-gray-700 dark:text-gray-300">{applicationProcessText}</p>
+							{renderSectionContent(applicationProcessText)}
 						</section>
 					) : null}
 				</div>

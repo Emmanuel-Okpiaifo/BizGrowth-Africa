@@ -79,6 +79,10 @@ function snapshot_build_data() {
   return $payload;
 }
 
+function snapshot_build_sheet_data($sheetName) {
+  return snapshot_read_sheet_values($sheetName) ?: ['values' => []];
+}
+
 function snapshot_write_data($payload) {
   $path = snapshot_cache_path();
   $dir = dirname($path);
@@ -109,6 +113,44 @@ function snapshot_refresh() {
   $payload = snapshot_build_data();
   $ok = snapshot_write_data($payload);
   return [$ok, $payload];
+}
+
+function snapshot_refresh_sheet($sheetName) {
+  $sheetName = trim((string) $sheetName);
+  if ($sheetName === '') return [false, null];
+
+  $sheetData = snapshot_build_sheet_data($sheetName);
+  $sheetJson = json_encode($sheetData, JSON_UNESCAPED_SLASHES);
+  if ($sheetJson === false) return [false, null];
+
+  $sheetDir = snapshot_sheet_cache_dir();
+  if (!is_dir($sheetDir)) {
+    @mkdir($sheetDir, 0775, true);
+  }
+  $ok = @file_put_contents(snapshot_sheet_cache_path($sheetName), $sheetJson, LOCK_EX) !== false;
+
+  // Keep aggregate snapshot reasonably fresh for status/debug consumers.
+  $all = snapshot_read_data();
+  if (!is_array($all)) {
+    $all = ['updatedAt' => gmdate('c'), 'sheets' => []];
+  }
+  if (!isset($all['sheets']) || !is_array($all['sheets'])) {
+    $all['sheets'] = [];
+  }
+  $all['updatedAt'] = gmdate('c');
+  $all['sheets'][$sheetName] = $sheetData;
+  $aggregateJson = json_encode($all, JSON_UNESCAPED_SLASHES);
+  $okAll = false;
+  if ($aggregateJson !== false) {
+    $path = snapshot_cache_path();
+    $dir = dirname($path);
+    if (!is_dir($dir)) {
+      @mkdir($dir, 0775, true);
+    }
+    $okAll = @file_put_contents($path, $aggregateJson, LOCK_EX) !== false;
+  }
+
+  return [($ok || $okAll), $all];
 }
 
 function snapshot_read_data() {

@@ -102,7 +102,12 @@ if (
     isset($data['action']) &&
     in_array($data['action'], ['append', 'update', 'delete'], true)
 ) {
-    @snapshot_refresh();
+    $sheetName = isset($data['sheet']) ? (string) $data['sheet'] : '';
+    if ($sheetName !== '') {
+        @snapshot_refresh_sheet($sheetName);
+    } else {
+        @snapshot_refresh();
+    }
 }
 
 // Return the response

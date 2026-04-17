@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Save, FileText, ArrowLeft, Clock, Upload, X } from 'lucide-react';
+import RichTextEditor from '../../components/admin/RichTextEditor';
 import { appendSheetRow, getSheetData, updateSheetRow } from '../../utils/googleSheets';
 import { ErrorBoundary } from '../../components/admin/ErrorBoundary';
 import { toGMTPlus1ISO, getMinScheduleDateTime } from '../../utils/scheduling';
@@ -135,10 +136,10 @@ export default function AdminProcurements() {
 		setIsSubmitting(true);
 		setStatus({ type: null, message: '' });
 
-		if (!formData.title || !formData.category || !formData.overview || !formData.officialLink) {
+		if (!formData.title || !formData.category || !formData.overview) {
 			setStatus({
 				type: 'error',
-				message: 'Please fill title, category, overview, and official link.'
+				message: 'Please fill title, category, and overview.'
 			});
 			setIsSubmitting(false);
 			return;
@@ -342,12 +343,10 @@ export default function AdminProcurements() {
 							<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 								{label} {key === 'overview' ? <span className="text-primary">*</span> : null}
 							</label>
-							<textarea
+							<RichTextEditor
 								value={formData[key]}
-								onChange={(e) => setFormData((prev) => ({ ...prev, [key]: e.target.value }))}
-								rows={4}
-								required={key === 'overview'}
-								className={inputClass}
+								onChange={(content) => setFormData((prev) => ({ ...prev, [key]: content }))}
+								type="procurements"
 								placeholder={placeholder}
 							/>
 						</div>
@@ -355,13 +354,12 @@ export default function AdminProcurements() {
 
 					<div>
 						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-							Official Link <span className="text-primary">*</span>
+							Official Link
 						</label>
 						<input
 							type="url"
 							value={formData.officialLink}
 							onChange={(e) => setFormData((prev) => ({ ...prev, officialLink: e.target.value }))}
-							required
 							className={inputClass}
 							placeholder="https://..."
 						/>

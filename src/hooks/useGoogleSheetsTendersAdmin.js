@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getSheetData } from '../utils/googleSheets';
+import { getSortableTimestamp } from '../utils/timeUtils';
 
 /**
  * Hook to fetch ALL tenders from Google Sheets (for admin use)
@@ -48,7 +49,7 @@ export function useGoogleSheetsTendersAdmin() {
 						description: (tender.description || '').trim(),
 						eligibility: (tender.eligibility || '').trim(),
 						value: (tender.value || '').trim(),
-						heroImage: (tender.heroImage || '').trim(), // Hero/banner image
+						heroImage: (tender.heroimage ?? tender['hero image'] ?? tender.heroImage ?? '').toString().trim(), // Hero/banner image
 						author: (tender.author || '').trim(), // From sheet (for per-user filtering in admin)
 						status: tenderStatus, // Include status
 						scheduledAt: tender.scheduledAt || '', // Include scheduledAt
@@ -56,9 +57,9 @@ export function useGoogleSheetsTendersAdmin() {
 					};
 				})
 				.sort((a, b) => {
-					const dateA = new Date(a.createdAt || a.postedAt);
-					const dateB = new Date(b.createdAt || b.postedAt);
-					return dateB - dateA;
+					const diff = getSortableTimestamp(b.createdAt || 0) - getSortableTimestamp(a.createdAt || 0);
+					if (diff !== 0) return diff;
+					return (a.title || '').localeCompare(b.title || '');
 				});
 			
 			setTenders(transformed);

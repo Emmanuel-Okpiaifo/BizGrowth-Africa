@@ -81,9 +81,9 @@ export default function AdminTendersList() {
 		return matchesSearch && matchesFilter;
 	});
 
-	// Sort by most recently published (postedAt > publishedAt > createdAt)
+	// Admin order: newest by createdAt first.
 	const sortedTenders = [...filteredTenders].sort((a, b) => {
-		const dateDiff = getSortableTimestamp(b.postedAt || b.publishedAt || b.createdAt || 0) - getSortableTimestamp(a.postedAt || a.publishedAt || a.createdAt || 0);
+		const dateDiff = getSortableTimestamp(b.createdAt || 0) - getSortableTimestamp(a.createdAt || 0);
 		if (dateDiff !== 0) return dateDiff;
 		return (a.title || '').localeCompare(b.title || '');
 	});

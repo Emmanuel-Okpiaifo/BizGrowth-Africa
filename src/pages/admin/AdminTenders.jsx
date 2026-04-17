@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Save, FileText, ArrowLeft, Clock, Upload, X } from 'lucide-react';
+import RichTextEditor from '../../components/admin/RichTextEditor';
 import { appendSheetRow, getSheetData, updateSheetRow } from '../../utils/googleSheets';
 import { ErrorBoundary } from '../../components/admin/ErrorBoundary';
 import { toGMTPlus1ISO, getMinScheduleDateTime } from '../../utils/scheduling';
@@ -139,8 +140,8 @@ export default function AdminTenders() {
 		setStatus({ type: null, message: '' });
 
 		// Validation
-		if (!formData.title || !formData.category || !formData.overview || !formData.officialLink) {
-			setStatus({ type: 'error', message: 'Please fill title, category, overview, and official link.' });
+		if (!formData.title || !formData.category || !formData.overview) {
+			setStatus({ type: 'error', message: 'Please fill title, category, and overview.' });
 			setIsSubmitting(false);
 			return;
 		}
@@ -435,12 +436,10 @@ export default function AdminTenders() {
 						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 							{label} {key === 'overview' ? <span className="text-primary">*</span> : null}
 						</label>
-						<textarea
+						<RichTextEditor
 							value={formData[key]}
-							onChange={(e) => setFormData(prev => ({ ...prev, [key]: e.target.value }))}
-							rows={4}
-							required={key === 'overview'}
-							className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+							onChange={(content) => setFormData(prev => ({ ...prev, [key]: content }))}
+							type="tenders"
 							placeholder={placeholder}
 						/>
 					</div>
@@ -448,13 +447,12 @@ export default function AdminTenders() {
 
 				<div>
 					<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-						Official Link <span className="text-primary">*</span>
+						Official Link
 					</label>
 					<input
 						type="url"
 						value={formData.officialLink}
 						onChange={(e) => setFormData(prev => ({ ...prev, officialLink: e.target.value }))}
-						required
 						className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#0B1220] px-4 py-2 text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
 						placeholder="https://..."
 					/>

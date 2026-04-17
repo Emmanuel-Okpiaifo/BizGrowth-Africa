@@ -5,6 +5,7 @@ import RouteProgress from "./RouteProgress";
 import ScrollToTop from "./ScrollToTop";
 import Preloader from "./Preloader";
 import CookieConsent from "./CookieConsent";
+import ChatWidget from "./ChatWidget";
 import { usePageTracking } from "../hooks/usePageTracking";
 
 export default function Layout() {
@@ -24,6 +25,7 @@ export default function Layout() {
 			</main>
 			<Footer />
 			<CookieConsent />
+			<ChatWidget />
 		</div>
 	);
 }
