@@ -8,6 +8,7 @@ import ProcurementTenderDetail from "./pages/ProcurementTenderDetail";
 import NewsInsights from "./pages/NewsInsights";
 import ToolsTemplates from "./pages/ToolsTemplates";
 import Community from "./pages/Community";
+import Network from "./pages/Network";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NewsArticle from "./pages/NewsArticle";
@@ -29,6 +30,7 @@ export default function App() {
 				<Route path="news/:slug" element={<NewsArticle />} />
 				<Route path="tools-templates" element={<ToolsTemplates />} />
 				<Route path="community" element={<Community />} />
+				<Route path="network" element={<Network />} />
 				<Route path="about" element={<About />} />
 				<Route path="contact" element={<Contact />} />
 				<Route path="privacy-policy" element={<PrivacyPolicy />} />

@@ -14,6 +14,7 @@ export default function ChatWidget() {
 	const [open, setOpen] = useState(false);
 	const [question, setQuestion] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [guardrailNotice, setGuardrailNotice] = useState(null);
 	const messagesEndRef = useRef(null);
 	const [messages, setMessages] = useState([INITIAL_MESSAGE]);
 
@@ -66,6 +67,23 @@ export default function ChatWidget() {
 			if (!res.ok) {
 				throw new Error(data.error || "Failed to get response.");
 			}
+			const isGuardrail = Boolean(data.guardrail);
+			if (isGuardrail) {
+				const reason = String(data.guardrailReason || "").trim();
+				const bannerText =
+					reason === "rate_limit"
+						? "Assistant is busy right now. Please wait a moment before sending another message."
+						: reason === "daily_limit"
+						? "Daily chatbot capacity has been reached. Please try again later."
+						: reason === "provider_quota"
+						? "Chat provider limit reached temporarily. Service will resume soon."
+						: reason === "provider_unavailable"
+						? "Assistant is temporarily unavailable. Please try again shortly."
+						: "Chat is temporarily limited. Please try again shortly.";
+				setGuardrailNotice({ reason, text: bannerText });
+			} else {
+				setGuardrailNotice(null);
+			}
 			setMessages((prev) => [
 				...prev,
 				{
@@ -108,12 +126,47 @@ export default function ChatWidget() {
 					listedItems: []
 				}
 			]);
+			setGuardrailNotice({ reason: "request_error", text: "Connection issue. Please try again in a moment." });
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	const renderMessageText = (text) => {
+		const renderInlineMarkdown = (rawText, keyPrefix) => {
+			const input = String(rawText || "");
+			const tokenRegex = /(`[^`]+`|\*\*[^*]+\*\*|_[^_]+_)/g;
+			const chunks = input.split(tokenRegex);
+			return chunks.map((chunk, idx) => {
+				if (!chunk) return null;
+				const codeMatch = chunk.match(/^`([^`]+)`$/);
+				if (codeMatch) {
+					return (
+						<code key={`${keyPrefix}-c-${idx}`} className="rounded bg-black/10 px-1 py-0.5 font-mono text-[0.92em] dark:bg-white/10">
+							{codeMatch[1]}
+						</code>
+					);
+				}
+				const boldMatch = chunk.match(/^\*\*([^*]+)\*\*$/);
+				if (boldMatch) {
+					return (
+						<strong key={`${keyPrefix}-b-${idx}`} className="font-semibold">
+							{boldMatch[1]}
+						</strong>
+					);
+				}
+				const italicMatch = chunk.match(/^_([^_]+)_$/);
+				if (italicMatch) {
+					return (
+						<em key={`${keyPrefix}-i-${idx}`} className="italic">
+							{italicMatch[1]}
+						</em>
+					);
+				}
+				return <span key={`${keyPrefix}-n-${idx}`}>{chunk}</span>;
+			});
+		};
+
 		const renderInlineWithLinks = (value, keyPrefix) => {
 			const raw = String(value || "");
 			const tokenRegex = /(https?:\/\/[^\s]+|\/[a-zA-Z0-9\-_/%.?=&]+)/g;
@@ -123,7 +176,7 @@ export default function ChatWidget() {
 				const isUrl = /^https?:\/\//i.test(part);
 				const isPath = /^\/[a-zA-Z0-9\-_/%.?=&]+$/.test(part);
 				if (!isUrl && !isPath) {
-					return <span key={`${keyPrefix}-t-${idx}`}>{part}</span>;
+					return <span key={`${keyPrefix}-t-${idx}`}>{renderInlineMarkdown(part, `${keyPrefix}-md-${idx}`)}</span>;
 				}
 				return (
 					<a
@@ -131,7 +184,7 @@ export default function ChatWidget() {
 						href={part}
 						target={isUrl ? "_blank" : undefined}
 						rel={isUrl ? "noopener noreferrer" : undefined}
-						className="underline decoration-primary/60 underline-offset-2 hover:text-primary"
+						className="break-all underline decoration-primary/60 underline-offset-2 hover:text-primary"
 					>
 						{part}
 					</a>
@@ -209,6 +262,7 @@ export default function ChatWidget() {
 		if (loading) return;
 		setQuestion("");
 		setMessages([INITIAL_MESSAGE]);
+		setGuardrailNotice(null);
 	};
 
 	return (
@@ -279,6 +333,11 @@ export default function ChatWidget() {
 							</button>
 						</div>
 					</div>
+					{guardrailNotice ? (
+						<div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-[12px] text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+							{guardrailNotice.text}
+						</div>
+					) : null}
 					<div className="max-h-[440px] space-y-3 overflow-y-auto bg-gradient-to-b from-white to-blue-50/30 p-4 dark:from-[#0B1220] dark:to-[#0F172A]">
 						{messages.map((m, idx) => (
 							<div
@@ -298,7 +357,7 @@ export default function ChatWidget() {
 									</div>
 								</div>
 								<div
-									className={`inline-block max-w-[90%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+									className={`inline-block max-w-[90%] overflow-hidden break-words rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed [overflow-wrap:anywhere] ${
 										m.role === "user"
 											? "bg-gradient-to-r from-primary to-indigo-600 text-white shadow-lg shadow-blue-500/20"
 											: "border border-gray-200 bg-white text-gray-800 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
@@ -312,10 +371,10 @@ export default function ChatWidget() {
 											<a
 												key={`${s.url}-${i}`}
 												href={s.url}
-												className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-primary no-underline transition hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30"
+												className="inline-flex max-w-full items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-primary no-underline transition hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30"
 											>
-												<ExternalLink size={11} />
-												{s.title}
+												<ExternalLink size={11} className="shrink-0" />
+												<span className="break-words whitespace-normal [overflow-wrap:anywhere]">{s.title}</span>
 											</a>
 										))}
 									</div>
@@ -342,7 +401,7 @@ export default function ChatWidget() {
 							onKeyDown={(e) => {
 								if (e.key === "Enter") sendQuestion();
 							}}
-							placeholder="Ask about content on this site..."
+							placeholder="Ask me anything about news, opportunities, tenders, or procurements..."
 							className="flex-1 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-[#0B1220] dark:text-white"
 						/>
 						<button

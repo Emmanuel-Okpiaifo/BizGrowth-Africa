@@ -13,7 +13,8 @@ var EXPECTED_HEADERS = {
   Articles: ['title', 'slug', 'category', 'subheading', 'summary', 'content', 'image', 'heroImage', 'whyItMatters', 'homepageFeatureSlot', 'homepageFeaturePriority', 'publishedAt', 'author', 'status', 'scheduledAt', 'createdAt'],
   Opportunities: ['title', 'org', 'country', 'region', 'category', 'amountMin', 'amountMax', 'currency', 'deadline', 'postedAt', 'link', 'tags', 'featured', 'description', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'],
   Tenders: ['type', 'title', 'agency', 'category', 'subCategory', 'country', 'region', 'deadline', 'postedAt', 'link', 'reference', 'quickSummary', 'overview', 'whoCanApply', 'scopeOfWork', 'requirements', 'applicationProcess', 'disclaimer', 'description', 'eligibility', 'value', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'],
-  Procurements: ['title', 'agency', 'category', 'subCategory', 'country', 'region', 'deadline', 'postedAt', 'link', 'reference', 'quickSummary', 'overview', 'whoCanApply', 'scopeOfWork', 'requirements', 'applicationProcess', 'description', 'eligibility', 'value', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage']
+  Procurements: ['title', 'agency', 'category', 'subCategory', 'country', 'region', 'deadline', 'postedAt', 'link', 'reference', 'quickSummary', 'overview', 'whoCanApply', 'scopeOfWork', 'requirements', 'applicationProcess', 'description', 'eligibility', 'value', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'],
+  Network: ['submittedAt', 'ts', 'form', 'formType', 'firstName', 'lastName', 'email', 'whatsAppNumber', 'gender', 'businessDescription', 'sector', 'companyName', 'companyWebsite', 'linkedInProfile', 'businessLocation', 'otherLocation', 'businessStage', 'annualRevenue', 'teamSize', 'growthGoal', 'heardAbout', 'subscriptionReadiness', 'challenges', 'helpNeeds', 'additionalSupport', 'joinReason', 'activeMemberReadiness', 'founderSpotlight', 'userAgent', 'page']
 };
 
 // Set these in Apps Script Project Settings > Script properties for security:
@@ -68,6 +69,10 @@ function getRowFromData(sheet, data, sheetName) {
   });
 }
 
+function shouldNotifySnapshot_(sheetName) {
+  return ['Articles', 'Opportunities', 'Tenders', 'Procurements'].indexOf(String(sheetName || '').trim()) !== -1;
+}
+
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
@@ -84,7 +89,9 @@ function doPost(e) {
       // Always build row from sheet headers + data.data so status/scheduledAt go to the right column
       var row = getRowFromData(sheet, data, data.sheet);
       sheet.appendRow(row);
-      notifySnapshotRefresh_();
+      if (shouldNotifySnapshot_(data.sheet)) {
+        notifySnapshotRefresh_();
+      }
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         message: 'Row appended successfully'
@@ -111,7 +118,9 @@ function doPost(e) {
         }
       }
       sheet.getRange(data.row + 1, 1, 1, row.length).setValues([row]);
-      notifySnapshotRefresh_();
+      if (shouldNotifySnapshot_(data.sheet)) {
+        notifySnapshotRefresh_();
+      }
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         message: 'Row updated successfully'
@@ -120,7 +129,9 @@ function doPost(e) {
 
     if (data.action === 'delete' && data.row != null) {
       sheet.deleteRow(data.row + 1);
-      notifySnapshotRefresh_();
+      if (shouldNotifySnapshot_(data.sheet)) {
+        notifySnapshotRefresh_();
+      }
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         message: 'Row deleted successfully'

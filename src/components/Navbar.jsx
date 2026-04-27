@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useLocation } from "react-router-dom";
 import { Moon, Sun, Menu, X } from "lucide-react";
 import brandLogo from "../assets/img/logos/bizgrowth3.png";
 
@@ -10,6 +10,7 @@ const navItems = [
 	{ to: "/news-insights", label: "News & Insights" },
 	{ to: "/tools-templates", label: "Tools & Templates" },
 	{ to: "/community", label: "Community" },
+	{ to: "/network", label: "Network" },
 	{ to: "/about", label: "About" },
 	{ to: "/contact", label: "Contact" },
 ];
@@ -17,6 +18,7 @@ const navItems = [
 export default function Navbar() {
 	const [dark, setDark] = useState(false);
 	const [open, setOpen] = useState(false);
+	const location = useLocation();
 
 	useEffect(() => {
 		const stored = localStorage.getItem("theme");
@@ -25,6 +27,14 @@ export default function Navbar() {
 		document.documentElement.classList.toggle("dark", enabled);
 		setDark(enabled);
 	}, []);
+
+	useEffect(() => {
+		const isNetworkPage = location.pathname === "/network";
+		if (!isNetworkPage) return;
+		document.documentElement.classList.add("dark");
+		localStorage.setItem("theme", "dark");
+		setDark(true);
+	}, [location.pathname]);
 
 	function toggleTheme() {
 		const next = !dark;
@@ -116,14 +126,14 @@ export default function Navbar() {
 							BizGrowth Africa
 						</span>
 					</Link>
-					<nav className="hidden items-center gap-6 md:flex">
+					<nav className="hidden flex-1 items-center justify-center gap-2 lg:flex xl:gap-3">
 						{navItems.map((item) => (
 							<NavLink
 								key={item.to}
 								to={item.to}
 								className={({ isActive }) =>
 									[
-										"px-2 py-1 text-sm font-medium transition relative group",
+										"whitespace-nowrap px-1.5 py-1 text-[13px] font-medium transition relative group",
 										isActive
 											? "text-primary"
 											: "text-gray-600 hover:text-primary dark:text-gray-300 dark:hover:text-primary",
@@ -142,7 +152,7 @@ export default function Navbar() {
 						))}
 					</nav>
 					{/* Desktop/Tablet theme toggle */}
-					<div className="hidden md:block">
+					<div className="hidden lg:block">
 						<button
 							type="button"
 							onClick={toggleTheme}
@@ -154,7 +164,7 @@ export default function Navbar() {
 						</button>
 					</div>
 					{/* Mobile hamburger (theme toggle lives inside this menu) */}
-					<div className="relative md:hidden">
+					<div className="relative lg:hidden">
 						<button
 							type="button"
 							onClick={() => setOpen((v) => !v)}

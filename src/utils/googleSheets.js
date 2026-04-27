@@ -84,12 +84,14 @@ const ARTICLES_COLUMNS = ['title', 'slug', 'category', 'subheading', 'summary', 
 const OPPORTUNITIES_COLUMNS = ['title', 'org', 'country', 'region', 'category', 'amountMin', 'amountMax', 'currency', 'deadline', 'postedAt', 'link', 'tags', 'featured', 'description', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
 const TENDERS_COLUMNS = ['type', 'title', 'agency', 'category', 'subCategory', 'country', 'region', 'deadline', 'postedAt', 'link', 'reference', 'quickSummary', 'overview', 'whoCanApply', 'scopeOfWork', 'requirements', 'applicationProcess', 'disclaimer', 'description', 'eligibility', 'value', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
 const PROCUREMENTS_COLUMNS = ['title', 'agency', 'category', 'subCategory', 'country', 'region', 'deadline', 'postedAt', 'link', 'reference', 'quickSummary', 'overview', 'whoCanApply', 'scopeOfWork', 'requirements', 'applicationProcess', 'description', 'eligibility', 'value', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
+const NETWORK_COLUMNS = ['submittedAt', 'ts', 'form', 'formType', 'firstName', 'lastName', 'email', 'whatsAppNumber', 'gender', 'businessDescription', 'sector', 'companyName', 'companyWebsite', 'linkedInProfile', 'businessLocation', 'otherLocation', 'businessStage', 'annualRevenue', 'teamSize', 'growthGoal', 'heardAbout', 'subscriptionReadiness', 'challenges', 'helpNeeds', 'additionalSupport', 'joinReason', 'activeMemberReadiness', 'founderSpotlight', 'userAgent', 'page'];
 
 function buildValuesRow(sheetName, data) {
 	const columns = sheetName === 'Articles' ? ARTICLES_COLUMNS
 		: sheetName === 'Opportunities' ? OPPORTUNITIES_COLUMNS
 		: sheetName === 'Tenders' ? TENDERS_COLUMNS
 		: sheetName === 'Procurements' ? PROCUREMENTS_COLUMNS
+		: sheetName === 'Network' ? NETWORK_COLUMNS
 		: null;
 	if (!columns) return null;
 	return columns.map((key) => {
@@ -136,6 +138,19 @@ export async function appendSheetRow(sheetName, data) {
 			console.log('Response status:', response.status);
 		}
 		
+		// Some hosts return an HTML 504 timeout page even when the upstream write
+		// already completed. Treat Network form submits as accepted to prevent
+		// false-negative UI and duplicate retries by users.
+		if (
+			response.status === 504 &&
+			sheetName === 'Network' &&
+			typeof responseText === 'string' &&
+			/<\!doctype html>/i.test(responseText)
+		) {
+			console.warn('⚠️ Gateway timeout page received, but Network submission may have already been saved upstream.');
+			return true;
+		}
+
 		// Check if response is OK
 		if (!response.ok) {
 			throw new Error(`HTTP error: ${response.status} - ${responseText}`);
@@ -150,8 +165,8 @@ export async function appendSheetRow(sheetName, data) {
 			throw new Error(`Invalid JSON response: ${responseText}`);
 		}
 
-		// Check if the result indicates success
-		if (result.success === true) {
+		// Accept both legacy { success: true } and newer { ok: true } API formats.
+		if (result.success === true || result.ok === true) {
 			if (import.meta.env.DEV) console.log('✅ Successfully appended row to Google Sheets');
 			return true;
 		}
@@ -162,8 +177,8 @@ export async function appendSheetRow(sheetName, data) {
 			throw new Error(result.error);
 		}
 
-		// If success is false, that's an error
-		if (result.success === false) {
+		// If either success/ok is explicitly false, treat as an error.
+		if (result.success === false || result.ok === false) {
 			console.error('❌ Request failed:', result.error || 'Unknown error');
 			throw new Error(result.error || 'Failed to save to Google Sheets');
 		}

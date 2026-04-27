@@ -120,6 +120,173 @@ if ($provider === 'groq') {
 
 $chatUrl = rtrim($providerUrl, '/') . '/chat/completions';
 
+function chatbot_guardrail_response($message, $reason = 'guardrail', $meta = []) {
+  return [
+    'answer' => $message,
+    'sources' => [],
+    'referencedItem' => null,
+    'listedItems' => [],
+    'guardrail' => true,
+    'guardrailReason' => trim((string) $reason),
+    'guardrailMeta' => is_array($meta) ? $meta : [],
+  ];
+}
+
+function chatbot_guardrail_cache_root() {
+  return __DIR__ . '/cache/chatbot';
+}
+
+function chatbot_guardrail_ensure_dir($dir) {
+  if (!is_dir($dir)) {
+    @mkdir($dir, 0775, true);
+  }
+  return is_dir($dir) && is_writable($dir);
+}
+
+function chatbot_guardrail_json_read($path, $default = []) {
+  if (!is_file($path) || !is_readable($path)) return $default;
+  $fp = @fopen($path, 'rb');
+  if (!$fp) return $default;
+  @flock($fp, LOCK_SH);
+  $raw = stream_get_contents($fp);
+  @flock($fp, LOCK_UN);
+  fclose($fp);
+  $data = json_decode((string) $raw, true);
+  return is_array($data) ? $data : $default;
+}
+
+function chatbot_guardrail_json_write($path, $data) {
+  $dir = dirname($path);
+  if (!chatbot_guardrail_ensure_dir($dir)) return false;
+  $fp = @fopen($path, 'c+');
+  if (!$fp) return false;
+  if (!@flock($fp, LOCK_EX)) {
+    fclose($fp);
+    return false;
+  }
+  ftruncate($fp, 0);
+  rewind($fp);
+  fwrite($fp, json_encode($data, JSON_UNESCAPED_SLASHES));
+  fflush($fp);
+  @flock($fp, LOCK_UN);
+  fclose($fp);
+  return true;
+}
+
+function chatbot_client_ip() {
+  $candidates = [
+    $_SERVER['HTTP_CF_CONNECTING_IP'] ?? '',
+    $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '',
+    $_SERVER['REMOTE_ADDR'] ?? '',
+  ];
+  foreach ($candidates as $candidate) {
+    $candidate = trim((string) $candidate);
+    if ($candidate === '') continue;
+    if (strpos($candidate, ',') !== false) {
+      $candidate = trim(explode(',', $candidate)[0]);
+    }
+    if ($candidate !== '') return $candidate;
+  }
+  return 'unknown';
+}
+
+function chatbot_check_rate_limit($ip, $limitPerMinute) {
+  if ($limitPerMinute <= 0) return [true, 0];
+  $root = chatbot_guardrail_cache_root() . '/rate';
+  if (!chatbot_guardrail_ensure_dir($root)) return [true, 0];
+  $path = $root . '/' . md5((string) $ip) . '.json';
+  $now = time();
+  $windowStart = $now - 60;
+  $payload = chatbot_guardrail_json_read($path, ['hits' => []]);
+  $hits = array_values(array_filter((array) ($payload['hits'] ?? []), function($ts) use ($windowStart) {
+    return is_numeric($ts) && (int) $ts >= $windowStart;
+  }));
+  $remaining = max(0, $limitPerMinute - count($hits));
+  if (count($hits) >= $limitPerMinute) {
+    chatbot_guardrail_json_write($path, ['hits' => $hits]);
+    return [false, $remaining];
+  }
+  $hits[] = $now;
+  chatbot_guardrail_json_write($path, ['hits' => $hits]);
+  $remaining = max(0, $limitPerMinute - count($hits));
+  return [true, $remaining];
+}
+
+function chatbot_check_daily_limit($dailyLimit) {
+  if ($dailyLimit <= 0) return [true, 0];
+  $root = chatbot_guardrail_cache_root() . '/daily';
+  if (!chatbot_guardrail_ensure_dir($root)) return [true, 0];
+  $key = gmdate('Ymd');
+  $path = $root . '/count-' . $key . '.json';
+  $payload = chatbot_guardrail_json_read($path, ['count' => 0]);
+  $count = (int) ($payload['count'] ?? 0);
+  if ($count >= $dailyLimit) {
+    return [false, max(0, $dailyLimit - $count)];
+  }
+  $count += 1;
+  chatbot_guardrail_json_write($path, ['count' => $count]);
+  return [true, max(0, $dailyLimit - $count)];
+}
+
+function chatbot_cache_key($provider, $question, $history) {
+  $q = strtolower(trim((string) $question));
+  $q = preg_replace('/\s+/', ' ', $q);
+  $historySlice = array_slice(is_array($history) ? $history : [], -3);
+  $small = [];
+  foreach ($historySlice as $h) {
+    if (!is_array($h)) continue;
+    $small[] = [
+      'r' => substr((string) ($h['role'] ?? ''), 0, 1),
+      't' => mb_substr(trim((string) ($h['text'] ?? '')), 0, 120),
+      'ref' => mb_substr(trim((string) (($h['referencedItem']['title'] ?? ''))), 0, 80),
+    ];
+  }
+  return sha1(json_encode(['p' => $provider, 'q' => $q, 'h' => $small], JSON_UNESCAPED_SLASHES));
+}
+
+function chatbot_cache_get($key, $ttlSec) {
+  if ($ttlSec <= 0) return null;
+  $root = chatbot_guardrail_cache_root() . '/answers';
+  if (!chatbot_guardrail_ensure_dir($root)) return null;
+  $path = $root . '/' . $key . '.json';
+  if (!is_file($path)) return null;
+  $payload = chatbot_guardrail_json_read($path, []);
+  $savedAt = (int) ($payload['_savedAt'] ?? 0);
+  if ($savedAt <= 0 || (time() - $savedAt) > $ttlSec) return null;
+  if (!isset($payload['answer'])) return null;
+  unset($payload['_savedAt']);
+  return $payload;
+}
+
+function chatbot_cache_put($key, $data) {
+  $root = chatbot_guardrail_cache_root() . '/answers';
+  if (!chatbot_guardrail_ensure_dir($root)) return false;
+  $path = $root . '/' . $key . '.json';
+  $payload = is_array($data) ? $data : [];
+  $payload['_savedAt'] = time();
+  return chatbot_guardrail_json_write($path, $payload);
+}
+
+function chatbot_select_model($baseModel, $question) {
+  $defaultModel = chatbot_setting('CHAT_MODEL_DEFAULT', '');
+  $premiumModel = chatbot_setting('CHAT_MODEL_PREMIUM', '');
+  $selected = $defaultModel !== '' ? $defaultModel : $baseModel;
+  if ($premiumModel === '') return $selected;
+  $q = strtolower(trim((string) $question));
+  $isComplex = strlen($q) > 180 || preg_match('/\b(explain|compare|analysis|strategy|step by step|comprehensive|deep dive)\b/', $q);
+  return $isComplex ? $premiumModel : $selected;
+}
+
+function chatbot_is_provider_quota_error($message) {
+  $m = strtolower(trim((string) $message));
+  if ($m === '') return false;
+  return strpos($m, 'quota') !== false
+    || strpos($m, 'billing') !== false
+    || strpos($m, 'credit') !== false
+    || strpos($m, 'rate limit') !== false
+    || strpos($m, 'too many requests') !== false;
+}
+
 function chatbot_slugify($value) {
   $value = strtolower(trim((string) $value));
   $value = preg_replace('/[^a-z0-9]+/', '-', $value);
@@ -343,6 +510,227 @@ function chatbot_day_window_yesterday_utc($tzOffsetHours = 1) {
   ];
 }
 
+function chatbot_day_window_for_local_date_utc($tzOffsetHours = 1, $timezoneName = '', $offsetDays = 0) {
+  $tz = null;
+  if (is_string($timezoneName) && trim($timezoneName) !== '') {
+    try {
+      $tz = new DateTimeZone(trim($timezoneName));
+    } catch (Exception $e) {
+      $tz = null;
+    }
+  }
+  if ($tz === null) {
+    $sign = ((int) $tzOffsetHours) >= 0 ? '+' : '-';
+    $hours = str_pad((string) abs((int) $tzOffsetHours), 2, '0', STR_PAD_LEFT);
+    $tz = new DateTimeZone("{$sign}{$hours}:00");
+  }
+
+  $now = new DateTimeImmutable('now', $tz);
+  $target = $now->modify(((int) $offsetDays) . ' day');
+  $startLocal = $target->setTime(0, 0, 0);
+  $endLocal = $target->setTime(23, 59, 59);
+
+  return [
+    'startUtc' => $startLocal->setTimezone(new DateTimeZone('UTC'))->getTimestamp(),
+    'endUtc' => $endLocal->setTimezone(new DateTimeZone('UTC'))->getTimestamp(),
+    'localDate' => $target->format('Y-m-d'),
+    'localDayName' => $target->format('l'),
+  ];
+}
+
+function chatbot_now_context($tzOffsetHours = 1, $timezoneName = '') {
+  $tz = null;
+  if (is_string($timezoneName) && trim($timezoneName) !== '') {
+    try {
+      $tz = new DateTimeZone(trim($timezoneName));
+    } catch (Exception $e) {
+      $tz = null;
+    }
+  }
+
+  if ($tz === null) {
+    $sign = ((int) $tzOffsetHours) >= 0 ? '+' : '-';
+    $hours = str_pad((string) abs((int) $tzOffsetHours), 2, '0', STR_PAD_LEFT);
+    $tz = new DateTimeZone("{$sign}{$hours}:00");
+  }
+
+  $now = new DateTimeImmutable('now', $tz);
+  return [
+    'iso' => $now->format(DateTimeInterface::ATOM),
+    'date' => $now->format('Y-m-d'),
+    'time' => $now->format('H:i:s'),
+    'timeHuman' => $now->format('g:i A'),
+    'dayName' => $now->format('l'),
+    'dateHuman' => $now->format('j F Y'),
+    'timezone' => $tz->getName(),
+  ];
+}
+
+function chatbot_timezone_human_label($timezone, $isoDateTime) {
+  $tz = trim((string) $timezone);
+  if ($tz === '') return 'UTC';
+
+  // Friendly names for common zones used by this project.
+  $friendlyMap = [
+    'Africa/Lagos' => 'West Africa Time (UTC plus 1 hour)',
+    'UTC' => 'Coordinated Universal Time (UTC)',
+    'GMT' => 'Greenwich Mean Time (UTC)',
+  ];
+  if (isset($friendlyMap[$tz])) {
+    return $friendlyMap[$tz];
+  }
+
+  // If timezone is an offset like +01:00 / -05:00, convert to words.
+  if (preg_match('/^([+-])(\d{2}):(\d{2})$/', $tz, $m)) {
+    $signWord = $m[1] === '+' ? 'plus' : 'minus';
+    $h = (int) $m[2];
+    $min = (int) $m[3];
+    if ($min === 0) {
+      return "UTC {$signWord} {$h} hour" . ($h === 1 ? '' : 's');
+    }
+    return "UTC {$signWord} {$h} hour" . ($h === 1 ? '' : 's') . " and {$min} minute" . ($min === 1 ? '' : 's');
+  }
+
+  // For named zones, include offset words too.
+  try {
+    $dt = new DateTimeImmutable($isoDateTime);
+    $zone = new DateTimeZone($tz);
+    $zdt = $dt->setTimezone($zone);
+    $offsetSeconds = $zone->getOffset($zdt);
+    $signWord = $offsetSeconds >= 0 ? 'plus' : 'minus';
+    $abs = abs($offsetSeconds);
+    $h = intdiv($abs, 3600);
+    $min = intdiv($abs % 3600, 60);
+    if ($min === 0) {
+      return "{$tz} (UTC {$signWord} {$h} hour" . ($h === 1 ? '' : 's') . ")";
+    }
+    return "{$tz} (UTC {$signWord} {$h} hour" . ($h === 1 ? '' : 's') . " and {$min} minute" . ($min === 1 ? '' : 's') . ")";
+  } catch (Exception $e) {
+    return $tz;
+  }
+}
+
+function chatbot_scope_candidates_from_question($question) {
+  $q = strtolower(trim((string) $question));
+  $scopes = [];
+  if (preg_match('/\barticle|news|story|stories\b/', $q)) $scopes[] = 'article';
+  if (preg_match('/\bopportunit(?:y|ies|i|u)\b/', $q)) $scopes[] = 'opportunity';
+  if (preg_match('/\btender(?:s)?\b/', $q)) $scopes[] = 'tender';
+  if (preg_match('/\bprocurement(?:s)?\b/', $q)) $scopes[] = 'procurement';
+  return array_values(array_unique($scopes));
+}
+
+function chatbot_has_relative_today_intent($question) {
+  $q = strtolower(trim((string) $question));
+  return preg_match('/\btoday\b|\bcurrent day\b|\bposted today\b|\bpost today\b/', $q) === 1;
+}
+
+function chatbot_is_current_date_question($question) {
+  $q = strtolower(trim((string) $question));
+  if ($q === '') return false;
+  return preg_match('/\bwhat(?:\'s| is)\s+(?:today|todays|today\'s)\s+(?:date|day)\b|\bwhat is today\b|\bwhat day is it\b|\bwhat(?:\'s| is)\s+the date\b|\bdate today\b/', $q) === 1;
+}
+
+function chatbot_has_relative_this_week_intent($question) {
+  $q = strtolower(trim((string) $question));
+  return preg_match('/\bthis week\b|\bcurrent week\b/', $q) === 1;
+}
+
+function chatbot_has_relative_this_month_intent($question) {
+  $q = strtolower(trim((string) $question));
+  return preg_match('/\bthis month\b|\bcurrent month\b/', $q) === 1;
+}
+
+function chatbot_has_relative_last_7_days_intent($question) {
+  $q = strtolower(trim((string) $question));
+  return preg_match('/\blast 7 days\b|\blast seven days\b|\bpast 7 days\b|\bpast seven days\b/', $q) === 1;
+}
+
+function chatbot_date_window_for_range_utc($rangeType, $tzOffsetHours = 1, $timezoneName = '') {
+  $tz = null;
+  if (is_string($timezoneName) && trim($timezoneName) !== '') {
+    try {
+      $tz = new DateTimeZone(trim($timezoneName));
+    } catch (Exception $e) {
+      $tz = null;
+    }
+  }
+  if ($tz === null) {
+    $sign = ((int) $tzOffsetHours) >= 0 ? '+' : '-';
+    $hours = str_pad((string) abs((int) $tzOffsetHours), 2, '0', STR_PAD_LEFT);
+    $tz = new DateTimeZone("{$sign}{$hours}:00");
+  }
+
+  $now = new DateTimeImmutable('now', $tz);
+  switch ($rangeType) {
+    case 'week':
+      $startLocal = $now->modify('monday this week')->setTime(0, 0, 0);
+      $endLocal = $now->setTime(23, 59, 59);
+      break;
+    case 'month':
+      $startLocal = $now->modify('first day of this month')->setTime(0, 0, 0);
+      $endLocal = $now->setTime(23, 59, 59);
+      break;
+    case 'last7':
+      $startLocal = $now->modify('-6 day')->setTime(0, 0, 0); // includes today + previous 6 days
+      $endLocal = $now->setTime(23, 59, 59);
+      break;
+    default:
+      $startLocal = $now->setTime(0, 0, 0);
+      $endLocal = $now->setTime(23, 59, 59);
+      break;
+  }
+
+  return [
+    'startUtc' => $startLocal->setTimezone(new DateTimeZone('UTC'))->getTimestamp(),
+    'endUtc' => $endLocal->setTimezone(new DateTimeZone('UTC'))->getTimestamp(),
+  ];
+}
+
+function chatbot_scope_label($scopes) {
+  if (!is_array($scopes) || empty($scopes)) return 'items';
+  if (count($scopes) === 1) {
+    $map = [
+      'article' => 'news articles',
+      'opportunity' => 'opportunities',
+      'tender' => 'tenders',
+      'procurement' => 'procurements',
+    ];
+    return $map[$scopes[0]] ?? 'items';
+  }
+  return 'items';
+}
+
+function chatbot_is_show_me_request($question) {
+  $q = strtolower(trim((string) $question));
+  return preg_match('/\bshow me\b|\bcan i see\b|\blet me see\b/', $q) === 1;
+}
+
+function chatbot_requests_latest($question) {
+  $q = strtolower(trim((string) $question));
+  return preg_match('/\blatest\b|\blastest\b|\bnewest\b|\brecent\b/', $q) === 1;
+}
+
+function chatbot_infer_recent_scope_from_history($history) {
+  for ($i = count($history) - 1; $i >= 0; $i--) {
+    if (($history[$i]['role'] ?? '') !== 'user') continue;
+    $text = trim((string) ($history[$i]['text'] ?? ''));
+    if ($text === '') continue;
+    $scopes = chatbot_scope_candidates_from_question($text);
+    if (!empty($scopes)) {
+      return $scopes;
+    }
+  }
+  return [];
+}
+
+function chatbot_range_label($rangeType) {
+  if ($rangeType === 'week') return 'this week';
+  if ($rangeType === 'month') return 'this month';
+  if ($rangeType === 'last7') return 'the last 7 days';
+  return 'today';
+}
+
 function chatbot_build_query_with_history($question, $history) {
   $q = trim((string) $question);
   if (empty($history)) {
@@ -497,6 +885,39 @@ function chatbot_snapshot_rows($sheetName) {
   return $rows;
 }
 
+$history = chatbot_clean_history($rawHistory);
+$lastAssistantText = chatbot_last_assistant_text_from_history($history);
+$clientIp = chatbot_client_ip();
+
+$rateLimitPerMinute = (int) chatbot_setting('CHAT_RATE_LIMIT_PER_MIN', '20');
+list($rateOk, $rateRemaining) = chatbot_check_rate_limit($clientIp, $rateLimitPerMinute);
+if (!$rateOk) {
+  json_ok(chatbot_guardrail_response(
+    "Chat is busy right now. Please wait a moment and try again.",
+    'rate_limit',
+    ['retryAfterSec' => 60, 'limitPerMinute' => $rateLimitPerMinute, 'remaining' => $rateRemaining]
+  ));
+}
+
+$dailyLimit = (int) chatbot_setting('CHAT_DAILY_LIMIT', '5000');
+list($dailyOk, $dailyRemaining) = chatbot_check_daily_limit($dailyLimit);
+if (!$dailyOk) {
+  json_ok(chatbot_guardrail_response(
+    "Today's chatbot capacity is full. Please try again later.",
+    'daily_limit',
+    ['limitPerDay' => $dailyLimit, 'remaining' => $dailyRemaining]
+  ));
+}
+
+$responseCacheTtlSec = (int) chatbot_setting('CHAT_RESPONSE_CACHE_TTL_SEC', '300');
+$responseCacheKey = chatbot_cache_key($provider, $question, $history);
+$cachedResponse = chatbot_cache_get($responseCacheKey, $responseCacheTtlSec);
+if (is_array($cachedResponse) && isset($cachedResponse['answer'])) {
+  json_ok($cachedResponse);
+}
+
+$model = chatbot_select_model($model, $question);
+
 $docs = [];
 foreach (['Articles', 'Opportunities', 'Tenders', 'Procurements'] as $sheet) {
   $rows = chatbot_snapshot_rows($sheet);
@@ -510,19 +931,34 @@ if (empty($docs)) {
   json_error('No published content available for chatbot context', 503);
 }
 
-$history = chatbot_clean_history($rawHistory);
-$lastAssistantText = chatbot_last_assistant_text_from_history($history);
 $identityReply = chatbot_identity_reply_if_needed($question);
 if ($identityReply !== '') {
-  json_ok([
+  $payload = [
     'answer' => $identityReply,
     'sources' => [],
     'referencedItem' => null,
     'listedItems' => [],
-  ]);
+  ];
+  if ($responseCacheTtlSec > 0) chatbot_cache_put($responseCacheKey, $payload);
+  json_ok($payload);
 }
 
 $tzOffset = (int) chatbot_setting('CHAT_TIMEZONE_OFFSET_HOURS', '1');
+$tzName = chatbot_setting('CHAT_TIMEZONE', '');
+$nowContext = chatbot_now_context($tzOffset, $tzName);
+
+if (chatbot_is_current_date_question($question)) {
+  $tzHuman = chatbot_timezone_human_label((string) ($nowContext['timezone'] ?? ''), (string) ($nowContext['iso'] ?? ''));
+  $payload = [
+    'answer' => "Today is {$nowContext['dayName']}, {$nowContext['dateHuman']}. The current time is {$nowContext['timeHuman']} in {$tzHuman}.",
+    'sources' => [],
+    'referencedItem' => null,
+    'listedItems' => [],
+  ];
+  if ($responseCacheTtlSec > 0) chatbot_cache_put($responseCacheKey, $payload);
+  json_ok($payload);
+}
+
 foreach ($docs as &$doc) {
   $doc['_publishedTs'] = chatbot_parse_timestamp($doc['publishedAt'] ?? '');
 }
@@ -545,20 +981,151 @@ if (chatbot_has_relative_yesterday_opportunity_intent($question)) {
 
   if (!empty($listed)) {
     $bullets = array_map(function($m) { return "- " . $m['title']; }, $listed);
-    json_ok([
+    $payload = [
       'answer' => "Here are yesterday's opportunities I found:\n\n" . implode("\n", $bullets),
       'sources' => array_slice($listed, 0, 3),
       'referencedItem' => $listed[0],
       'listedItems' => $listed,
-    ]);
+    ];
+    if ($responseCacheTtlSec > 0) chatbot_cache_put($responseCacheKey, $payload);
+    json_ok($payload);
   }
 
-  json_ok([
+  $payload = [
     'answer' => "I couldn't find any opportunities published yesterday in the available content. If you want, I can show the latest opportunities instead.",
     'sources' => [],
     'referencedItem' => null,
     'listedItems' => [],
-  ]);
+  ];
+  if ($responseCacheTtlSec > 0) chatbot_cache_put($responseCacheKey, $payload);
+  json_ok($payload);
+}
+
+if (chatbot_has_relative_today_intent($question)) {
+  $scopes = chatbot_scope_candidates_from_question($question);
+  $windowToday = chatbot_day_window_for_local_date_utc($tzOffset, $tzName, 0);
+  $matches = array_values(array_filter($docs, function($d) use ($windowToday, $scopes) {
+    $type = strtolower(trim((string) ($d['type'] ?? '')));
+    if (!empty($scopes) && !in_array($type, $scopes, true)) return false;
+    $ts = (int) ($d['_publishedTs'] ?? 0);
+    if ($ts <= 0) return false;
+    return $ts >= $windowToday['startUtc'] && $ts <= $windowToday['endUtc'];
+  }));
+  usort($matches, function($a, $b) {
+    return ((int) ($b['_publishedTs'] ?? 0)) - ((int) ($a['_publishedTs'] ?? 0));
+  });
+
+  $listed = array_slice(array_map(function($m) {
+    return ['title' => $m['title'], 'url' => $m['url'], 'type' => $m['type']];
+  }, $matches), 0, 8);
+
+  if (!empty($listed)) {
+    $label = chatbot_scope_label($scopes);
+    $bullets = array_map(function($m) { return "- " . $m['title']; }, $listed);
+    $payload = [
+      'answer' => "Here are {$label} posted today:\n\n" . implode("\n", $bullets),
+      'sources' => array_slice($listed, 0, 5),
+      'referencedItem' => $listed[0],
+      'listedItems' => $listed,
+    ];
+    if ($responseCacheTtlSec > 0) chatbot_cache_put($responseCacheKey, $payload);
+    json_ok($payload);
+  }
+
+  $label = chatbot_scope_label($scopes);
+  $payload = [
+    'answer' => "I couldn't find any {$label} posted today in the available content. If you want, I can show the latest instead.",
+    'sources' => [],
+    'referencedItem' => null,
+    'listedItems' => [],
+  ];
+  if ($responseCacheTtlSec > 0) chatbot_cache_put($responseCacheKey, $payload);
+  json_ok($payload);
+}
+
+$historyScoped = chatbot_infer_recent_scope_from_history($history);
+if (chatbot_is_show_me_request($question) && (chatbot_requests_latest($question) || !empty($historyScoped))) {
+  $scopes = chatbot_scope_candidates_from_question($question);
+  if (empty($scopes)) {
+    $scopes = $historyScoped;
+  }
+  $matches = array_values(array_filter($docs, function($d) use ($scopes) {
+    if (empty($scopes)) return true;
+    $type = strtolower(trim((string) ($d['type'] ?? '')));
+    return in_array($type, $scopes, true);
+  }));
+  usort($matches, function($a, $b) {
+    return ((int) ($b['_publishedTs'] ?? 0)) - ((int) ($a['_publishedTs'] ?? 0));
+  });
+
+  $listed = array_slice(array_map(function($m) {
+    return ['title' => $m['title'], 'url' => $m['url'], 'type' => $m['type']];
+  }, $matches), 0, 8);
+
+  if (!empty($listed)) {
+    $label = chatbot_scope_label($scopes);
+    $bullets = array_map(function($m) { return "- " . $m['title']; }, $listed);
+    $payload = [
+      'answer' => "Here are the latest {$label}:\n\n" . implode("\n", $bullets),
+      'sources' => array_slice($listed, 0, 5),
+      'referencedItem' => $listed[0],
+      'listedItems' => $listed,
+    ];
+    if ($responseCacheTtlSec > 0) chatbot_cache_put($responseCacheKey, $payload);
+    json_ok($payload);
+  }
+}
+
+$rangeType = '';
+if (chatbot_has_relative_this_week_intent($question)) {
+  $rangeType = 'week';
+} elseif (chatbot_has_relative_this_month_intent($question)) {
+  $rangeType = 'month';
+} elseif (chatbot_has_relative_last_7_days_intent($question)) {
+  $rangeType = 'last7';
+}
+
+if ($rangeType !== '') {
+  $scopes = chatbot_scope_candidates_from_question($question);
+  $window = chatbot_date_window_for_range_utc($rangeType, $tzOffset, $tzName);
+  $matches = array_values(array_filter($docs, function($d) use ($window, $scopes) {
+    $type = strtolower(trim((string) ($d['type'] ?? '')));
+    if (!empty($scopes) && !in_array($type, $scopes, true)) return false;
+    $ts = (int) ($d['_publishedTs'] ?? 0);
+    if ($ts <= 0) return false;
+    return $ts >= $window['startUtc'] && $ts <= $window['endUtc'];
+  }));
+  usort($matches, function($a, $b) {
+    return ((int) ($b['_publishedTs'] ?? 0)) - ((int) ($a['_publishedTs'] ?? 0));
+  });
+
+  $listed = array_slice(array_map(function($m) {
+    return ['title' => $m['title'], 'url' => $m['url'], 'type' => $m['type']];
+  }, $matches), 0, 8);
+
+  $scopeLabel = chatbot_scope_label($scopes);
+  $rangeLabel = chatbot_range_label($rangeType);
+
+  if (!empty($listed)) {
+    $bullets = array_map(function($m) { return "- " . $m['title']; }, $listed);
+    $payload = [
+      'answer' => "Here are {$scopeLabel} posted {$rangeLabel}:\n\n" . implode("\n", $bullets),
+      'sources' => array_slice($listed, 0, 5),
+      'referencedItem' => $listed[0],
+      'listedItems' => $listed,
+    ];
+    if ($responseCacheTtlSec > 0) chatbot_cache_put($responseCacheKey, $payload);
+    json_ok($payload);
+  }
+
+  $payload = [
+    'answer' => "I couldn't find any {$scopeLabel} posted {$rangeLabel} in the available content. If you want, I can show the latest instead.",
+    'sources' => [],
+    'referencedItem' => null,
+    'listedItems' => [],
+  ];
+  if ($responseCacheTtlSec > 0) chatbot_cache_put($responseCacheKey, $payload);
+  json_ok($payload);
 }
 
 $recentReferencedItem = chatbot_recent_referenced_item_from_history($history);
@@ -586,12 +1153,14 @@ if (chatbot_is_source_request($question)) {
       $bullets[] = "- " . trim((string) ($src['title'] ?? ''));
     }
     $answerText = $lead . "\n\n" . implode("\n", $bullets);
-    json_ok([
+    $payload = [
       'answer' => $answerText,
       'sources' => array_slice($resolvedSources, 0, 5),
       'referencedItem' => $resolvedSources[0],
       'listedItems' => array_slice($resolvedSources, 0, 5),
-    ]);
+    ];
+    if ($responseCacheTtlSec > 0) chatbot_cache_put($responseCacheKey, $payload);
+    json_ok($payload);
   }
 }
 
@@ -626,6 +1195,7 @@ $contextText = implode("\n\n---\n\n", $contextParts);
 
 $developerMsg = "You are the BizGrowth Africa website assistant.\n"
   . "You must answer ONLY from the provided BizGrowth Africa context snippets.\n"
+  . "Use the provided CURRENT_DATETIME for any time-sensitive phrasing (today, yesterday, this week, deadlines), not model assumptions.\n"
   . "Do not use outside knowledge, and do not invent facts.\n"
   . "Speak in a very polite, warm, conversational style like a helpful assistant.\n"
   . "Handle casual slang naturally with short, friendly wording.\n"
@@ -656,6 +1226,12 @@ if (!empty($history)) {
 }
 
 $userMsg = "CURRENT QUESTION:\n{$question}\n\n"
+  . "CURRENT_DATETIME:\n"
+  . "- ISO: {$nowContext['iso']}\n"
+  . "- Day: {$nowContext['dayName']}\n"
+  . "- Date: {$nowContext['date']}\n"
+  . "- Time: {$nowContext['time']}\n"
+  . "- Timezone: {$nowContext['timezone']}\n\n"
   . (!empty($historyText) ? "RECENT CHAT HISTORY (same session):\n{$historyText}\n\n" : "")
   . "CONTEXT:\n{$contextText}";
 
@@ -719,12 +1295,21 @@ $err = curl_error($ch);
 curl_close($ch);
 
 if ($err) {
-  json_error('Chat provider connection failed: ' . $err, 502);
+  json_ok(chatbot_guardrail_response(
+    "The assistant is temporarily unavailable. Please try again shortly.",
+    'provider_unavailable'
+  ));
 }
 
 $data = json_decode((string) $resp, true);
 if ($http < 200 || $http >= 300 || !is_array($data)) {
   $msg = is_array($data) && isset($data['error']['message']) ? $data['error']['message'] : 'Chat provider error';
+  if (chatbot_is_provider_quota_error($msg)) {
+    json_ok(chatbot_guardrail_response(
+      "The assistant has reached its usage limit for now. Please try again later.",
+      'provider_quota'
+    ));
+  }
   json_error($msg, 502);
 }
 
@@ -960,10 +1545,16 @@ if (chatbot_should_store_listed_items($question, $answer, $sources)) {
   }
 }
 
-json_ok([
+$responsePayload = [
   'answer' => $answer,
   'sources' => $sources,
   'referencedItem' => $referencedItem,
   'listedItems' => $listedItems,
-]);
+];
+
+if ($responseCacheTtlSec > 0) {
+  chatbot_cache_put($responseCacheKey, $responsePayload);
+}
+
+json_ok($responsePayload);
 

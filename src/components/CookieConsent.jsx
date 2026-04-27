@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { X, Settings, Check, Cookie } from 'lucide-react';
+import { initPixel, trackPageView as trackMetaPageView } from '../utils/metaPixel';
 
 const COOKIE_CONSENT_KEY = 'bizgrowth_cookie_consent';
 const COOKIE_PREFERENCES_KEY = 'bizgrowth_cookie_preferences';
@@ -22,7 +23,7 @@ export default function CookieConsent() {
 	// Check if user is on homepage
 	const isHomepage = location.pathname === '/';
 
-	// Apply cookie preferences (enable/disable GA4)
+	// Apply cookie preferences (enable/disable GA4 + Meta Pixel)
 	const applyCookiePreferences = (prefs) => {
 		if (window.gtag) {
 			if (prefs.analytics) {
@@ -45,15 +46,17 @@ export default function CookieConsent() {
 				});
 			}
 		}
+
+		if (prefs.analytics) {
+			// Initialize and fire an immediate pageview when consent is granted
+			// so Meta can detect the pixel on the current page.
+			initPixel();
+			trackMetaPageView();
+		}
 	};
 
 	// Load saved preferences
 	useEffect(() => {
-		if (!isHomepage) {
-			setShowConsent(false);
-			return;
-		}
-
 		const savedConsent = localStorage.getItem(COOKIE_CONSENT_KEY);
 		const savedPreferences = localStorage.getItem(COOKIE_PREFERENCES_KEY);
 
@@ -72,8 +75,8 @@ export default function CookieConsent() {
 				}
 			}
 		} else {
-			// User hasn't made a choice yet, show popup
-			setShowConsent(true);
+			// User hasn't made a choice yet, show popup only on homepage
+			setShowConsent(isHomepage);
 		}
 	}, [isHomepage]);
 

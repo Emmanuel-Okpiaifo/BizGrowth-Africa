@@ -202,6 +202,7 @@ export default function Footer() {
 							{[
 								{ label: "About", href: "/about" },
 								{ label: "Community", href: "/community" },
+								{ label: "Network", href: "/network" },
 								{ label: "Contact", href: "/contact" },
 								{ label: "Privacy Policy", href: "/privacy-policy" }
 							].map((link, idx) => (

@@ -39,11 +39,12 @@ $articlesColumns = ['title', 'slug', 'category', 'subheading', 'summary', 'conte
 $opportunitiesColumns = ['title', 'org', 'country', 'region', 'category', 'amountMin', 'amountMax', 'currency', 'deadline', 'postedAt', 'link', 'tags', 'featured', 'description', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
 $tendersColumns = ['type', 'title', 'agency', 'category', 'subCategory', 'country', 'region', 'deadline', 'postedAt', 'link', 'reference', 'quickSummary', 'overview', 'whoCanApply', 'scopeOfWork', 'requirements', 'applicationProcess', 'disclaimer', 'description', 'eligibility', 'value', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
 $procurementsColumns = ['title', 'agency', 'category', 'subCategory', 'country', 'region', 'deadline', 'postedAt', 'link', 'reference', 'quickSummary', 'overview', 'whoCanApply', 'scopeOfWork', 'requirements', 'applicationProcess', 'description', 'eligibility', 'value', 'author', 'createdAt', 'status', 'scheduledAt', 'heroImage'];
+$networkColumns = ['submittedAt', 'ts', 'form', 'formType', 'firstName', 'lastName', 'email', 'whatsAppNumber', 'gender', 'businessDescription', 'sector', 'companyName', 'companyWebsite', 'linkedInProfile', 'businessLocation', 'otherLocation', 'businessStage', 'annualRevenue', 'teamSize', 'growthGoal', 'heardAbout', 'subscriptionReadiness', 'challenges', 'helpNeeds', 'additionalSupport', 'joinReason', 'activeMemberReadiness', 'founderSpotlight', 'userAgent', 'page'];
 
 if (isset($data['action']) && $data['action'] === 'append' && isset($data['data']) && is_array($data['data']) && empty($data['values'])) {
     $sheet = isset($data['sheet']) ? $data['sheet'] : '';
     $rowData = $data['data'];
-    $columns = $sheet === 'Articles' ? $articlesColumns : ($sheet === 'Opportunities' ? $opportunitiesColumns : ($sheet === 'Tenders' ? $tendersColumns : ($sheet === 'Procurements' ? $procurementsColumns : null)));
+    $columns = $sheet === 'Articles' ? $articlesColumns : ($sheet === 'Opportunities' ? $opportunitiesColumns : ($sheet === 'Tenders' ? $tendersColumns : ($sheet === 'Procurements' ? $procurementsColumns : ($sheet === 'Network' ? $networkColumns : null))));
     if ($columns) {
         $row = [];
         foreach ($columns as $key) {
@@ -103,9 +104,10 @@ if (
     in_array($data['action'], ['append', 'update', 'delete'], true)
 ) {
     $sheetName = isset($data['sheet']) ? (string) $data['sheet'] : '';
-    if ($sheetName !== '') {
+    $isContentSheet = in_array($sheetName, ['Articles', 'Opportunities', 'Tenders', 'Procurements'], true);
+    if ($sheetName !== '' && $isContentSheet) {
         @snapshot_refresh_sheet($sheetName);
-    } else {
+    } elseif ($sheetName === '') {
         @snapshot_refresh();
     }
 }
